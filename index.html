@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Protótipo VR - Exposição Gradual (TCC)</title>
+
+  <!-- Biblioteca A-Frame (carregada pela internet, via CDN) -->
+  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+
+  <!-- Nosso arquivo de estilos -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Camada de interface em HTML, que fica POR CIMA da cena 3D -->
+  <div id="interface">
+    <p id="aviso">
+      Protótipo acadêmico de Realidade Virtual (TCC).
+      Não constitui tratamento médico ou psicológico.
+    </p>
+  </div>
+
+  <!-- A cena 3D começa aqui -->
+  <a-scene id="cena">
+
+    <!-- Chão -->
+    <a-plane
+      position="0 0 0"
+      rotation="-90 0 0"
+      width="20"
+      height="20"
+      color="#7BC8A4">
+    </a-plane>
+
+    <!-- Objeto de teste: um cubo à nossa frente -->
+    <a-box
+      position="0 1 -4"
+      width="1"
+      height="1"
+      depth="1"
+      color="#4C6EF5">
+    </a-box>
+
+    <!-- Céu: uma esfera gigante que envolve toda a cena -->
+    <a-sky color="#ECECEC"></a-sky>
+
+  </a-scene>
+
+  <!-- Nosso arquivo de JavaScript, carregado no final -->
+  <script src="script.js"></script>
+
+</body>
+</html>
