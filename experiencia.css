@@ -50,3 +50,20 @@ html, body {
 #voltar:hover {
   background-color: rgba(0, 0, 0, 0.8);
 }
+
+/* Resumo do que foi selecionado em selecao.html */
+#selecaoInfo {
+  display: inline-block;
+  background-color: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+#selecaoInfo a {
+  pointer-events: auto;
+  color: #3ED0C0;
+}

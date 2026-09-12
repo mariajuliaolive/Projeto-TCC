@@ -12,7 +12,9 @@
   <!-- Marca que o JavaScript está ativo (explicado no script.js) -->
   <script>document.documentElement.classList.add('js');</script>
 
-  <link rel="stylesheet" href="style.css" />
+  <!-- Primeiro o que e comum a todas as paginas, depois o especifico -->
+  <link rel="stylesheet" href="base.css" />
+  <link rel="stylesheet" href="inicio.css" />
 </head>
 <body>
 
@@ -42,7 +44,7 @@
       <nav class="menu" id="menu" aria-label="Navegação principal">
         <a href="#inicio">Início</a>
         <a href="#sobre">Sobre o projeto</a>
-        <a href="experiencia.html" class="menu__destaque">Experiência VR</a>
+        <a href="selecao.html" class="menu__destaque">Experiência VR</a>
       </nav>
 
     </div>
@@ -70,7 +72,7 @@
           </p>
 
           <div class="hero__botoes">
-            <a class="botao botao--principal" href="experiencia.html">Iniciar experiência</a>
+            <a class="botao botao--principal" href="selecao.html">Iniciar experiência</a>
             <a class="botao botao--secundario" href="#sobre">Saiba mais</a>
           </div>
         </div>
@@ -242,6 +244,6 @@
     </div>
   </footer>
 
-  <script src="script.js"></script>
+  <script src="base.js"></script>
 </body>
 </html>

@@ -1,0 +1,212 @@
+/* =========================================================
+   INÍCIO — estilos exclusivos da página inicial (index.html).
+   O que é compartilhado com as outras páginas está em base.css.
+   ========================================================= */
+
+/* ---------- HERO ---------- */
+.hero {
+  padding-block: clamp(48px, 9vw, 110px);
+  background-image:
+    radial-gradient(60% 70% at 15% 0%, rgba(91, 141, 239, 0.16), transparent 70%),
+    radial-gradient(55% 60% at 95% 25%, rgba(62, 208, 192, 0.12), transparent 70%);
+}
+
+.hero__interno {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.selo {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--verde);
+  background-color: rgba(62, 208, 192, 0.1);
+  border: 1px solid rgba(62, 208, 192, 0.25);
+  padding: 6px 14px;
+  border-radius: 100px;
+  margin-bottom: 22px;
+}
+
+.hero__titulo {
+  font-size: clamp(2rem, 5.5vw, 3.4rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.destaque {
+  background-image: linear-gradient(120deg, var(--azul), var(--verde));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero__descricao {
+  font-size: clamp(1rem, 2vw, 1.1rem);
+  color: var(--texto-suave);
+  max-width: 52ch;
+  margin-bottom: 32px;
+}
+
+.hero__botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.hero__visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  max-width: 380px;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.anel {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--borda);
+}
+
+.anel--1 { width: 100%; height: 100%; }
+.anel--2 { width: 74%;  height: 74%;  border-color: rgba(91, 141, 239, 0.3); }
+.anel--3 {
+  width: 48%;
+  height: 48%;
+  border-color: rgba(62, 208, 192, 0.35);
+  border-style: dashed;
+  animation: girar 26s linear infinite;
+}
+
+.oculos {
+  position: relative;
+  width: 58%;
+  filter: drop-shadow(0 12px 30px rgba(91, 141, 239, 0.35));
+  animation: flutuar 5s ease-in-out infinite;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes flutuar {
+  0%, 100% { transform: translateY(-6px); }
+  50%      { transform: translateY(6px); }
+}
+
+/* ---------- GRADES ---------- */
+.recursos,
+.cards,
+.passos {
+  list-style: none;
+  display: grid;
+  gap: 18px;
+}
+
+.recursos { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.cards    { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.passos   { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+
+.recurso {
+  background-color: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 24px;
+}
+
+.secao--alternada .recurso {
+  background-color: var(--superficie-2);
+}
+
+.recurso__titulo {
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+}
+
+.recurso__texto {
+  font-size: 0.93rem;
+  color: var(--texto-suave);
+}
+
+.card {
+  background-color: var(--superficie-2);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 26px 20px;
+  text-align: center;
+  transition: transform var(--transicao), border-color var(--transicao);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(62, 208, 192, 0.45);
+}
+
+.card__icone {
+  display: block;
+  font-size: 34px;
+  line-height: 1;
+  margin-bottom: 14px;
+  opacity: 0.9;
+}
+
+.card__titulo {
+  font-size: 1.05rem;
+  margin-bottom: 4px;
+}
+
+.card__texto {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+.passos { counter-reset: passo; }
+
+.passo {
+  position: relative;
+  background-color: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 28px 24px;
+}
+
+.passo__numero {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-image: linear-gradient(135deg, var(--azul), var(--verde));
+  color: #06121F;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.passo__titulo {
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+}
+
+.passo__texto {
+  font-size: 0.93rem;
+  color: var(--texto-suave);
+}
+
+/* ---------- RESPONSIVIDADE ---------- */
+@media (min-width: 900px) {
+  .hero__interno {
+    grid-template-columns: 1.15fr 1fr;
+    gap: 64px;
+  }
+}
+
+@media (max-width: 780px) {
+  .hero__visual {
+    max-width: 280px;
+  }
+}

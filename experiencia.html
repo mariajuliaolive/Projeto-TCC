@@ -18,7 +18,8 @@
 
   <!-- Camada de interface em HTML, que fica POR CIMA da cena 3D -->
   <div id="interface">
-    <a href="index.html" id="voltar">&larr; Voltar ao início</a>
+    <a href="selecao.html" id="voltar">&larr; Trocar experiência</a>
+    <p id="selecaoInfo">Carregando...</p>
     <p id="aviso">
       Protótipo acadêmico de Realidade Virtual (TCC).
       Não constitui tratamento médico ou psicológico.
@@ -37,8 +38,9 @@
       color="#7BC8A4">
     </a-plane>
 
-    <!-- Objeto de teste: um cubo à nossa frente -->
+    <!-- Objeto de teste: o script move ele conforme o nível escolhido -->
     <a-box
+      id="cuboTeste"
       position="0 1 -4"
       width="1"
       height="1"
@@ -52,6 +54,7 @@
   </a-scene>
 
   <!-- Nosso arquivo de JavaScript, carregado no final -->
+  <script src="dados.js"></script>
   <script src="experiencia.js"></script>
 
 </body>

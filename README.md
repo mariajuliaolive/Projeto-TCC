@@ -28,13 +28,19 @@ Depois abra http://localhost:8000 no navegador.
 ## Estrutura atual
 
 ```
-index.html         pagina inicial (site institucional)
-style.css          estilos da pagina inicial
-script.js          menu do celular e animacao de entrada
-
+index.html         pagina inicial
+selecao.html       escolha do estimulo e do nivel
 experiencia.html   cena 3D em A-Frame
+
+base.css           estilos compartilhados por todas as paginas
+base.js            menu do celular e animacao de entrada (compartilhado)
+dados.js           os 5 animais e os 5 niveis (fonte unica de verdade)
+
+inicio.css         estilos da pagina inicial
+selecao.css        estilos da selecao
+selecao.js         monta as opcoes e gera o link da experiencia
 experiencia.css    estilos da cena
-experiencia.js     script da cena
+experiencia.js     le a escolha na URL e prepara a cena
 
 assets/
   models/          modelos 3D dos animais (.glb)
@@ -42,5 +48,21 @@ assets/
   sounds/          audios
 ```
 
-Cada pagina tem seu proprio trio de arquivos `nome.html` / `nome.css` /
-`nome.js`. A pagina inicial usa `style.css` e `script.js` por convencao.
+Arquivos `base.*` sao compartilhados. Os demais levam o nome da pagina a
+que pertencem.
+
+## Fluxo de navegacao
+
+```
+index.html  ->  selecao.html  ->  experiencia.html?animal=<id>&nivel=<n>
+```
+
+A escolha viaja pela URL, entao cada cenario pode ser aberto direto para
+teste isolado. Exemplos:
+
+```
+experiencia.html?animal=cobra&nivel=1
+experiencia.html?animal=aranha&nivel=4
+```
+
+Os identificadores validos estao em `dados.js`.

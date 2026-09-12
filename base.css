@@ -1,0 +1,342 @@
+/* =========================================================
+   BASE — estilos compartilhados por TODAS as páginas do site.
+   Variáveis, reset, cabeçalho, botões, seções, rodapé.
+   Cada página carrega este arquivo e depois o seu próprio.
+   ========================================================= */
+
+/* ---------- 1. VARIÁVEIS ---------- */
+:root {
+  --fundo:        #0B1120;
+  --superficie:   #121C2E;
+  --superficie-2: #16223A;
+  --borda:        rgba(255, 255, 255, 0.09);
+
+  --texto:        #E8EDF7;
+  --texto-suave:  #9AA9C4;
+
+  --azul:         #5B8DEF;
+  --verde:        #3ED0C0;
+
+  --raio:         14px;
+  --largura-max:  1120px;
+  --transicao:    0.25s ease;
+}
+
+/* ---------- 2. RESET E BASE ---------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 90px;
+}
+
+body {
+  background-color: var(--fundo);
+  color: var(--texto);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+img, svg {
+  max-width: 100%;
+  display: block;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--largura-max);
+  margin: 0 auto;
+  padding-inline: 20px;
+}
+
+.sr-apenas {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.pular {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  z-index: 200;
+  background: var(--azul);
+  color: #06121F;
+  padding: 10px 16px;
+  border-radius: 0 0 8px 8px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.pular:focus {
+  top: 0;
+}
+
+/* ---------- 3. CABEÇALHO ---------- */
+.cabecalho {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: rgba(11, 17, 32, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--borda);
+}
+
+.cabecalho__interno {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 68px;
+  flex-wrap: wrap;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--texto);
+  font-size: 17px;
+  letter-spacing: 0.2px;
+}
+
+.logo__icone {
+  width: 30px;
+  height: 30px;
+  fill: var(--verde);
+  flex-shrink: 0;
+}
+
+.logo__texto strong {
+  color: var(--verde);
+  font-weight: 700;
+}
+
+.menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu a {
+  color: var(--texto-suave);
+  text-decoration: none;
+  font-size: 15px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  transition: color var(--transicao), background-color var(--transicao);
+}
+
+.menu a:hover,
+.menu a:focus-visible {
+  color: var(--texto);
+  background-color: var(--superficie);
+}
+
+.menu__destaque {
+  border: 1px solid var(--borda);
+  color: var(--texto);
+}
+
+.menu-botao {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 42px;
+  height: 42px;
+  padding: 9px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.menu-botao__barra {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background-color: var(--texto);
+  border-radius: 2px;
+  transition: transform var(--transicao), opacity var(--transicao);
+}
+
+.menu-botao[aria-expanded="true"] .menu-botao__barra:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.menu-botao[aria-expanded="true"] .menu-botao__barra:nth-child(2) {
+  opacity: 0;
+}
+.menu-botao[aria-expanded="true"] .menu-botao__barra:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ---------- 4. BOTÕES ---------- */
+.botao {
+  display: inline-block;
+  padding: 14px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  transition: transform var(--transicao), box-shadow var(--transicao),
+              background-color var(--transicao), opacity var(--transicao);
+}
+
+.botao--principal {
+  background-image: linear-gradient(135deg, var(--azul), var(--verde));
+  color: #06121F;
+  box-shadow: 0 6px 20px rgba(91, 141, 239, 0.28);
+}
+
+.botao--principal:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(91, 141, 239, 0.4);
+}
+
+.botao--secundario {
+  background-color: transparent;
+  color: var(--texto);
+  border: 1px solid var(--borda);
+}
+
+.botao--secundario:hover {
+  background-color: var(--superficie);
+}
+
+/* Botão ainda sem destino: visualmente apagado e sem hover */
+.botao--desativado {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.botao--desativado:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* ---------- 5. SEÇÕES ---------- */
+.secao {
+  padding-block: clamp(56px, 8vw, 96px);
+}
+
+.secao--alternada {
+  background-color: var(--superficie);
+  border-block: 1px solid var(--borda);
+}
+
+.secao__rotulo {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--verde);
+  margin-bottom: 10px;
+}
+
+.secao__titulo {
+  font-size: clamp(1.6rem, 3.6vw, 2.3rem);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin-bottom: 16px;
+}
+
+.secao__texto {
+  color: var(--texto-suave);
+  max-width: 62ch;
+  margin-bottom: 44px;
+}
+
+/* ---------- 6. AVISO ---------- */
+.aviso {
+  border-left: 3px solid var(--verde);
+  background-color: var(--superficie);
+  border-radius: 0 10px 10px 0;
+  padding: 18px 22px;
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+  margin-bottom: 72px;
+}
+
+.aviso strong {
+  color: var(--texto);
+}
+
+/* ---------- 7. RODAPÉ ---------- */
+.rodape {
+  border-top: 1px solid var(--borda);
+  padding-block: 30px;
+}
+
+.rodape__interno {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+/* ---------- 8. ANIMAÇÃO DE ENTRADA ---------- */
+.js .revelar {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+
+.js .revelar.visivel {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- 9. RESPONSIVIDADE ---------- */
+@media (max-width: 780px) {
+  .menu-botao {
+    display: flex;
+  }
+
+  .menu {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding-bottom: 14px;
+  }
+
+  .menu.aberto {
+    display: flex;
+  }
+
+  .menu a {
+    padding: 12px 14px;
+    background-color: var(--superficie);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .js .revelar {
+    opacity: 1;
+    transform: none;
+  }
+}
