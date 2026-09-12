@@ -28,7 +28,19 @@ Depois abra http://localhost:8000 no navegador.
 ## Estrutura atual
 
 ```
-index.html   - estrutura da página e da cena 3D
-style.css    - estilos da interface 2D
-script.js    - lógica em JavaScript
+index.html         pagina inicial (site institucional)
+style.css          estilos da pagina inicial
+script.js          menu do celular e animacao de entrada
+
+experiencia.html   cena 3D em A-Frame
+experiencia.css    estilos da cena
+experiencia.js     script da cena
+
+assets/
+  models/          modelos 3D dos animais (.glb)
+  textures/        imagens e texturas
+  sounds/          audios
 ```
+
+Cada pagina tem seu proprio trio de arquivos `nome.html` / `nome.css` /
+`nome.js`. A pagina inicial usa `style.css` e `script.js` por convencao.

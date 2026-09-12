@@ -3,52 +3,245 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Protótipo VR - Exposição Gradual (TCC)</title>
+  <meta name="description" content="Protótipo acadêmico de Realidade Virtual para navegador, com cenários de exposição gradual a estímulos associados a fobias específicas." />
+  <title>VR Exposição Gradual | Protótipo Acadêmico</title>
 
-  <!-- Biblioteca A-Frame (carregada pela internet, via CDN) -->
-  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+  <!-- Favicon desenhado em SVG, embutido na propria pagina -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%233ED0C0' d='M3.5 7h17a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-5.2q-3.3-3.2-6.6 0H3.5A1.5 1.5 0 0 1 2 15.5v-7A1.5 1.5 0 0 1 3.5 7z'/></svg>" />
 
-  <!-- Nosso arquivo de estilos -->
+  <!-- Marca que o JavaScript está ativo (explicado no script.js) -->
+  <script>document.documentElement.classList.add('js');</script>
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- Camada de interface em HTML, que fica POR CIMA da cena 3D -->
-  <div id="interface">
-    <p id="aviso">
-      Protótipo acadêmico de Realidade Virtual (TCC).
-      Não constitui tratamento médico ou psicológico.
-    </p>
-  </div>
+  <!-- Atalho para quem navega pelo teclado ou usa leitor de tela -->
+  <a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
-  <!-- A cena 3D começa aqui -->
-  <a-scene id="cena">
+  <!-- ============ CABEÇALHO ============ -->
+  <header class="cabecalho" id="inicio">
+    <div class="container cabecalho__interno">
 
-    <!-- Chão -->
-    <a-plane
-      position="0 0 0"
-      rotation="-90 0 0"
-      width="20"
-      height="20"
-      color="#7BC8A4">
-    </a-plane>
+      <a class="logo" href="index.html">
+        <!-- Ícone de óculos VR desenhado em SVG -->
+        <svg class="logo__icone" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3.5 7h17a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-5.2q-3.3-3.2-6.6 0H3.5A1.5 1.5 0 0 1 2 15.5v-7A1.5 1.5 0 0 1 3.5 7z" />
+        </svg>
+        <span class="logo__texto">VR<strong>Exposição</strong></span>
+      </a>
 
-    <!-- Objeto de teste: um cubo à nossa frente -->
-    <a-box
-      position="0 1 -4"
-      width="1"
-      height="1"
-      depth="1"
-      color="#4C6EF5">
-    </a-box>
+      <!-- Botão que abre o menu no celular (controlado pelo script.js) -->
+      <button class="menu-botao" id="menuBotao" aria-expanded="false" aria-controls="menu">
+        <span class="menu-botao__barra"></span>
+        <span class="menu-botao__barra"></span>
+        <span class="menu-botao__barra"></span>
+        <span class="sr-apenas">Abrir menu</span>
+      </button>
 
-    <!-- Céu: uma esfera gigante que envolve toda a cena -->
-    <a-sky color="#ECECEC"></a-sky>
+      <nav class="menu" id="menu" aria-label="Navegação principal">
+        <a href="#inicio">Início</a>
+        <a href="#sobre">Sobre o projeto</a>
+        <a href="experiencia.html" class="menu__destaque">Experiência VR</a>
+      </nav>
 
-  </a-scene>
+    </div>
+  </header>
 
-  <!-- Nosso arquivo de JavaScript, carregado no final -->
+  <main id="conteudo">
+
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="container hero__interno">
+
+        <div class="hero__texto">
+          <p class="selo">Protótipo acadêmico &middot; TCC</p>
+
+          <h1 class="hero__titulo">
+            Realidade Virtual para uma
+            <span class="destaque">exposição gradual e controlada</span>
+          </h1>
+
+          <p class="hero__descricao">
+            Um sistema web que permite explorar ambientes virtuais com estímulos
+            específicos de forma progressiva, em cinco níveis de aproximação.
+            Funciona direto no navegador, no computador, no celular e em óculos
+            de Realidade Virtual compatíveis.
+          </p>
+
+          <div class="hero__botoes">
+            <a class="botao botao--principal" href="experiencia.html">Iniciar experiência</a>
+            <a class="botao botao--secundario" href="#sobre">Saiba mais</a>
+          </div>
+        </div>
+
+        <!-- Elemento visual: óculos VR em SVG com anéis animados -->
+        <div class="hero__visual" aria-hidden="true">
+          <span class="anel anel--1"></span>
+          <span class="anel anel--2"></span>
+          <span class="anel anel--3"></span>
+
+          <svg class="oculos" viewBox="0 0 140 72">
+            <defs>
+              <linearGradient id="gradOculos" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#5B8DEF" />
+                <stop offset="100%" stop-color="#3ED0C0" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M22 14 H118 A16 16 0 0 1 134 30 V42 A16 16 0 0 1 118 58 H84 Q70 40 56 58 H22 A16 16 0 0 1 6 42 V30 A16 16 0 0 1 22 14 Z"
+              fill="url(#gradOculos)" />
+            <ellipse cx="42" cy="33" rx="15" ry="10" fill="#0B1120" opacity="0.55" />
+            <ellipse cx="98" cy="33" rx="15" ry="10" fill="#0B1120" opacity="0.55" />
+          </svg>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ SOBRE O PROJETO ============ -->
+    <section class="secao" id="sobre">
+      <div class="container">
+
+        <p class="secao__rotulo revelar">Sobre o projeto</p>
+        <h2 class="secao__titulo revelar">O que é este sistema</h2>
+        <p class="secao__texto revelar">
+          Um protótipo de Realidade Virtual desenvolvido como Trabalho de
+          Conclusão de Curso. Ele simula a presença de animais associados a
+          fobias específicas em ambientes virtuais, organizados em níveis
+          progressivos de aproximação, para estudar como as pessoas percebem e
+          interagem com esse tipo de estímulo em VR.
+        </p>
+
+        <ul class="recursos">
+          <li class="recurso revelar">
+            <h3 class="recurso__titulo">Acesso pelo navegador</h3>
+            <p class="recurso__texto">
+              Nada para instalar. A experiência abre em uma página web comum.
+            </p>
+          </li>
+          <li class="recurso revelar">
+            <h3 class="recurso__titulo">Cinco níveis progressivos</h3>
+            <p class="recurso__texto">
+              Do estímulo distante até a interação direta, com avanço controlado
+              por quem usa.
+            </p>
+          </li>
+          <li class="recurso revelar">
+            <h3 class="recurso__titulo">Multiplataforma</h3>
+            <p class="recurso__texto">
+              Computador, celular e óculos de Realidade Virtual compatíveis com
+              WebXR.
+            </p>
+          </li>
+          <li class="recurso revelar">
+            <h3 class="recurso__titulo">Finalidade acadêmica</h3>
+            <p class="recurso__texto">
+              Construído para avaliar usabilidade, imersão, interação e
+              percepção.
+            </p>
+          </li>
+        </ul>
+
+      </div>
+    </section>
+
+    <!-- ============ ESTÍMULOS ============ -->
+    <section class="secao secao--alternada" id="estimulos">
+      <div class="container">
+
+        <p class="secao__rotulo revelar">Estímulos</p>
+        <h2 class="secao__titulo revelar">Cenários disponíveis</h2>
+        <p class="secao__texto revelar">
+          Cinco ambientes, cada um com um animal associado a uma fobia
+          específica. Em breve será possível escolher o estímulo e o nível.
+        </p>
+
+        <ul class="cards">
+          <li class="card revelar">
+            <span class="card__icone">🐍</span>
+            <h3 class="card__titulo">Cobra</h3>
+            <p class="card__texto">Ofidiofobia</p>
+          </li>
+          <li class="card revelar">
+            <span class="card__icone">🐀</span>
+            <h3 class="card__titulo">Rato</h3>
+            <p class="card__texto">Musofobia</p>
+          </li>
+          <li class="card revelar">
+            <span class="card__icone">🪳</span>
+            <h3 class="card__titulo">Barata</h3>
+            <p class="card__texto">Katsaridafobia</p>
+          </li>
+          <li class="card revelar">
+            <span class="card__icone">🕷️</span>
+            <h3 class="card__titulo">Aranha</h3>
+            <p class="card__texto">Aracnofobia</p>
+          </li>
+          <li class="card revelar">
+            <span class="card__icone">🐸</span>
+            <h3 class="card__titulo">Sapo</h3>
+            <p class="card__texto">Ranidafobia</p>
+          </li>
+        </ul>
+
+      </div>
+    </section>
+
+    <!-- ============ COMO FUNCIONA ============ -->
+    <section class="secao" id="como-funciona">
+      <div class="container">
+
+        <p class="secao__rotulo revelar">Como funciona</p>
+        <h2 class="secao__titulo revelar">Três passos</h2>
+
+        <ol class="passos">
+          <li class="passo revelar">
+            <span class="passo__numero">1</span>
+            <h3 class="passo__titulo">Escolha um estímulo</h3>
+            <p class="passo__texto">
+              Selecione qual dos cinco cenários deseja explorar.
+            </p>
+          </li>
+          <li class="passo revelar">
+            <span class="passo__numero">2</span>
+            <h3 class="passo__titulo">Escolha o nível</h3>
+            <p class="passo__texto">
+              Do nível 1, com o estímulo distante, até o nível 5, com interação
+              direta.
+            </p>
+          </li>
+          <li class="passo revelar">
+            <span class="passo__numero">3</span>
+            <h3 class="passo__titulo">Entre no ambiente</h3>
+            <p class="passo__texto">
+              A cena abre no navegador. É possível sair a qualquer momento.
+            </p>
+          </li>
+        </ol>
+
+      </div>
+    </section>
+
+    <!-- ============ AVISO ============ -->
+    <section class="container">
+      <p class="aviso revelar">
+        <strong>Aviso:</strong> o sistema é um protótipo acadêmico desenvolvido
+        para avaliação de interação, usabilidade e experiência em Realidade
+        Virtual. Não possui finalidade de diagnóstico ou tratamento.
+      </p>
+    </section>
+
+  </main>
+
+  <!-- ============ RODAPÉ ============ -->
+  <footer class="rodape">
+    <div class="container rodape__interno">
+      <p>Trabalho de Conclusão de Curso &middot; Ciência da Computação</p>
+      <p>Desenvolvido com HTML, CSS, JavaScript, A-Frame, Three.js e WebXR</p>
+    </div>
+  </footer>
+
   <script src="script.js"></script>
-
 </body>
 </html>

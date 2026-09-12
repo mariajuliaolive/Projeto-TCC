@@ -1,11 +1,49 @@
-// Arquivo principal de JavaScript do protótipo.
-// Por enquanto ele só verifica se tudo carregou corretamente.
+/* =========================================================
+   JavaScript da página inicial.
+   Só duas funções: abrir o menu no celular e revelar as
+   seções conforme a rolagem. Nada além disso é necessário —
+   o botão "Iniciar experiência" é um link comum.
+   ========================================================= */
 
-// Pegamos a cena 3D pelo id que definimos no index.html
-const cena = document.querySelector('#cena');
+/* ---------------------------------------------------------
+   1. MENU DO CELULAR
+   --------------------------------------------------------- */
+const menuBotao = document.querySelector('#menuBotao');
+const menu = document.querySelector('#menu');
 
-// 'loaded' é um evento do A-Frame: dispara quando a cena terminou de carregar
-cena.addEventListener('loaded', function () {
-  console.log('Cena 3D carregada com sucesso.');
-  console.log('Versão do A-Frame:', AFRAME.version);
+menuBotao.addEventListener('click', function () {
+  // Lê o estado atual a partir do próprio HTML
+  const estaAberto = menuBotao.getAttribute('aria-expanded') === 'true';
+
+  // Inverte o estado
+  menuBotao.setAttribute('aria-expanded', String(!estaAberto));
+  menu.classList.toggle('aberto');
+});
+
+// Fecha o menu depois de clicar em um item
+menu.addEventListener('click', function (evento) {
+  if (evento.target.tagName === 'A') {
+    menuBotao.setAttribute('aria-expanded', 'false');
+    menu.classList.remove('aberto');
+  }
+});
+
+/* ---------------------------------------------------------
+   2. REVELAR SEÇÕES AO ROLAR
+   --------------------------------------------------------- */
+const elementosRevelaveis = document.querySelectorAll('.revelar');
+
+const observador = new IntersectionObserver(function (entradas) {
+  entradas.forEach(function (entrada) {
+    if (entrada.isIntersecting) {
+      entrada.target.classList.add('visivel');
+      observador.unobserve(entrada.target);   // anima uma vez só
+    }
+  });
+}, {
+  threshold: 0.15                             // dispara com 15% do elemento visível
+});
+
+elementosRevelaveis.forEach(function (elemento) {
+  observador.observe(elemento);
 });

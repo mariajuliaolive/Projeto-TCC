@@ -1,35 +1,567 @@
-/* Remove margens padrão do navegador e evita barras de rolagem */
+/* =========================================================
+   1. VARIÁVEIS (a "paleta" do projeto, definida num lugar só)
+   ========================================================= */
+:root {
+  --fundo:        #0B1120;
+  --superficie:   #121C2E;
+  --superficie-2: #16223A;
+  --borda:        rgba(255, 255, 255, 0.09);
+
+  --texto:        #E8EDF7;
+  --texto-suave:  #9AA9C4;
+
+  --azul:         #5B8DEF;
+  --verde:        #3ED0C0;
+
+  --raio:         14px;
+  --largura-max:  1120px;
+  --transicao:    0.25s ease;
+}
+
+/* =========================================================
+   2. BASE
+   ========================================================= */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  font-family: Arial, Helvetica, sans-serif;
+html {
+  scroll-behavior: smooth;      /* rolagem suave ao clicar nos links do menu */
+  scroll-padding-top: 90px;     /* impede que o cabeçalho fixo cubra a seção */
 }
 
-/* Camada de interface 2D sobre a cena 3D */
-#interface {
+body {
+  background-color: var(--fundo);
+  color: var(--texto);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+img, svg {
+  max-width: 100%;
+  display: block;
+}
+
+/* Faixa central usada por todas as seções */
+.container {
+  width: 100%;
+  max-width: var(--largura-max);
+  margin: 0 auto;
+  padding-inline: 20px;         /* respiro nas laterais, importante no celular */
+}
+
+/* Esconde visualmente, mas mantém para leitores de tela */
+.sr-apenas {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 10;            /* fica na frente da cena */
-  pointer-events: none;   /* deixa o mouse "atravessar" até a cena 3D */
-  padding: 12px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
-#aviso {
+/* Atalho de teclado: só aparece quando recebe foco pelo Tab */
+.pular {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  z-index: 200;
+  background: var(--azul);
+  color: #06121F;
+  padding: 10px 16px;
+  border-radius: 0 0 8px 8px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.pular:focus {
+  top: 0;
+}
+
+/* =========================================================
+   3. CABEÇALHO
+   ========================================================= */
+.cabecalho {
+  position: sticky;             /* acompanha a rolagem */
+  top: 0;
+  z-index: 100;
+  background-color: rgba(11, 17, 32, 0.85);
+  backdrop-filter: blur(10px);  /* desfoca o que passa por trás */
+  border-bottom: 1px solid var(--borda);
+}
+
+.cabecalho__interno {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 68px;
+  flex-wrap: wrap;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--texto);
+  font-size: 17px;
+  letter-spacing: 0.2px;
+}
+
+.logo__icone {
+  width: 30px;
+  height: 30px;
+  fill: var(--verde);
+  flex-shrink: 0;
+}
+
+.logo__texto strong {
+  color: var(--verde);
+  font-weight: 700;
+}
+
+/* ---- Menu ---- */
+.menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu a {
+  color: var(--texto-suave);
+  text-decoration: none;
+  font-size: 15px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  transition: color var(--transicao), background-color var(--transicao);
+}
+
+.menu a:hover,
+.menu a:focus-visible {
+  color: var(--texto);
+  background-color: var(--superficie);
+}
+
+.menu__destaque {
+  border: 1px solid var(--borda);
+  color: var(--texto);
+}
+
+/* ---- Botão de menu (só aparece no celular) ---- */
+.menu-botao {
+  display: none;                /* escondido no computador */
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 42px;
+  height: 42px;
+  padding: 9px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.menu-botao__barra {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background-color: var(--texto);
+  border-radius: 2px;
+  transition: transform var(--transicao), opacity var(--transicao);
+}
+
+/* Vira um "X" quando o menu está aberto */
+.menu-botao[aria-expanded="true"] .menu-botao__barra:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.menu-botao[aria-expanded="true"] .menu-botao__barra:nth-child(2) {
+  opacity: 0;
+}
+.menu-botao[aria-expanded="true"] .menu-botao__barra:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* =========================================================
+   4. BOTÕES
+   ========================================================= */
+.botao {
   display: inline-block;
-  background-color: rgba(0, 0, 0, 0.55);
-  color: #ffffff;
+  padding: 14px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 600;
+  transition: transform var(--transicao), box-shadow var(--transicao),
+              background-color var(--transicao);
+}
+
+.botao--principal {
+  background-image: linear-gradient(135deg, var(--azul), var(--verde));
+  color: #06121F;               /* texto escuro sobre fundo claro = alto contraste */
+  box-shadow: 0 6px 20px rgba(91, 141, 239, 0.28);
+}
+
+.botao--principal:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(91, 141, 239, 0.4);
+}
+
+.botao--secundario {
+  background-color: transparent;
+  color: var(--texto);
+  border: 1px solid var(--borda);
+}
+
+.botao--secundario:hover {
+  background-color: var(--superficie);
+}
+
+/* =========================================================
+   5. HERO
+   ========================================================= */
+.hero {
+  padding-block: clamp(48px, 9vw, 110px);
+  /* brilho suave de fundo, sem imagem externa */
+  background-image:
+    radial-gradient(60% 70% at 15% 0%, rgba(91, 141, 239, 0.16), transparent 70%),
+    radial-gradient(55% 60% at 95% 25%, rgba(62, 208, 192, 0.12), transparent 70%);
+}
+
+.hero__interno {
+  display: grid;
+  grid-template-columns: 1fr;   /* 1 coluna por padrão (celular) */
+  gap: 56px;
+  align-items: center;
+}
+
+.selo {
+  display: inline-block;
   font-size: 13px;
-  line-height: 1.4;
-  padding: 8px 12px;
-  border-radius: 6px;
-  max-width: 420px;
+  color: var(--verde);
+  background-color: rgba(62, 208, 192, 0.1);
+  border: 1px solid rgba(62, 208, 192, 0.25);
+  padding: 6px 14px;
+  border-radius: 100px;
+  margin-bottom: 22px;
+}
+
+.hero__titulo {
+  font-size: clamp(2rem, 5.5vw, 3.4rem);  /* cresce junto com a tela */
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.destaque {
+  background-image: linear-gradient(120deg, var(--azul), var(--verde));
+  -webkit-background-clip: text;          /* pinta o texto com o degradê */
+  background-clip: text;
+  color: transparent;
+}
+
+.hero__descricao {
+  font-size: clamp(1rem, 2vw, 1.1rem);
+  color: var(--texto-suave);
+  max-width: 52ch;                        /* linha curta = leitura confortável */
+  margin-bottom: 32px;
+}
+
+.hero__botoes {
+  display: flex;
+  flex-wrap: wrap;                        /* empilha sozinho se não couber */
+  gap: 14px;
+}
+
+/* ---- Visual do hero ---- */
+.hero__visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  max-width: 380px;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.anel {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--borda);
+}
+
+.anel--1 { width: 100%; height: 100%; }
+.anel--2 { width: 74%;  height: 74%;  border-color: rgba(91, 141, 239, 0.3); }
+.anel--3 {
+  width: 48%;
+  height: 48%;
+  border-color: rgba(62, 208, 192, 0.35);
+  border-style: dashed;
+  animation: girar 26s linear infinite;
+}
+
+.oculos {
+  position: relative;
+  width: 58%;
+  filter: drop-shadow(0 12px 30px rgba(91, 141, 239, 0.35));
+  animation: flutuar 5s ease-in-out infinite;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes flutuar {
+  0%, 100% { transform: translateY(-6px); }
+  50%      { transform: translateY(6px); }
+}
+
+/* =========================================================
+   6. SEÇÕES
+   ========================================================= */
+.secao {
+  padding-block: clamp(56px, 8vw, 96px);
+}
+
+.secao--alternada {
+  background-color: var(--superficie);
+  border-block: 1px solid var(--borda);
+}
+
+.secao__rotulo {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--verde);
+  margin-bottom: 10px;
+}
+
+.secao__titulo {
+  font-size: clamp(1.6rem, 3.6vw, 2.3rem);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin-bottom: 16px;
+}
+
+.secao__texto {
+  color: var(--texto-suave);
+  max-width: 62ch;
+  margin-bottom: 44px;
+}
+
+/* =========================================================
+   7. GRADES (recursos, cards, passos)
+   ========================================================= */
+.recursos,
+.cards,
+.passos {
+  list-style: none;
+  display: grid;
+  gap: 18px;
+}
+
+/* auto-fit + minmax = responsivo sem media query:
+   o navegador encaixa quantas colunas couberem, com no mínimo X de largura */
+.recursos { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.cards    { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.passos   { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+
+/* ---- Recursos ---- */
+.recurso {
+  background-color: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 24px;
+}
+
+.secao--alternada .recurso {
+  background-color: var(--superficie-2);
+}
+
+.recurso__titulo {
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+}
+
+.recurso__texto {
+  font-size: 0.93rem;
+  color: var(--texto-suave);
+}
+
+/* ---- Cards dos estímulos ---- */
+.card {
+  background-color: var(--superficie-2);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 26px 20px;
+  text-align: center;
+  transition: transform var(--transicao), border-color var(--transicao);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(62, 208, 192, 0.45);
+}
+
+.card__icone {
+  display: block;
+  font-size: 34px;
+  line-height: 1;
+  margin-bottom: 14px;
+  opacity: 0.9;
+}
+
+.card__titulo {
+  font-size: 1.05rem;
+  margin-bottom: 4px;
+}
+
+.card__texto {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+/* ---- Passos ---- */
+.passos { counter-reset: passo; }
+
+.passo {
+  position: relative;
+  background-color: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 28px 24px;
+}
+
+.passo__numero {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-image: linear-gradient(135deg, var(--azul), var(--verde));
+  color: #06121F;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.passo__titulo {
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+}
+
+.passo__texto {
+  font-size: 0.93rem;
+  color: var(--texto-suave);
+}
+
+/* =========================================================
+   8. AVISO
+   ========================================================= */
+.aviso {
+  border-left: 3px solid var(--verde);
+  background-color: var(--superficie);
+  border-radius: 0 10px 10px 0;
+  padding: 18px 22px;
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+  margin-bottom: 72px;
+}
+
+.aviso strong {
+  color: var(--texto);
+}
+
+/* =========================================================
+   9. RODAPÉ
+   ========================================================= */
+.rodape {
+  border-top: 1px solid var(--borda);
+  padding-block: 30px;
+}
+
+.rodape__interno {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+/* =========================================================
+   10. ANIMAÇÃO DE ENTRADA
+   ========================================================= */
+.js .revelar {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+
+.js .revelar.visivel {
+  opacity: 1;
+  transform: none;
+}
+
+/* =========================================================
+   11. RESPONSIVIDADE
+   ========================================================= */
+
+/* A partir de 900px: hero em duas colunas */
+@media (min-width: 900px) {
+  .hero__interno {
+    grid-template-columns: 1.15fr 1fr;
+    gap: 64px;
+  }
+}
+
+/* Até 780px: menu vira painel controlado pelo botão */
+@media (max-width: 780px) {
+  .menu-botao {
+    display: flex;
+  }
+
+  .menu {
+    display: none;              /* fechado por padrão */
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding-bottom: 14px;
+  }
+
+  .menu.aberto {
+    display: flex;
+  }
+
+  .menu a {
+    padding: 12px 14px;
+    background-color: var(--superficie);
+  }
+
+  .hero__visual {
+    max-width: 280px;
+  }
+}
+
+/* Respeita quem configurou o sistema para reduzir animações */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .js .revelar {
+    opacity: 1;
+    transform: none;
+  }
 }
