@@ -66,3 +66,15 @@ experiencia.html?animal=aranha&nivel=4
 ```
 
 Os identificadores validos estao em `dados.js`.
+
+## Controles da cena
+
+| Dispositivo | Olhar          | Andar     | Selecionar            |
+|-------------|----------------|-----------|-----------------------|
+| Computador  | arrastar mouse | W A S D   | clique                |
+| Celular     | girar aparelho | -         | manter a mira no alvo |
+| Oculos VR   | mover a cabeca | -         | manter a mira no alvo |
+
+A camera fica a 1,6 m do chao (altura media dos olhos) e a velocidade de
+caminhada e de cerca de 1,8 m/s, proxima da caminhada humana. Valores mais
+altos causam desconforto em Realidade Virtual.

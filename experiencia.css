@@ -67,3 +67,15 @@ html, body {
   pointer-events: auto;
   color: #3ED0C0;
 }
+
+/* Dica de controles, embaixo do resumo */
+#ajuda {
+  display: inline-block;
+  background-color: rgba(0, 0, 0, 0.45);
+  color: #C9D4E4;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 6px 12px;
+  border-radius: 6px;
+  max-width: 320px;
+}
