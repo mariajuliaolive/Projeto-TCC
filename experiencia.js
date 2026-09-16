@@ -13,6 +13,12 @@ const giroEl = document.querySelector('#animalGiro');
 const modeloEl = document.querySelector('#animalModelo');
 const apoioEl = document.querySelector('#animalApoio');
 
+/* ---------- interface dentro do óculos ---------- */
+const uiVR = document.querySelector('#uiVR');
+const painelInfoVR = document.querySelector('#painelInfoVR');
+const btnVRProximo = document.querySelector('#btnVRProximo');
+const btnVRSair = document.querySelector('#btnVRSair');
+
 /* ---------- elementos do HUD ---------- */
 const hudFobia = document.querySelector('#hudFobia');
 const hudIcone = document.querySelector('#hudIcone');
@@ -32,6 +38,7 @@ const btnAjuda = document.querySelector('#btnAjuda');
 const btnReiniciar = document.querySelector('#btnReiniciar');
 const btnProximo = document.querySelector('#btnProximo');
 const btnProximoTexto = document.querySelector('#btnProximoTexto');
+const hudVR = document.querySelector('#hudVR');
 
 /* =========================================================
    1. LER A ESCOLHA QUE VEIO NA URL
@@ -414,7 +421,98 @@ function iniciarExperiencia() {
   });
 
   /* =========================================================
-     14. REGISTROS DE CARREGAMENTO
+     14. REALIDADE VIRTUAL (WebXR)
+
+     Três coisas mudam quando a pessoa entra no óculos:
+
+     1. O HUD em HTML desaparece. Dentro do modo VR o navegador
+        mostra apenas a cena 3D, então a informação essencial
+        precisa virar objeto da cena.
+
+     2. Não há teclado. O deslocamento por W A S D não funciona;
+        quem usa se move andando de verdade no espaço físico.
+
+     3. A seleção passa a ser pelo raio do controle de mão, ou
+        pelo olhar demorado quando não há controle.
+     ========================================================= */
+
+  /* ---------- o que os painéis do óculos mostram ---------- */
+  painelInfoVR.setAttribute('painel-texto', {
+    titulo: `Nível ${nivel.numero} de ${NIVEIS.length}`,
+    texto: nivel.instrucao
+  });
+
+  if (!buscarNivel(nivel.numero + 1)) {
+    btnVRProximo.setAttribute('painel-texto', 'texto', 'Último nível');
+  }
+
+  /* ---------- destaque ao apontar ---------- */
+  [btnVRProximo, btnVRSair].forEach(function (botao) {
+    botao.addEventListener('mouseenter', function () {
+      botao.setAttribute('painel-texto', 'destacado', true);
+    });
+    botao.addEventListener('mouseleave', function () {
+      botao.setAttribute('painel-texto', 'destacado', false);
+    });
+  });
+
+  btnVRProximo.addEventListener('click', function () {
+    if (btnProximo.href) {
+      window.location.href = btnProximo.href;
+    }
+  });
+
+  btnVRSair.addEventListener('click', function () {
+    window.location.href = 'selecao.html';
+  });
+
+  /* ---------- avisar se este navegador suporta VR ---------- */
+  function verificarSuporteVR() {
+    if (!navigator.xr) {
+      hudVR.textContent = 'VR não disponível neste navegador';
+      hudVR.hidden = false;
+      return;
+    }
+
+    navigator.xr.isSessionSupported('immersive-vr').then(function (suportado) {
+      hudVR.textContent = suportado
+        ? 'VR disponível — use o botão no canto'
+        : 'VR não disponível neste aparelho';
+      hudVR.classList.toggle('hud-vr--ok', suportado);
+      hudVR.hidden = false;
+    }).catch(function () {
+      hudVR.textContent = 'VR não disponível neste aparelho';
+      hudVR.hidden = false;
+    });
+  }
+
+  verificarSuporteVR();
+
+  /* ---------- entrar e sair do modo VR ---------- */
+  cena.addEventListener('enter-vr', function () {
+    uiVR.setAttribute('visible', true);
+
+    /* Sem controle de mão, a seleção é pelo olhar demorado.
+       Se um controle aparecer, desligamos isso para a pessoa
+       não acionar coisas sem querer só de olhar. */
+    mira.setAttribute('fuse', true);
+
+    console.log('Entrou no modo VR.');
+  });
+
+  cena.addEventListener('exit-vr', function () {
+    uiVR.setAttribute('visible', false);
+    mira.setAttribute('fuse', ehMobile);
+    console.log('Saiu do modo VR.');
+  });
+
+  cena.addEventListener('controllerconnected', function (evento) {
+    mira.setAttribute('fuse', false);
+    console.log('Controle conectado:', evento.detail.name);
+  });
+
+  /* =========================================================
+     15. REGISTROS DE CARREGAMENTO
      ========================================================= */
   cena.addEventListener('loaded', function () {
     inclinarCamera(INCLINACAO_GRAUS);
@@ -424,14 +522,6 @@ function iniciarExperiencia() {
     console.log('Animal:', animal.nome, '| tamanho real:', animal.tamanhoReal, 'm');
     console.log('Nível:', nivel.numero, '| distância:', distancia.toFixed(2), 'm');
     console.log('Dispositivo móvel:', ehMobile);
-  });
-
-  cena.addEventListener('enter-vr', function () {
-    console.log('Entrou no modo VR.');
-  });
-
-  cena.addEventListener('exit-vr', function () {
-    console.log('Saiu do modo VR.');
   });
 
 }

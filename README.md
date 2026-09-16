@@ -143,13 +143,36 @@ respiracao leve sempre, e um giro lento do corpo nos niveis de movimento.
 | rato.glb   | 0,31 MB | 776        | 512x512     | nenhuma                    |
 | barata.glb | ausente | -          | -           | -                          |
 
+## Realidade Virtual (WebXR)
+
+A pagina detecta o suporte a WebXR e informa na barra superior. Quando ha
+suporte, o botao do A-Frame no canto inferior direito entra no modo VR.
+
+Dentro do oculos o HUD em HTML desaparece: o navegador mostra apenas a
+cena 3D. Por isso a informacao essencial (nivel, instrucao, avancar e
+sair) e reconstruida como objetos 3D, no bloco `#uiVR`. Os paineis sao
+desenhados em canvas pelo componente `painel-texto` (`painel.js`), sem
+depender de arquivo de fonte externo.
+
+Os paineis ficam a esquerda de quem usa e sao filhos do rig: acompanham a
+pessoa se ela andar, mas nao giram junto com a cabeca. Interface presa ao
+rosto causa desconforto e tampa a cena.
+
+A selecao dentro do oculos usa o raio dos controles de mao
+(`laser-controls`, do proprio A-Frame) ou, sem controle, o olhar demorado.
+
+**Limitacao conhecida:** nao ha teleporte. Dentro do oculos o
+deslocamento e apenas fisico, andando no espaco real. Isso nao impede o
+uso: sao os niveis que aproximam o animal, nao o usuario que precisa se
+deslocar.
+
 ## Controles da cena
 
 | Dispositivo | Olhar          | Andar     | Selecionar            |
 |-------------|----------------|-----------|-----------------------|
 | Computador  | arrastar mouse | W A S D   | clique                |
 | Celular     | girar aparelho | -         | manter a mira no alvo |
-| Oculos VR   | mover a cabeca | -         | manter a mira no alvo |
+| Oculos VR   | mover a cabeca | andar no espaco fisico | raio do controle, ou olhar demorado |
 
 A camera fica a 1,6 m do chao (altura media dos olhos) e a velocidade de
 caminhada e de cerca de 1,8 m/s, proxima da caminhada humana. Valores mais

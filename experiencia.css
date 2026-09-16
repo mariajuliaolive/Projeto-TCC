@@ -498,6 +498,19 @@ html, body {
   }
 }
 
+/* Situação do WebXR, na barra superior */
+.hud-vr {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--hud-suave);
+  text-align: right;
+  max-width: 130px;
+}
+
+.hud-vr--ok {
+  color: var(--hud-verde);
+}
+
 /* =========================================================
    BOTÃO VR DO A-FRAME
    Ele nasce no canto inferior direito, exatamente onde fica o

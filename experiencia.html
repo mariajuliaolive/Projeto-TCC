@@ -36,6 +36,7 @@
         <p class="hud-tempo__rotulo">Tempo da sessão</p>
         <p class="hud-tempo__valor" id="hudTempo">00:00</p>
       </div>
+      <p class="hud-vr" id="hudVR" hidden></p>
       <a class="hud-sair" href="selecao.html">
         Sair
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -305,6 +306,50 @@
        USUÁRIO: rig + câmera + mira
        =========================================================== -->
   <a-entity id="rig" position="0 0 0">
+
+    <!-- ==========================================================
+         INTERFACE DENTRO DO ÓCULOS
+
+         O HUD em HTML some quando o navegador entra em modo VR:
+         lá dentro só existe o mundo 3D. Estes painéis são objetos
+         da cena, então aparecem no óculos.
+
+         Ficam à esquerda de quem usa, e não à frente, para não
+         cobrir o animal. Como são filhos do rig, acompanham a
+         pessoa se ela andar, mas não giram junto com a cabeça —
+         interface presa ao rosto causa desconforto.
+         ========================================================== -->
+    <a-entity id="uiVR" visible="false" position="-0.82 1.05 -0.72" rotation="0 42 0">
+
+      <a-entity id="painelInfoVR"
+                position="0 0.20 0"
+                painel-texto="largura: 0.62; altura: 0.30"></a-entity>
+
+      <a-entity id="btnVRProximo" class="botaoVR"
+                position="-0.165 -0.11 0"
+                painel-texto="largura: 0.29; altura: 0.11; centralizar: true; texto: Próximo nível"></a-entity>
+
+      <a-entity id="btnVRSair" class="botaoVR"
+                position="0.165 -0.11 0"
+                painel-texto="largura: 0.29; altura: 0.11; centralizar: true; texto: Sair"></a-entity>
+
+    </a-entity>
+
+    <!-- ==========================================================
+         CONTROLES DE MÃO
+
+         laser-controls faz parte do A-Frame: reconhece sozinho o
+         controle do Quest, do Vive, do Windows MR e desenha um
+         raio de mira. Sem óculos, estas entidades ficam inertes.
+         ========================================================== -->
+    <a-entity id="maoEsquerda"
+              laser-controls="hand: left"
+              raycaster="objects: .clicavel, .botaoVR; far: 10"></a-entity>
+
+    <a-entity id="maoDireita"
+              laser-controls="hand: right"
+              raycaster="objects: .clicavel, .botaoVR; far: 10"></a-entity>
+
     <a-camera
       id="camera"
       position="0 1.6 0"
@@ -324,6 +369,7 @@
 
 <script src="dados.js"></script>
 <script src="animador.js"></script>
+<script src="painel.js"></script>
 <script src="experiencia.js"></script>
 </body>
 </html>
