@@ -67,6 +67,27 @@ experiencia.html?animal=aranha&nivel=4
 
 Os identificadores validos estao em `dados.js`.
 
+## Distancias dos niveis
+
+Cada animal tem sua propria escala de distancias, porque os tamanhos
+variam muito: a 7 metros, uma cobra de 1,2 m e visivel e uma barata de
+5 cm ocupa menos de 2 pixels na tela.
+
+Em `dados.js`, cada animal declara `distanciaLonge` (nivel 1) e
+`distanciaPerto` (nivel 5); cada nivel declara uma `proporcao` entre as
+duas. A funcao `distanciaDoNivel(animal, nivel)` faz a conta.
+
+| animal | n1     | n2     | n3     | n4     | n5     |
+|--------|--------|--------|--------|--------|--------|
+| Cobra  | 7,00 m | 4,39 m | 4,39 m | 2,36 m | 1,20 m |
+| Rato   | 5,50 m | 3,57 m | 3,57 m | 2,06 m | 1,20 m |
+| Sapo   | 4,50 m | 3,01 m | 3,01 m | 1,86 m | 1,20 m |
+| Aranha | 4,00 m | 2,74 m | 2,74 m | 1,76 m | 1,20 m |
+| Barata | 3,00 m | 2,19 m | 2,19 m | 1,56 m | 1,20 m |
+
+O minimo de 1,20 m e a camera inclinada 24 graus para baixo garantem que
+o animal fique dentro do campo de visao em todas as combinacoes.
+
 ## Modelos 3D
 
 Os modelos vao em `assets/models/`, no formato `.glb`, com o nome do `id`

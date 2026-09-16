@@ -14,7 +14,9 @@
    id          → usado na URL (experiencia.html?animal=cobra)
    nome        → o que aparece na tela
    fobia       → nome técnico, para a documentação do TCC
-   ambiente    → cenário onde o animal vai aparecer (Etapa 3)
+   ambiente    → cenário onde o animal aparece. Por enquanto todos
+                 usam o mesmo quarto; ambientes próprios (jardim, porão,
+                 cozinha, sótão, lago) ficam para uma etapa posterior
    icone       → emoji exibido nos cards
    modelo      → caminho do arquivo 3D dentro de assets/models/
    tamanhoReal → maior dimensão do animal, EM METROS. O código usa
@@ -22,16 +24,25 @@
                  ao tamanho correto, seja qual for a escala do arquivo
    rotacao     → giro aplicado ao modelo para ele ficar de frente
                  para quem observa. Ajuste depois de ver o modelo
+   distanciaLonge → distância do nível 1, em metros
+   distanciaPerto → distância do nível 5, em metros
+
+   As distâncias variam por animal porque os tamanhos variam muito:
+   a 7 metros, uma cobra de 1,2 m é visível e uma barata de 5 cm
+   ocupa menos de 2 pixels na tela. O mínimo de 1,2 m existe para o
+   animal continuar dentro do campo de visão de quem está em pé.
    --------------------------------------------------------- */
 const ANIMAIS = [
   {
     id: 'cobra',
     nome: 'Cobra',
     fobia: 'Ofidiofobia',
-    ambiente: 'Jardim',
+    ambiente: 'Quarto',
     icone: '🐍',
     inicial: 'C',
     modelo: 'assets/models/cobra.glb',
+    distanciaLonge: 7.0,
+    distanciaPerto: 1.2,
     tamanhoReal: 1.2,
     rotacao: '0 0 0'
   },
@@ -39,10 +50,12 @@ const ANIMAIS = [
     id: 'rato',
     nome: 'Rato',
     fobia: 'Musofobia',
-    ambiente: 'Porão',
+    ambiente: 'Quarto',
     icone: '🐀',
     inicial: 'R',
     modelo: 'assets/models/rato.glb',
+    distanciaLonge: 5.5,
+    distanciaPerto: 1.2,
     tamanhoReal: 0.25,
     rotacao: '0 0 0'
   },
@@ -50,10 +63,12 @@ const ANIMAIS = [
     id: 'barata',
     nome: 'Barata',
     fobia: 'Katsaridafobia',
-    ambiente: 'Cozinha',
+    ambiente: 'Quarto',
     icone: '🪳',
     inicial: 'B',
     modelo: 'assets/models/barata.glb',
+    distanciaLonge: 3.0,
+    distanciaPerto: 1.2,
     tamanhoReal: 0.05,
     rotacao: '0 0 0'
   },
@@ -61,10 +76,12 @@ const ANIMAIS = [
     id: 'aranha',
     nome: 'Aranha',
     fobia: 'Aracnofobia',
-    ambiente: 'Sótão',
+    ambiente: 'Quarto',
     icone: '🕷️',
     inicial: 'A',
     modelo: 'assets/models/aranha.glb',
+    distanciaLonge: 4.0,
+    distanciaPerto: 1.2,
     tamanhoReal: 0.08,
     rotacao: '0 0 0'
   },
@@ -72,10 +89,12 @@ const ANIMAIS = [
     id: 'sapo',
     nome: 'Sapo',
     fobia: 'Ranidafobia',
-    ambiente: 'Lago',
+    ambiente: 'Quarto',
     icone: '🐸',
     inicial: 'S',
     modelo: 'assets/models/sapo.glb',
+    distanciaLonge: 4.5,
+    distanciaPerto: 1.2,
     tamanhoReal: 0.10,
     rotacao: '0 0 0'
   }
@@ -85,18 +104,27 @@ const ANIMAIS = [
    OS CINCO NÍVEIS DE EXPOSIÇÃO
 
    Além do texto, cada nível guarda os valores que a cena 3D
-   vai usar de verdade nas etapas 5 a 9:
+   usa de verdade:
 
-   distancia → em metros, o quanto o animal fica do usuário
+   proporcao → onde o nível fica entre o longe e o perto do animal:
+               1 = na distância mais longe, 0 = na mais próxima.
+               Assim a mesma progressão vale para todos os animais,
+               em distâncias adequadas ao tamanho de cada um
    movimento → o animal se move? (Etapa 7)
    interacao → o usuário pode interagir? (Etapa 9)
+   instrucao → texto exibido no painel de instruções
+
+   As distâncias cabem dentro do cenário fechado (um quarto de
+   9 m de profundidade) e mantêm o animal no campo de visão.
    --------------------------------------------------------- */
 const NIVEIS = [
   {
     numero: 1,
     nome: 'Visualização distante',
     descricao: 'O animal aparece ao longe. Você apenas observa, sem se aproximar.',
-    distancia: 15,
+    instrucao: 'O estímulo está distante. Observe no seu tempo. '
+             + 'Você pode sair a qualquer momento.',
+    proporcao: 1.0,
     movimento: false,
     interacao: false
   },
@@ -104,7 +132,9 @@ const NIVEIS = [
     numero: 2,
     nome: 'Aproximação moderada',
     descricao: 'O animal aparece mais próximo, ainda a uma distância confortável.',
-    distancia: 8,
+    instrucao: 'O estímulo está mais próximo. Respire com calma e '
+             + 'avance apenas quando se sentir pronta.',
+    proporcao: 0.55,
     movimento: false,
     interacao: false
   },
@@ -112,7 +142,9 @@ const NIVEIS = [
     numero: 3,
     nome: 'Movimento do estímulo',
     descricao: 'Na mesma distância do nível anterior, o animal passa a realizar movimentos simples.',
-    distancia: 8,
+    instrucao: 'O estímulo começa a se mover, na mesma distância. '
+             + 'Continue observando no seu ritmo.',
+    proporcao: 0.55,
     movimento: true,
     interacao: false
   },
@@ -120,7 +152,9 @@ const NIVEIS = [
     numero: 4,
     nome: 'Proximidade elevada',
     descricao: 'O animal se posiciona perto de você, mantendo o movimento.',
-    distancia: 3,
+    instrucao: 'O estímulo está perto. Permaneça o tempo que precisar '
+             + 'antes de seguir.',
+    proporcao: 0.2,
     movimento: true,
     interacao: false
   },
@@ -128,11 +162,28 @@ const NIVEIS = [
     numero: 5,
     nome: 'Interação direta',
     descricao: 'O animal fica ao alcance e você pode se aproximar ou interagir com ele.',
-    distancia: 1.5,
+    instrucao: 'Você pode se aproximar e interagir. Avance somente '
+             + 'se estiver confortável.',
+    proporcao: 0.0,
     movimento: true,
     interacao: true
   }
 ];
+
+/* ---------------------------------------------------------
+   DISTÂNCIA FINAL DE UM NÍVEL PARA UM ANIMAL
+
+   Cada animal tem sua distância mais longe e sua mais próxima.
+   A proporção do nível diz onde parar entre as duas:
+
+     proporcao 1   → distanciaLonge
+     proporcao 0   → distanciaPerto
+     proporcao 0.5 → exatamente no meio
+   --------------------------------------------------------- */
+function distanciaDoNivel(animal, nivel) {
+  const intervalo = animal.distanciaLonge - animal.distanciaPerto;
+  return animal.distanciaPerto + intervalo * nivel.proporcao;
+}
 
 /* ---------------------------------------------------------
    FUNÇÕES DE BUSCA

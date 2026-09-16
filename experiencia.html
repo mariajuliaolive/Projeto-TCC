@@ -3,111 +3,319 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Protótipo VR - Exposição Gradual (TCC)</title>
+  <title>Experiência VR | Exposição Gradual</title>
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%233ED0C0' d='M3.5 7h17a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-5.2q-3.3-3.2-6.6 0H3.5A1.5 1.5 0 0 1 2 15.5v-7A1.5 1.5 0 0 1 3.5 7z'/></svg>" />
 
-  <!-- Biblioteca A-Frame (carregada pela internet, via CDN) -->
   <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
 
   <link rel="stylesheet" href="experiencia.css" />
 </head>
 <body>
 
-  <!-- Camada de interface em HTML, que fica POR CIMA da cena 3D -->
-  <div id="interface">
-    <a href="selecao.html" id="voltar">&larr; Trocar experiência</a>
-    <p id="selecaoInfo">Carregando...</p>
-    <p id="ajuda"></p>
+<!-- =============================================================
+     INTERFACE (HUD) — camada HTML por cima da cena 3D
+     ============================================================= -->
+<div id="hud">
+
+  <!-- ---------- BARRA SUPERIOR ---------- -->
+  <header class="hud-topo">
+
+    <div class="hud-topo__lado">
+      <p class="hud-marca">Exposição Virtual</p>
+      <p class="hud-fobia">Fobia: <span id="hudFobia">—</span> <span id="hudIcone"></span></p>
+    </div>
+
+    <div class="hud-topo__centro">
+      <p class="hud-nivel" id="hudNivel">Nível —</p>
+      <ol class="hud-trilha" id="hudTrilha" aria-label="Progresso pelos níveis"></ol>
+    </div>
+
+    <div class="hud-topo__lado hud-topo__lado--dir">
+      <div class="hud-tempo">
+        <p class="hud-tempo__rotulo">Tempo da sessão</p>
+        <p class="hud-tempo__valor" id="hudTempo">00:00</p>
+      </div>
+      <a class="hud-sair" href="selecao.html">
+        Sair
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M16 16l4-4-4-4M20 12H10" />
+        </svg>
+      </a>
+    </div>
+
+  </header>
+
+  <!-- ---------- INSTRUÇÕES ---------- -->
+  <aside class="hud-caixa hud-instrucoes">
+    <h2 class="hud-caixa__titulo">Instruções</h2>
+    <p id="hudInstrucao">Carregando…</p>
+  </aside>
+
+  <!-- ---------- AJUDA (escondida até ser pedida) ---------- -->
+  <aside class="hud-caixa hud-ajuda" id="hudAjuda" hidden>
+    <h2 class="hud-caixa__titulo">Como usar</h2>
+    <p id="hudAjudaTexto"></p>
+    <p class="hud-ajuda__aviso">
+      Protótipo acadêmico. Não é tratamento nem diagnóstico.
+    </p>
+  </aside>
+
+  <!-- ---------- PROGRESSO ---------- -->
+  <section class="hud-caixa hud-progresso">
+    <h2 class="hud-caixa__titulo">Seu progresso</h2>
+
+    <ul class="hud-medidas">
+
+      <li class="hud-medida">
+        <svg class="hud-medida__icone" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 20s-7-4.6-7-9.3A4 4 0 0 1 12 8a4 4 0 0 1 7-2.7c0 0 0 .9 0 1.4C19 15.4 12 20 12 20z" />
+        </svg>
+        <span class="hud-medida__nome">Frequência cardíaca</span>
+        <span class="hud-medida__valor hud-medida__valor--vazio" id="hudBpm">— bpm</span>
+        <span class="hud-medida__nota">sem sensor conectado</span>
+      </li>
+
+      <li class="hud-medida">
+        <svg class="hud-medida__icone" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 12h4l2.5-6 4 12 2.5-6h5" />
+        </svg>
+        <span class="hud-medida__nome">Nível de ansiedade</span>
+        <button class="hud-medida__valor hud-medida__botao" id="hudAnsiedade"
+                aria-expanded="false" aria-controls="hudEscala">informar</button>
+        <span class="hud-medida__nota">autorrelato</span>
+      </li>
+
+      <li class="hud-medida">
+        <svg class="hud-medida__icone" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 20V12M12 20V5M19 20v-5" />
+        </svg>
+        <span class="hud-medida__nome">Exposição concluída</span>
+        <span class="hud-medida__valor" id="hudConcluido">0%</span>
+      </li>
+
+    </ul>
+
+    <!-- Escala 0-10 preenchida por experiencia.js -->
+    <div class="hud-escala" id="hudEscala" hidden>
+      <p class="hud-escala__pergunta">Quanto desconforto você sente agora?</p>
+      <div class="hud-escala__botoes" id="hudEscalaBotoes"></div>
+      <p class="hud-escala__legenda"><span>0 · nenhum</span><span>10 · máximo</span></p>
+    </div>
+
+  </section>
+
+  <!-- ---------- AÇÕES ---------- -->
+  <div class="hud-acoes">
+
+    <button class="hud-acao" id="btnSom" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 9v6h4l5 4V5L8 9H4z" />
+        <path d="M16.5 8.5a5 5 0 0 1 0 7" />
+      </svg>
+      <span>Som</span>
+    </button>
+
+    <button class="hud-acao" id="btnAjuda" aria-expanded="false" aria-controls="hudAjuda">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.5 9.5a2.5 2.5 0 1 1 3.2 2.4c-.6.2-1 .8-1 1.4v.4" />
+        <circle cx="12" cy="17" r="0.8" fill="currentColor" stroke="none" />
+      </svg>
+      <span>Ajuda</span>
+    </button>
+
+    <button class="hud-acao" id="btnReiniciar">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20 12a8 8 0 1 1-2.4-5.7" />
+        <path d="M20 4v4h-4" />
+      </svg>
+      <span>Reiniciar nível</span>
+    </button>
+
   </div>
 
-  <a-scene id="cena">
+  <!-- ---------- PRÓXIMO NÍVEL ---------- -->
+  <a class="hud-proximo" id="btnProximo">
+    <span id="btnProximoTexto">Próximo nível</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  </a>
 
-    <!-- ============================================================
-         CHÃO
-         ============================================================ -->
-    <a-plane
-      position="0 0 0"
-      rotation="-90 0 0"
-      width="60"
-      height="60"
-      color="#3E6B57">
-    </a-plane>
+</div>
 
-    <!-- ============================================================
-         MARCOS DE REFERÊNCIA
-         Sem pontos fixos na cena é impossível perceber que você
-         está andando. São temporários: viram cenário na Etapa 3.
-         ============================================================ -->
-    <a-cylinder position="-6  1.5 -8"  radius="0.3" height="3" color="#5C7A8A"></a-cylinder>
-    <a-cylinder position=" 6  1.5 -8"  radius="0.3" height="3" color="#5C7A8A"></a-cylinder>
-    <a-cylinder position="-6  1.5 -18" radius="0.3" height="3" color="#5C7A8A"></a-cylinder>
-    <a-cylinder position=" 6  1.5 -18" radius="0.3" height="3" color="#5C7A8A"></a-cylinder>
+<!-- =============================================================
+     CENA 3D
+     ============================================================= -->
+<a-scene id="cena" background="color: #0C1016">
 
-    <!-- ============================================================
-         O ANIMAL
+  <!-- ===========================================================
+       CENÁRIO — um quarto de 5 m x 9 m x 2,8 m
 
-         Três camadas, cada uma com uma responsabilidade:
+       Tudo construído com primitivas do A-Frame: nenhum arquivo
+       externo, nenhum download. Paredes, piso e móveis são caixas
+       e cilindros posicionados à mão.
 
-         #animal        onde ele está no mundo (a distância do nível)
-         #animalModelo  recebe o arquivo 3D, já redimensionado
-         #animalApoio   caixa provisória, do tamanho real do animal,
-                        usada enquanto não houver arquivo 3D
+       Sistema de coordenadas do quarto:
+         x   -2,5 (esquerda)  ...  +2,5 (direita)
+         z   +1,0 (atrás)     ...  -8,0 (à frente)
+         y    0   (piso)      ...   2,8 (teto)
 
-         A classe "clicavel" autoriza a mira a enxergar o conjunto.
-         ============================================================ -->
-    <a-entity id="animal" class="clicavel" position="0 0 -4">
+       Quem usa começa em (0, 0, 0), de costas para a parede de trás.
+       =========================================================== */ -->
+  <a-entity id="cenario">
 
-      <a-entity id="animalModelo"></a-entity>
+    <!-- ---------- PISO (tábuas de madeira) ---------- -->
+    <a-plane position="0 0 -3.5" rotation="-90 0 0" width="5" height="9"
+             color="#7A5637" roughness="1" metalness="0"></a-plane>
 
-      <a-box
-        id="animalApoio"
-        color="#4C6EF5"
-        opacity="0.85">
-      </a-box>
+    <!-- Frisos que sugerem as tábuas do assoalho -->
+    <a-entity id="tabuas"></a-entity>
 
+    <!-- ---------- TETO ---------- -->
+    <a-plane position="0 2.8 -3.5" rotation="90 0 0" width="5" height="9"
+             color="#E6E3DC"></a-plane>
+
+    <!-- ---------- PAREDES ---------- -->
+    <!-- fundo (à frente de quem observa) -->
+    <a-plane position="0 1.4 -8" width="5" height="2.8" color="#DAD6CD"></a-plane>
+    <!-- atrás -->
+    <a-plane position="0 1.4 1" rotation="0 180 0" width="5" height="2.8" color="#DAD6CD"></a-plane>
+    <!-- esquerda -->
+    <a-plane position="-2.5 1.4 -3.5" rotation="0 90 0" width="9" height="2.8" color="#D2CEC4"></a-plane>
+    <!-- direita -->
+    <a-plane position="2.5 1.4 -3.5" rotation="0 -90 0" width="9" height="2.8" color="#D2CEC4"></a-plane>
+    <!-- rodapé -->
+    <a-box position="0 0.06 -7.96" width="5" height="0.12" depth="0.04" color="#F2EFE9"></a-box>
+
+    <!-- ---------- JANELA (parede do fundo) ---------- -->
+    <a-entity id="janela" position="0 1.55 -7.95">
+      <!-- vista externa -->
+      <a-plane width="1.5" height="1.2" color="#8FBF7F"></a-plane>
+      <a-plane position="0 0.35 0.01" width="1.5" height="0.5" color="#BBD9EA"></a-plane>
+      <!-- caixilhos -->
+      <a-box position="0    0.65 0.03" width="1.62" height="0.08" depth="0.06" color="#FFFFFF"></a-box>
+      <a-box position="0   -0.65 0.03" width="1.62" height="0.08" depth="0.06" color="#FFFFFF"></a-box>
+      <a-box position="-0.79 0   0.03" width="0.08" height="1.38" depth="0.06" color="#FFFFFF"></a-box>
+      <a-box position=" 0.79 0   0.03" width="0.08" height="1.38" depth="0.06" color="#FFFFFF"></a-box>
+      <a-box position="0     0   0.03" width="0.05" height="1.2"  depth="0.05" color="#FFFFFF"></a-box>
+      <!-- peitoril -->
+      <a-box position="0 -0.72 0.09" width="1.7" height="0.06" depth="0.18" color="#FFFFFF"></a-box>
     </a-entity>
 
-    <!-- ============================================================
-         ILUMINAÇÃO
-         Declarada explicitamente: assim que criamos uma luz, o
-         A-Frame para de usar as luzes automáticas dele.
-         ============================================================ -->
-    <a-light type="ambient"     color="#BBC7D9" intensity="0.6"></a-light>
-    <a-light type="directional" color="#FFFFFF" intensity="0.8" position="-3 5 2"></a-light>
-
-    <!-- Céu -->
-    <a-sky color="#9FB6C9"></a-sky>
-
-    <!-- ============================================================
-         USUÁRIO: rig + câmera + mira
-         O rig representa "onde a pessoa está no mundo".
-         A câmera representa "para onde a cabeça dela aponta".
-         ============================================================ -->
-    <a-entity id="rig" position="0 0 0">
-
-      <a-camera
-        id="camera"
-        position="0 1.6 0"
-        wasd-controls="acceleration: 10; fly: false"
-        look-controls="pointerLockEnabled: false">
-
-        <!-- Mira presa à câmera: aponta sempre para onde se olha -->
-        <a-cursor
-          id="mira"
-          color="#3ED0C0"
-          fuse="false"
-          fuse-timeout="1200"
-          raycaster="objects: .clicavel; far: 30">
-        </a-cursor>
-
-      </a-camera>
-
+    <!-- ---------- QUADRO (parede esquerda) ---------- -->
+    <a-entity position="-2.46 1.7 -2" rotation="0 90 0">
+      <a-plane width="0.9" height="0.65" color="#2E2A26"></a-plane>
+      <a-plane position="0 0 0.01" width="0.8" height="0.55" color="#5C7C6B"></a-plane>
     </a-entity>
 
-  </a-scene>
+    <!-- ---------- ESCRIVANINHA (encostada à esquerda) ---------- -->
+    <a-entity id="mesa" position="-2.05 0 -3.2">
+      <a-box position="0 0.74 0" width="0.8" height="0.05" depth="1.7" color="#8A5A34"></a-box>
+      <a-box position="-0.3 0.37 0.78" width="0.07" height="0.72" depth="0.07" color="#4B3522"></a-box>
+      <a-box position=" 0.3 0.37 0.78" width="0.07" height="0.72" depth="0.07" color="#4B3522"></a-box>
+      <a-box position="-0.3 0.37 -0.78" width="0.07" height="0.72" depth="0.07" color="#4B3522"></a-box>
+      <a-box position=" 0.3 0.37 -0.78" width="0.07" height="0.72" depth="0.07" color="#4B3522"></a-box>
+      <!-- caderno -->
+      <a-box position="0.05 0.775 -0.2" width="0.3" height="0.02" depth="0.22"
+             rotation="0 12 0" color="#F0EBE0"></a-box>
+    </a-entity>
 
-  <script src="dados.js"></script>
-  <script src="experiencia.js"></script>
+    <!-- ---------- LUMINÁRIA DE MESA ---------- -->
+    <a-entity id="luminaria" position="-2.1 0.77 -3.85">
+      <a-cylinder position="0 0.01 0" radius="0.11" height="0.03" color="#22262B"></a-cylinder>
+      <a-cylinder position="0 0.2 0" radius="0.015" height="0.4" color="#22262B"></a-cylinder>
+      <a-cone position="0.07 0.42 0" rotation="0 0 -25"
+              radius-bottom="0.14" radius-top="0.05" height="0.16" color="#22262B"></a-cone>
+    </a-entity>
+
+    <!-- ---------- CADEIRA ---------- -->
+    <a-entity id="cadeira" position="-1.35 0 -3.2" rotation="0 -90 0">
+      <a-box position="0 0.45 0" width="0.5" height="0.06" depth="0.5" color="#26292F"></a-box>
+      <a-box position="0 0.78 -0.23" width="0.48" height="0.62" depth="0.06" color="#26292F"></a-box>
+      <a-cylinder position="0 0.22 0" radius="0.04" height="0.44" color="#3A3E45"></a-cylinder>
+      <a-cylinder position="0 0.03 0" radius="0.26" height="0.05" color="#3A3E45"></a-cylinder>
+    </a-entity>
+
+    <!-- ---------- ESTANTE (parede direita) ---------- -->
+    <a-entity id="estante" position="2.28 0 -4.6">
+      <a-box position="0 1.0 0" width="0.4" height="2.0" depth="1.5" color="#A57B4E"></a-box>
+      <a-box position="-0.02 0.62 0" width="0.38" height="0.04" depth="1.4" color="#8A6540"></a-box>
+      <a-box position="-0.02 1.05 0" width="0.38" height="0.04" depth="1.4" color="#8A6540"></a-box>
+      <a-box position="-0.02 1.48 0" width="0.38" height="0.04" depth="1.4" color="#8A6540"></a-box>
+      <!-- livros -->
+      <a-box position="-0.04 0.79 -0.45" width="0.26" height="0.3" depth="0.5" color="#6B4E63"></a-box>
+      <a-box position="-0.04 1.22 0.3"  width="0.26" height="0.3" depth="0.45" color="#4E6169"></a-box>
+      <a-box position="-0.04 1.65 -0.2" width="0.26" height="0.3" depth="0.4" color="#7A5A44"></a-box>
+    </a-entity>
+
+    <!-- ---------- CAMA (direita, mais próxima) ---------- -->
+    <a-entity id="cama" position="1.78 0 -2.7">
+      <a-box position="0 0.22 0" width="1.5" height="0.44" depth="2.0" color="#6B4E37"></a-box>
+      <a-box position="0 0.53 0" width="1.46" height="0.2" depth="1.96" color="#2C3652"></a-box>
+      <a-box position="0 0.66 -0.75" width="1.2" height="0.12" depth="0.4" color="#E8E4DA"></a-box>
+    </a-entity>
+
+    <!-- ---------- VASO DE PLANTA ---------- -->
+    <a-entity id="planta" position="-2.0 0 -6.6">
+      <a-cylinder position="0 0.16 0" radius="0.17" height="0.32" color="#B4785A"></a-cylinder>
+      <a-sphere position="0 0.62 0" radius="0.32" color="#4E7A4A"></a-sphere>
+      <a-sphere position="0.18 0.45 0.1" radius="0.2" color="#5C8A52"></a-sphere>
+    </a-entity>
+
+    <!-- ---------- TAPETE ---------- -->
+    <a-plane position="-0.3 0.01 -4.6" rotation="-90 0 0" width="2.1" height="2.8"
+             color="#4E4238" roughness="1" metalness="0"></a-plane>
+
+  </a-entity>
+
+  <!-- ===========================================================
+       ILUMINAÇÃO
+       =========================================================== -->
+  <!-- claridade geral, levemente fria -->
+  <a-light type="ambient" color="#8C99AB" intensity="0.55"></a-light>
+  <!-- luz que entra pela janela -->
+  <a-light type="directional" color="#DCE8F2" intensity="0.5" position="0 3 -6"
+           target="#cenario"></a-light>
+  <!-- luz quente da luminária -->
+  <a-light type="point" color="#FFD9A0" intensity="1.4" distance="6"
+           position="-1.95 1.2 -3.85"></a-light>
+
+  <!-- ===========================================================
+       O ANIMAL
+
+       #animal        onde ele está no mundo (a distância do nível)
+       #animalModelo  recebe o arquivo 3D, já redimensionado
+       #animalApoio   caixa provisória, do tamanho real do animal
+       =========================================================== -->
+  <a-entity id="animal" class="clicavel" position="0 0 -4">
+    <a-entity id="animalModelo"></a-entity>
+    <a-box id="animalApoio" color="#3A3F4B" opacity="0.95"></a-box>
+  </a-entity>
+
+  <!-- ===========================================================
+       USUÁRIO: rig + câmera + mira
+       =========================================================== -->
+  <a-entity id="rig" position="0 0 0">
+    <a-camera
+      id="camera"
+      position="0 1.6 0"
+      wasd-controls="acceleration: 10; fly: false"
+      look-controls="pointerLockEnabled: false">
+      <a-cursor
+        id="mira"
+        color="#3ED0C0"
+        fuse="false"
+        fuse-timeout="1200"
+        raycaster="objects: .clicavel; far: 30">
+      </a-cursor>
+    </a-camera>
+  </a-entity>
+
+</a-scene>
+
+<script src="dados.js"></script>
+<script src="experiencia.js"></script>
 </body>
 </html>

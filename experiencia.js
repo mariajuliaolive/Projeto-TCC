@@ -1,124 +1,153 @@
 /* =========================================================
-   CENA 3D — lê a escolha feita em selecao.html, carrega o
-   modelo do animal e ajusta os controles ao dispositivo.
+   EXPERIÊNCIA — lê a escolha feita em selecao.html, monta a
+   cena e controla o HUD.
    Depende de dados.js (ANIMAIS, NIVEIS), carregado antes.
    ========================================================= */
 
+/* ---------- elementos da cena ---------- */
 const cena = document.querySelector('#cena');
 const camera = document.querySelector('#camera');
 const mira = document.querySelector('#mira');
-
 const animalEl = document.querySelector('#animal');
 const modeloEl = document.querySelector('#animalModelo');
 const apoioEl = document.querySelector('#animalApoio');
 
-const selecaoInfo = document.querySelector('#selecaoInfo');
-const ajuda = document.querySelector('#ajuda');
+/* ---------- elementos do HUD ---------- */
+const hudFobia = document.querySelector('#hudFobia');
+const hudIcone = document.querySelector('#hudIcone');
+const hudNivel = document.querySelector('#hudNivel');
+const hudTrilha = document.querySelector('#hudTrilha');
+const hudTempo = document.querySelector('#hudTempo');
+const hudInstrucao = document.querySelector('#hudInstrucao');
+const hudConcluido = document.querySelector('#hudConcluido');
+const hudAnsiedade = document.querySelector('#hudAnsiedade');
+const hudEscala = document.querySelector('#hudEscala');
+const hudEscalaBotoes = document.querySelector('#hudEscalaBotoes');
+const hudAjuda = document.querySelector('#hudAjuda');
+const hudAjudaTexto = document.querySelector('#hudAjudaTexto');
 
-/* ---------------------------------------------------------
+const btnSom = document.querySelector('#btnSom');
+const btnAjuda = document.querySelector('#btnAjuda');
+const btnReiniciar = document.querySelector('#btnReiniciar');
+const btnProximo = document.querySelector('#btnProximo');
+const btnProximoTexto = document.querySelector('#btnProximoTexto');
+
+/* =========================================================
    1. LER A ESCOLHA QUE VEIO NA URL
-   Exemplo: experiencia.html?animal=cobra&nivel=3
-   --------------------------------------------------------- */
+   Exemplo: experiencia.html?animal=aranha&nivel=2
+   ========================================================= */
 const parametros = new URLSearchParams(window.location.search);
 
 const animal = buscarAnimal(parametros.get('animal'));
 const nivel = buscarNivel(parametros.get('nivel'));
 
 /* ---------------------------------------------------------
-   2. MOSTRAR O QUE FOI SELECIONADO
+   Sem escolha válida não há experiência: volta para a seleção.
+
+   Atenção: window.location.replace() NÃO interrompe o script.
+   O navegador só troca de página depois que o código atual
+   termina de rodar. Por isso o resto precisa ficar dentro de
+   uma função, chamada apenas quando a escolha é válida.
    --------------------------------------------------------- */
-if (animal && nivel) {
-  selecaoInfo.innerHTML =
-    `<strong>${animal.icone} ${animal.nome}</strong> &middot; ` +
-    `Nível ${nivel.numero}: ${nivel.nome}` +
-    `<br />Distância: ${nivel.distancia} m` +
-    ` &middot; Tamanho real: ${animal.tamanhoReal} m`;
+if (!animal || !nivel) {
+  window.location.replace('selecao.html');
 } else {
-  selecaoInfo.innerHTML =
-    'Nenhuma seleção válida na URL. ' +
-    '<a href="selecao.html">Escolher estímulo e nível</a>.';
+  iniciarExperiencia();
 }
 
-/* ---------------------------------------------------------
-   3. POSICIONAR O ANIMAL NA DISTÂNCIA DO NÍVEL
-   Z negativo = para a frente, longe de quem observa.
-   --------------------------------------------------------- */
-if (nivel) {
-  animalEl.setAttribute('position', '0 0 ' + (-nivel.distancia));
-}
+function iniciarExperiencia() {
 
-/* ---------------------------------------------------------
-   4. A CAIXA PROVISÓRIA
-   Enquanto não existir o arquivo 3D, mostramos uma caixa com
-   o tamanho REAL do animal. Assim já dá para avaliar escala e
-   distância antes de ter o modelo em mãos.
-   --------------------------------------------------------- */
-function mostrarApoio(tamanho) {
-  apoioEl.setAttribute('width', tamanho);
-  apoioEl.setAttribute('height', tamanho * 0.4);
-  apoioEl.setAttribute('depth', tamanho * 0.4);
-  // sobe metade da altura para a caixa apoiar no chão
-  apoioEl.setAttribute('position', '0 ' + (tamanho * 0.2) + ' 0');
-  apoioEl.setAttribute('visible', true);
-}
+  /* =========================================================
+     2. PREENCHER O HUD
+     ========================================================= */
+  hudFobia.textContent = animal.fobia;
+  hudIcone.textContent = animal.icone;
+  hudNivel.textContent = `Nível ${nivel.numero} — ${nivel.nome}`;
+  hudInstrucao.textContent = nivel.instrucao;
 
-/* ---------------------------------------------------------
-   5. AJUSTAR O MODELO 3D CARREGADO
+  /* ---------- trilha de bolinhas, uma por nível ---------- */
+  NIVEIS.forEach(function (n) {
+    const passo = document.createElement('li');
+    passo.className = 'hud-trilha__passo';
+    if (n.numero <= nivel.numero) {
+      passo.classList.add('hud-trilha__passo--feito');
+    }
+    passo.title = `Nível ${n.numero}: ${n.nome}`;
+    hudTrilha.appendChild(passo);
+  });
 
-   Dois problemas que todo modelo baixado traz:
+  /* ---------- quanto da progressão já foi percorrido ---------- */
+  hudConcluido.textContent = Math.round(nivel.numero / NIVEIS.length * 100) + '%';
 
-   a) Escala imprevisível. Um arquivo pode vir em centímetros,
-      outro em metros, outro numa unidade arbitrária. Em vez de
-      adivinhar, medimos o modelo e calculamos o fator que o
-      deixa com o tamanho real informado em dados.js.
+  /* =========================================================
+     3. POSICIONAR O ANIMAL
+     A distância vem do nível, ajustada ao tamanho do animal.
+     Z negativo = para a frente, longe de quem observa.
+     ========================================================= */
+  const distancia = distanciaDoNivel(animal, nivel);
+  animalEl.setAttribute('position', '0 0 ' + (-distancia));
 
-   b) Origem em lugar qualquer. O ponto (0,0,0) do arquivo pode
-      estar no centro do bicho, ou acima dele. Medimos onde fica
-      a base e deslocamos para ela encostar no chão.
-   --------------------------------------------------------- */
-function ajustarModelo(elemento, tamanhoReal) {
-  const objeto = elemento.getObject3D('mesh');
-  if (!objeto) {
-    return;
+  /* =========================================================
+     4. CAIXA PROVISÓRIA (enquanto não houver arquivo 3D)
+     Tem as dimensões reais do animal, para já dar pra avaliar
+     escala e distância.
+     ========================================================= */
+  function mostrarApoio(tamanho) {
+    apoioEl.setAttribute('width', tamanho);
+    apoioEl.setAttribute('height', tamanho * 0.4);
+    apoioEl.setAttribute('depth', tamanho * 0.4);
+    apoioEl.setAttribute('position', '0 ' + (tamanho * 0.2) + ' 0');
+    apoioEl.setAttribute('visible', true);
   }
 
-  // Box3 é uma "caixa invisível" que envolve o modelo inteiro
-  const caixa = new AFRAME.THREE.Box3().setFromObject(objeto);
-  const medidas = new AFRAME.THREE.Vector3();
-  caixa.getSize(medidas);
+  /* =========================================================
+     5. AJUSTAR O MODELO 3D CARREGADO
 
-  const maiorLado = Math.max(medidas.x, medidas.y, medidas.z);
-  if (maiorLado === 0) {
-    return;
+     a) Escala imprevisível: cada arquivo vem numa unidade
+        diferente. Medimos o modelo e calculamos o fator que o
+        leva ao tamanhoReal declarado em dados.js.
+
+     b) Origem em lugar qualquer: medimos onde fica a base e
+        deslocamos para ela encostar no chão.
+     ========================================================= */
+  function ajustarModelo(elemento, tamanhoReal) {
+    const objeto = elemento.getObject3D('mesh');
+    if (!objeto) {
+      return;
+    }
+
+    const caixa = new AFRAME.THREE.Box3().setFromObject(objeto);
+    const medidas = new AFRAME.THREE.Vector3();
+    caixa.getSize(medidas);
+
+    const maiorLado = Math.max(medidas.x, medidas.y, medidas.z);
+    if (maiorLado === 0) {
+      return;
+    }
+
+    const fator = tamanhoReal / maiorLado;
+    elemento.setAttribute('scale', `${fator} ${fator} ${fator}`);
+
+    const baseY = caixa.min.y * fator;
+    elemento.setAttribute('position', '0 ' + (-baseY) + ' 0');
+
+    console.log(
+      `Modelo medido: ${medidas.x.toFixed(2)} x ${medidas.y.toFixed(2)} x ` +
+      `${medidas.z.toFixed(2)} unidades. Fator aplicado: ${fator.toFixed(4)}`
+    );
   }
 
-  // (a) escala
-  const fator = tamanhoReal / maiorLado;
-  elemento.setAttribute('scale', `${fator} ${fator} ${fator}`);
-
-  // (b) apoiar no chão: a base do modelo, já escalada, sobe até y = 0
-  const baseY = caixa.min.y * fator;
-  elemento.setAttribute('position', '0 ' + (-baseY) + ' 0');
-
-  console.log(
-    `Modelo medido: ${medidas.x.toFixed(2)} x ${medidas.y.toFixed(2)} x ` +
-    `${medidas.z.toFixed(2)} unidades. Fator aplicado: ${fator.toFixed(4)}`
-  );
-}
-
-/* ---------------------------------------------------------
-   6. CARREGAR O MODELO DO ANIMAL
-
-   Se o arquivo não existir ainda, o evento "model-error"
-   dispara e a caixa provisória continua no lugar.
-   --------------------------------------------------------- */
-if (animal) {
+  /* =========================================================
+     6. CARREGAR O MODELO DO ANIMAL
+     Se o arquivo não existir, "model-error" dispara e a caixa
+     provisória continua no lugar.
+     ========================================================= */
   mostrarApoio(animal.tamanhoReal);
   modeloEl.setAttribute('rotation', animal.rotacao);
 
   modeloEl.addEventListener('model-loaded', function () {
     ajustarModelo(modeloEl, animal.tamanhoReal);
-    apoioEl.setAttribute('visible', false);   // esconde a caixa
+    apoioEl.setAttribute('visible', false);
     console.log('Modelo carregado:', animal.modelo);
   });
 
@@ -130,47 +159,173 @@ if (animal) {
   });
 
   modeloEl.setAttribute('gltf-model', 'url(' + animal.modelo + ')');
+
+  /* =========================================================
+     7. INCLINAR A CÂMERA PARA BAIXO
+
+     Quem está em pé olha para baixo quando há algo no chão.
+     Sem essa inclinação, um animal pequeno a 2 metros fica
+     abaixo do campo de visão e simplesmente não aparece.
+
+     Escrever rotation="-18 0 0" no HTML NÃO funciona: o
+     componente look-controls recalcula a rotação da câmera a
+     cada quadro, a partir de dois objetos internos seus.
+     Para inclinar de verdade, escrevemos no objeto que ele lê.
+     ========================================================= */
+  const INCLINACAO_GRAUS = -24;
+
+  function inclinarCamera(graus) {
+    const controles = camera.components['look-controls'];
+    if (!controles) {
+      return;
+    }
+    controles.pitchObject.rotation.x = AFRAME.THREE.MathUtils.degToRad(graus);
+  }
+
+  /* =========================================================
+     8. CONTROLES CONFORME O DISPOSITIVO
+     ========================================================= */
+  const ehMobile = AFRAME.utils.device.isMobile();
+
+  if (ehMobile) {
+    mira.setAttribute('fuse', true);
+    hudAjudaTexto.textContent =
+      'Gire o aparelho para olhar em volta. Mire no animal e segure o '
+      + 'olhar por um instante para selecionar. Use "Sair" para voltar '
+      + 'à escolha de estímulo a qualquer momento.';
+  } else {
+    hudAjudaTexto.textContent =
+      'Arraste o mouse para olhar em volta. Use as teclas W, A, S e D '
+      + 'para andar pelo quarto. Clique para selecionar. Use "Sair" para '
+      + 'voltar à escolha de estímulo a qualquer momento.';
+  }
+
+  /* =========================================================
+     9. TEMPO DA SESSÃO
+     setInterval executa a função a cada 1000 ms (1 segundo).
+     ========================================================= */
+  let segundos = 0;
+
+  function doisDigitos(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  setInterval(function () {
+    segundos = segundos + 1;
+    const min = Math.floor(segundos / 60);
+    const seg = segundos % 60;
+    hudTempo.textContent = doisDigitos(min) + ':' + doisDigitos(seg);
+  }, 1000);
+
+  /* =========================================================
+     10. ESCALA DE ANSIEDADE (autorrelato de 0 a 10)
+
+     Nenhum sensor mede ansiedade. Quem informa é a própria
+     pessoa — é assim que a pesquisa de exposição trabalha.
+     O valor fica só nesta página: não é enviado nem gravado.
+     ========================================================= */
+  for (let valor = 0; valor <= 10; valor++) {
+    const botao = document.createElement('button');
+    botao.className = 'hud-escala__botao';
+    botao.textContent = valor;
+    botao.setAttribute('aria-pressed', 'false');
+    botao.dataset.valor = valor;
+    hudEscalaBotoes.appendChild(botao);
+  }
+
+  hudEscalaBotoes.addEventListener('click', function (evento) {
+    const botao = evento.target.closest('.hud-escala__botao');
+    if (!botao) {
+      return;
+    }
+
+    // desmarca todos e marca o escolhido
+    hudEscalaBotoes.querySelectorAll('.hud-escala__botao').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b === botao));
+    });
+
+    hudAnsiedade.textContent = botao.dataset.valor + '/10';
+    console.log(
+      `Autorrelato — nível ${nivel.numero}, ${animal.nome}, ` +
+      `${segundos}s: ${botao.dataset.valor}/10`
+    );
+  });
+
+  hudAnsiedade.addEventListener('click', function () {
+    const aberto = hudEscala.hidden;
+    hudEscala.hidden = !aberto;
+    hudAnsiedade.setAttribute('aria-expanded', String(aberto));
+  });
+
+  /* =========================================================
+     11. BOTÕES DE AÇÃO
+     ========================================================= */
+
+  /* ---------- Ajuda ---------- */
+  btnAjuda.addEventListener('click', function () {
+    const aberto = hudAjuda.hidden;
+    hudAjuda.hidden = !aberto;
+    btnAjuda.setAttribute('aria-expanded', String(aberto));
+  });
+
+  /* ---------- Som ----------
+     Ainda não há áudio na cena; isso é a Etapa 13. O botão já
+     guarda o estado para quando houver. */
+  let somLigado = false;
+
+  btnSom.addEventListener('click', function () {
+    somLigado = !somLigado;
+    btnSom.setAttribute('aria-pressed', String(somLigado));
+    console.log('Som:', somLigado ? 'ligado' : 'desligado', '(sem áudio ainda)');
+  });
+
+  /* ---------- Reiniciar nível ---------- */
+  btnReiniciar.addEventListener('click', function () {
+    window.location.reload();
+  });
+
+  /* ---------- Próximo nível ---------- */
+  const proximoNumero = nivel.numero + 1;
+
+  if (buscarNivel(proximoNumero)) {
+    btnProximo.href = `experiencia.html?animal=${animal.id}&nivel=${proximoNumero}`;
+  } else {
+    // já está no último nível
+    btnProximoTexto.textContent = 'Último nível';
+    btnProximo.classList.add('hud-proximo--fim');
+  }
+
+  /* =========================================================
+     12. INTERAÇÃO COM O ANIMAL
+     Semente do Nível 5.
+     ========================================================= */
+  animalEl.addEventListener('click', function () {
+    if (!nivel.interacao) {
+      console.log('Este nível não permite interação.');
+      return;
+    }
+    console.log('Animal selecionado pela mira.');
+  });
+
+  /* =========================================================
+     13. REGISTROS DE CARREGAMENTO
+     ========================================================= */
+  cena.addEventListener('loaded', function () {
+    inclinarCamera(INCLINACAO_GRAUS);
+
+    console.log('Cena 3D carregada com sucesso.');
+    console.log('Versão do A-Frame:', AFRAME.version);
+    console.log('Animal:', animal.nome, '| tamanho real:', animal.tamanhoReal, 'm');
+    console.log('Nível:', nivel.numero, '| distância:', distancia.toFixed(2), 'm');
+    console.log('Dispositivo móvel:', ehMobile);
+  });
+
+  cena.addEventListener('enter-vr', function () {
+    console.log('Entrou no modo VR.');
+  });
+
+  cena.addEventListener('exit-vr', function () {
+    console.log('Saiu do modo VR.');
+  });
+
 }
-
-/* ---------------------------------------------------------
-   7. ADAPTAR OS CONTROLES AO DISPOSITIVO
-   No computador existe teclado; no celular e no óculos, não.
-   --------------------------------------------------------- */
-const ehMobile = AFRAME.utils.device.isMobile();
-
-if (ehMobile) {
-  mira.setAttribute('fuse', true);
-  ajuda.textContent = 'Gire o aparelho para olhar em volta. '
-    + 'Mire no animal e segure o olhar para selecionar.';
-} else {
-  ajuda.textContent = 'Arraste o mouse para olhar. '
-    + 'Use W A S D para andar. Clique para selecionar.';
-}
-
-/* ---------------------------------------------------------
-   8. INTERAÇÃO DE TESTE
-   Semente do Nível 5: por enquanto só registra no console.
-   --------------------------------------------------------- */
-animalEl.addEventListener('click', function () {
-  console.log('Animal selecionado pela mira.');
-});
-
-/* ---------------------------------------------------------
-   9. CONFIRMAR QUE A CENA CARREGOU
-   --------------------------------------------------------- */
-cena.addEventListener('loaded', function () {
-  console.log('Cena 3D carregada com sucesso.');
-  console.log('Versão do A-Frame:', AFRAME.version);
-  console.log('Animal:', animal ? animal.nome : '(nenhum)');
-  console.log('Nível:', nivel ? nivel.numero : '(nenhum)');
-  console.log('Dispositivo móvel:', ehMobile);
-  console.log('Altura dos olhos:', camera.getAttribute('position').y, 'm');
-});
-
-cena.addEventListener('enter-vr', function () {
-  console.log('Entrou no modo VR.');
-});
-
-cena.addEventListener('exit-vr', function () {
-  console.log('Saiu do modo VR.');
-});

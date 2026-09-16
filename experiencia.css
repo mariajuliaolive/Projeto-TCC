@@ -1,4 +1,19 @@
-/* Remove margens padrão do navegador e evita barras de rolagem */
+/* =========================================================
+   HUD DA EXPERIÊNCIA
+   Camada HTML desenhada por cima da cena 3D.
+   ========================================================= */
+
+:root {
+  --hud-fundo:      rgba(14, 18, 25, 0.92);
+  --hud-fundo-leve: rgba(14, 18, 25, 0.78);
+  --hud-borda:      rgba(255, 255, 255, 0.10);
+  --hud-texto:      #ECF1F8;
+  --hud-suave:      #9FADC0;
+  --hud-verde:      #4ADE80;
+  --hud-ciano:      #3ED0C0;
+  --hud-raio:       10px;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -9,73 +24,495 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: Arial, Helvetica, sans-serif;
+  background: #0C1016;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  color: var(--hud-texto);
 }
 
-/* Camada de interface 2D sobre a cena 3D */
-#interface {
+/* ---------------------------------------------------------
+   A camada inteira deixa o mouse passar para a cena 3D.
+   Só os controles reativam o clique (pointer-events: auto).
+   --------------------------------------------------------- */
+#hud {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+#hud button,
+#hud a {
+  pointer-events: auto;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* =========================================================
+   BARRA SUPERIOR
+   ========================================================= */
+.hud-topo {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  z-index: 10;            /* fica na frente da cena */
-  pointer-events: none;   /* deixa o mouse "atravessar" até a cena 3D */
-  padding: 12px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background: var(--hud-fundo);
+  border-bottom: 1px solid var(--hud-borda);
 }
 
-#aviso {
-  display: inline-block;
-  background-color: rgba(0, 0, 0, 0.55);
-  color: #ffffff;
+.hud-topo__lado--dir {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+}
+
+.hud-marca {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hud-fobia {
   font-size: 13px;
-  line-height: 1.4;
-  padding: 8px 12px;
-  border-radius: 6px;
-  max-width: 420px;
+  color: var(--hud-suave);
+  margin-top: 2px;
 }
 
-/* Link de retorno para a pagina inicial */
-#voltar {
-  display: inline-block;
-  pointer-events: auto;   /* reativa o clique nesta camada */
-  background-color: rgba(0, 0, 0, 0.55);
-  color: #ffffff;
+/* ---------- centro: nível + trilha ---------- */
+.hud-topo__centro {
+  text-align: center;
+}
+
+.hud-nivel {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.hud-trilha {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  list-style: none;
+  margin-top: 8px;
+}
+
+.hud-trilha__passo {
+  display: block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #3A4149;
+  flex-shrink: 0;
+}
+
+/* traço entre as bolinhas */
+.hud-trilha__passo + .hud-trilha__passo {
+  margin-left: 16px;
+  position: relative;
+}
+
+.hud-trilha__passo + .hud-trilha__passo::before {
+  content: "";
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  width: 16px;
+  height: 2px;
+  transform: translateY(-50%);
+  background: #3A4149;
+}
+
+.hud-trilha__passo--feito {
+  background: var(--hud-verde);
+}
+
+.hud-trilha__passo--feito + .hud-trilha__passo--feito::before {
+  background: var(--hud-verde);
+}
+
+/* ---------- direita: tempo + sair ---------- */
+.hud-tempo {
+  text-align: right;
+}
+
+.hud-tempo__rotulo {
+  font-size: 11px;
+  color: var(--hud-suave);
+}
+
+.hud-tempo__valor {
+  font-size: 19px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;  /* dígitos de largura igual */
+  line-height: 1.2;
+}
+
+.hud-sair {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-left: 1px solid var(--hud-borda);
+  color: var(--hud-texto);
   text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+
+.hud-sair:hover {
+  color: var(--hud-ciano);
+}
+
+.hud-sair svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* =========================================================
+   CAIXAS FLUTUANTES
+   ========================================================= */
+.hud-caixa {
+  position: absolute;
+  background: var(--hud-fundo-leve);
+  border: 1px solid var(--hud-borda);
+  border-radius: var(--hud-raio);
+  padding: 16px 18px;
+  backdrop-filter: blur(8px);
+}
+
+.hud-caixa__titulo {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.hud-instrucoes {
+  top: 96px;
+  right: 20px;
+  width: 230px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #DCE4EF;
+}
+
+.hud-ajuda {
+  top: 96px;
+  left: 20px;
+  width: 250px;
   font-size: 13px;
-  padding: 8px 12px;
+  line-height: 1.55;
+  color: #DCE4EF;
+}
+
+.hud-ajuda__aviso {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--hud-borda);
+  font-size: 11.5px;
+  color: var(--hud-suave);
+}
+
+/* =========================================================
+   PROGRESSO
+   ========================================================= */
+.hud-progresso {
+  left: 20px;
+  bottom: 20px;
+  width: 290px;
+}
+
+.hud-medidas {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.hud-medida {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 13px;
+}
+
+.hud-medida__icone {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--hud-suave);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hud-medida__nome {
+  color: #D3DBE6;
+}
+
+.hud-medida__valor {
+  font-weight: 600;
+  color: var(--hud-verde);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-medida__valor--vazio {
+  color: var(--hud-suave);
+}
+
+.hud-medida__botao {
+  background: transparent;
+  border: 1px dashed rgba(74, 222, 128, 0.5);
   border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 12.5px;
+  color: var(--hud-verde);
+  transition: background-color 0.2s ease;
+}
+
+.hud-medida__botao:hover {
+  background: rgba(74, 222, 128, 0.12);
+}
+
+/* a nota fica na 3ª coluna, abaixo do valor */
+.hud-medida__nota {
+  grid-column: 2 / 4;
+  font-size: 11px;
+  color: #6F7C8D;
+}
+
+/* ---------- escala 0 a 10 ---------- */
+.hud-escala {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--hud-borda);
+}
+
+.hud-escala__pergunta {
+  font-size: 12.5px;
+  color: #D3DBE6;
   margin-bottom: 8px;
 }
 
-#voltar:hover {
-  background-color: rgba(0, 0, 0, 0.8);
+.hud-escala__botoes {
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  gap: 3px;
 }
 
-/* Resumo do que foi selecionado em selecao.html */
-#selecaoInfo {
-  display: inline-block;
-  background-color: rgba(0, 0, 0, 0.55);
-  color: #ffffff;
-  font-size: 13px;
-  line-height: 1.5;
-  padding: 8px 12px;
-  border-radius: 6px;
-  margin-bottom: 8px;
+.hud-escala__botao {
+  padding: 5px 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--hud-borda);
+  border-radius: 5px;
+  color: var(--hud-suave);
+  font-size: 11px;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-#selecaoInfo a {
-  pointer-events: auto;
-  color: #3ED0C0;
+.hud-escala__botao:hover {
+  background: rgba(62, 208, 192, 0.18);
+  color: var(--hud-texto);
 }
 
-/* Dica de controles, embaixo do resumo */
-#ajuda {
-  display: inline-block;
-  background-color: rgba(0, 0, 0, 0.45);
-  color: #C9D4E4;
-  font-size: 12px;
-  line-height: 1.5;
-  padding: 6px 12px;
-  border-radius: 6px;
-  max-width: 320px;
+.hud-escala__botao[aria-pressed="true"] {
+  background: var(--hud-verde);
+  border-color: var(--hud-verde);
+  color: #0C1016;
+  font-weight: 700;
+}
+
+.hud-escala__legenda {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: #6F7C8D;
+}
+
+/* =========================================================
+   AÇÕES (centro inferior)
+   ========================================================= */
+.hud-acoes {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+
+.hud-acao {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  width: 78px;
+  padding: 10px 6px;
+  background: var(--hud-fundo-leve);
+  border: 1px solid var(--hud-borda);
+  border-radius: var(--hud-raio);
+  color: var(--hud-texto);
+  font-size: 11px;
+  backdrop-filter: blur(8px);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.hud-acao:hover {
+  background: rgba(30, 38, 50, 0.9);
+  border-color: rgba(62, 208, 192, 0.45);
+}
+
+.hud-acao svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* som desligado */
+.hud-acao[aria-pressed="false"] {
+  color: var(--hud-suave);
+}
+
+/* =========================================================
+   PRÓXIMO NÍVEL
+   ========================================================= */
+.hud-proximo {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 22px;
+  background: var(--hud-fundo);
+  border: 1px solid var(--hud-borda);
+  border-radius: var(--hud-raio);
+  color: var(--hud-texto);
+  text-decoration: none;
+  font-size: 14.5px;
+  font-weight: 600;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.hud-proximo:hover {
+  background: rgba(62, 208, 192, 0.16);
+  border-color: var(--hud-ciano);
+}
+
+.hud-proximo svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* último nível: sem destino */
+.hud-proximo--fim {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.hud-proximo--fim:hover {
+  background: var(--hud-fundo);
+  border-color: var(--hud-borda);
+}
+
+/* =========================================================
+   TELAS PEQUENAS
+   Em celular sobra pouco espaço: mantemos o essencial e
+   encolhemos ou escondemos o resto.
+   ========================================================= */
+@media (max-width: 900px) {
+  .hud-instrucoes {
+    top: auto;
+    bottom: 96px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    font-size: 12.5px;
+  }
+
+  .hud-progresso {
+    display: none;   /* reaparece ao tocar em "Ajuda" */
+  }
+
+  .hud-ajuda {
+    top: 84px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+
+  .hud-topo {
+    grid-template-columns: 1fr auto;
+    row-gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .hud-topo__centro {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+
+  .hud-marca { font-size: 13px; }
+  .hud-tempo__valor { font-size: 16px; }
+
+  .hud-acoes {
+    bottom: 14px;
+    gap: 8px;
+  }
+
+  .hud-acao {
+    width: 64px;
+    font-size: 10px;
+    padding: 8px 4px;
+  }
+
+  .hud-proximo {
+    right: 12px;
+    bottom: 68px;
+    padding: 11px 16px;
+    font-size: 13px;
+  }
+}
+
+/* =========================================================
+   BOTÃO VR DO A-FRAME
+   Ele nasce no canto inferior direito, exatamente onde fica o
+   "Próximo nível". Subimos o botão VR para os dois conviverem.
+   ========================================================= */
+.a-enter-vr,
+.a-enter-ar {
+  bottom: 96px !important;
+  right: 20px !important;
+}
+
+@media (max-width: 900px) {
+  .a-enter-vr,
+  .a-enter-ar {
+    bottom: 140px !important;
+    right: 12px !important;
+  }
 }
