@@ -387,10 +387,13 @@ html, body {
   stroke-linejoin: round;
 }
 
-/* som desligado */
+/* som desligado: risco no lugar da onda */
 .hud-acao[aria-pressed="false"] {
   color: var(--hud-suave);
 }
+
+.hud-acao[aria-pressed="false"] .onda-som { display: none; }
+.hud-acao[aria-pressed="true"]  .risco-som { display: none; }
 
 /* =========================================================
    PRÓXIMO NÍVEL

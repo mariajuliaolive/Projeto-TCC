@@ -173,6 +173,44 @@ O sistema em si **nao coleta** frequencia cardiaca. A linha existe no HUD
 mostrando a ausencia de sensor. A coleta efetiva demandaria, alem do
 hardware adequado, aprovacao em Comite de Etica em Pesquisa.
 
+## Audio
+
+Dois sons, com papeis diferentes:
+
+- **ambiente** (`assets/sounds/ambiente.wav`) — o rumor de fundo do
+  comodo. Nao tem posicao: vem de todos os lados. Volume baixo.
+- **animal** (`assets/sounds/<id>.wav`) — posicional, preso a camada da
+  distancia. O navegador calcula o volume pela posicao, entao a
+  progressao dos niveis aparece tambem no som, sem conta nenhuma no
+  codigo:
+
+  | nivel | cobra    | ganho | barata   | ganho |
+  |-------|----------|-------|----------|-------|
+  | 1     | 7,00 m   | 0,14  | 3,00 m   | 0,33  |
+  | 2     | 4,39 m   | 0,23  | 2,19 m   | 0,46  |
+  | 4     | 2,36 m   | 0,42  | 1,56 m   | 0,64  |
+  | 5     | 1,20 m   | 0,83  | 1,20 m   | 0,83  |
+
+Cada arquivo tem o som no comeco e silencio no resto. Tocando em laco, o
+resultado e um som intermitente com pausas naturais, sem codigo para
+controlar o intervalo.
+
+### O botao "Som" e obrigatorio
+
+Navegadores proibem tocar audio antes de a pessoa interagir com a pagina.
+Quem chega a experiencia veio de outra pagina, e o clique anterior nao
+conta. Por isso o som comeca desligado e o botao e a permissao. A escolha
+fica em `sessionStorage`, entao trocar de nivel nao exige reativar; a
+preferencia some ao fechar a aba.
+
+### Sons provisorios
+
+Os arquivos atuais foram **sintetizados** por `ferramentas/gerar-sons.py`,
+para permitir avaliar volume, espacializacao e ritmo antes de existirem os
+sons definitivos. Para trocar por sons reais (Freesound.org, por exemplo,
+atento a licenca), basta substituir o `.wav` mantendo o nome. Nenhum
+codigo muda.
+
 ## Realidade Virtual (WebXR)
 
 A pagina detecta o suporte a WebXR e informa na barra superior. Quando ha

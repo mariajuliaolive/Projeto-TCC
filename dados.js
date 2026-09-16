@@ -19,6 +19,10 @@
                  cozinha, sótão, lago) ficam para uma etapa posterior
    icone       → emoji exibido nos cards
    modelo      → caminho do arquivo 3D dentro de assets/models/
+   som         → caminho do som do animal dentro de assets/sounds/.
+                 O arquivo tem o som no começo e silêncio no resto:
+                 tocando em laço, o som sai intermitente sem precisar
+                 de código para controlar a pausa
    tamanhoReal → tamanho do animal na cena, EM METROS. O código usa
                  este número para redimensionar qualquer modelo 3D,
                  seja qual for a escala do arquivo
@@ -56,6 +60,7 @@ const ANIMAIS = [
     icone: '🐍',
     inicial: 'C',
     modelo: 'assets/models/cobra.glb',
+    som: 'assets/sounds/cobra.wav',
     animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: 'Jump' },
     distanciaLonge: 7.0,
     distanciaPerto: 1.2,
@@ -71,6 +76,7 @@ const ANIMAIS = [
     icone: '🐀',
     inicial: 'R',
     modelo: 'assets/models/rato.glb',
+    som: 'assets/sounds/rato.wav',
     animacoes: null,
     distanciaLonge: 5.5,
     distanciaPerto: 1.2,
@@ -86,6 +92,7 @@ const ANIMAIS = [
     icone: '🪳',
     inicial: 'B',
     modelo: 'assets/models/barata.glb',
+    som: 'assets/sounds/barata.wav',
     animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: 'Jump' },
     distanciaLonge: 3.0,
     distanciaPerto: 1.2,
@@ -101,6 +108,7 @@ const ANIMAIS = [
     icone: '🕷️',
     inicial: 'A',
     modelo: 'assets/models/aranha.glb',
+    som: 'assets/sounds/aranha.wav',
     animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: 'Jump' },
     distanciaLonge: 4.0,
     distanciaPerto: 1.2,
@@ -116,6 +124,7 @@ const ANIMAIS = [
     icone: '🐸',
     inicial: 'S',
     modelo: 'assets/models/sapo.glb',
+    som: 'assets/sounds/sapo.wav',
     animacoes: { parado: 'Idle', movendo: 'Jump', reagindo: 'Jump' },
     distanciaLonge: 4.5,
     distanciaPerto: 1.2,
