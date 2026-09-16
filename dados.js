@@ -28,6 +28,19 @@
    tamanhoReal → tamanho do animal na cena, EM METROS. O código usa
                  este número para redimensionar qualquer modelo 3D,
                  seja qual for a escala do arquivo
+   escalaVisual → quantas vezes o animal é mostrado maior que o
+                 tamanho real.
+
+                 Existe porque tamanho real e estímulo perceptível
+                 são coisas diferentes. Uma barata de 5 cm a 3
+                 metros ocupa 5 pixels na tela: fisicamente
+                 correto e visualmente inútil. Mostrada 4,5 vezes
+                 maior, ela vira um estímulo de verdade.
+
+                 O tamanho real fica registrado acima, separado,
+                 para o TCC poder declarar os dois números: o do
+                 animal e o da apresentação.
+
    medida      → a qual dimensão do modelo o tamanhoReal se refere:
                  'maior' (o normal), 'altura', 'largura' ou
                  'profundidade'. Existe porque a pose do modelo nem
@@ -71,9 +84,10 @@ const ANIMAIS = [
     modelo: 'assets/models/cobra.glb',
     som: 'assets/sounds/cobra.wav',
     animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: 'Jump' },
-    distanciaLonge: 7.0,
-    distanciaPerto: 1.2,
+    distanciaLonge: 5.0,
+    distanciaPerto: 1.0,
     tamanhoReal: 0.5,
+    escalaVisual: 1.9,
     medida: 'altura',
     rotacao: '0 0 0'
   },
@@ -88,9 +102,10 @@ const ANIMAIS = [
     modelo: 'assets/models/rato.glb',
     som: 'assets/sounds/rato.wav',
     animacoes: null,
-    distanciaLonge: 5.5,
-    distanciaPerto: 1.2,
+    distanciaLonge: 3.2,
+    distanciaPerto: 0.9,
     tamanhoReal: 0.25,
+    escalaVisual: 2.8,
     medida: 'maior',
     rotacao: '0 0 0'
   },
@@ -105,9 +120,10 @@ const ANIMAIS = [
     modelo: 'assets/models/barata.glb',
     som: 'assets/sounds/barata.wav',
     animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: null },
-    distanciaLonge: 3.0,
-    distanciaPerto: 1.2,
+    distanciaLonge: 1.9,
+    distanciaPerto: 0.75,
     tamanhoReal: 0.05,
+    escalaVisual: 4.5,
     medida: 'maior',
     rotacao: '0 0 0'
   },
@@ -122,9 +138,10 @@ const ANIMAIS = [
     modelo: 'assets/models/aranha.glb',
     som: 'assets/sounds/aranha.wav',
     animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: 'Jump' },
-    distanciaLonge: 4.0,
-    distanciaPerto: 1.2,
+    distanciaLonge: 2.6,
+    distanciaPerto: 0.85,
     tamanhoReal: 0.08,
+    escalaVisual: 3.6,
     medida: 'maior',
     rotacao: '0 0 0'
   },
@@ -139,9 +156,10 @@ const ANIMAIS = [
     modelo: 'assets/models/sapo.glb',
     som: 'assets/sounds/sapo.wav',
     animacoes: { parado: 'Idle', movendo: 'Jump', reagindo: 'Jump' },
-    distanciaLonge: 4.5,
-    distanciaPerto: 1.2,
+    distanciaLonge: 2.6,
+    distanciaPerto: 0.85,
     tamanhoReal: 0.10,
+    escalaVisual: 3.0,
     medida: 'maior',
     rotacao: '0 0 0'
   }
@@ -238,6 +256,16 @@ const NIVEIS = [
 function distanciaDoNivel(animal, nivel) {
   const intervalo = animal.distanciaLonge - animal.distanciaPerto;
   return animal.distanciaPerto + intervalo * nivel.proporcao;
+}
+
+/* ---------------------------------------------------------
+   TAMANHO COM QUE O ANIMAL É MOSTRADO
+
+   Separado do tamanho real de propósito: o real descreve o
+   animal, este descreve a apresentação.
+   --------------------------------------------------------- */
+function tamanhoApresentado(animal) {
+  return animal.tamanhoReal * (animal.escalaVisual || 1);
 }
 
 /* ---------------------------------------------------------

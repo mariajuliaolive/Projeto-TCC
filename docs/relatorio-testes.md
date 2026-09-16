@@ -77,13 +77,13 @@ O tamanho aplicado corresponde ao declarado em `dados.js` em todas as
 combinações. As variações de 1 a 2 mm vêm das animações: o modelo muda de
 pose durante a medição.
 
-| Animal | Tamanho declarado | Tamanho medido | N1 | N2 | N3 | N4 | N5 |
-|---|---|---|---|---|---|---|---|
-| Cobra | 0,50 m | 0,500 m | 7,00 | 4,39 | 4,39 | 2,36 | 1,20 |
-| Rato | 0,25 m | 0,247–0,250 m | 5,50 | 3,57 | 3,57 | 2,06 | 1,20 |
-| Barata | 0,05 m | 0,050 m | 3,00 | 2,19 | 2,19 | 1,56 | 1,20 |
-| Aranha | 0,08 m | 0,080–0,082 m | 4,00 | 2,74 | 2,74 | 1,76 | 1,20 |
-| Sapo | 0,10 m | 0,100–0,102 m | 4,50 | 3,01 | 3,01 | 1,86 | 1,20 |
+| Animal | Real | Escala | Mostrado | N1 | N2 | N3 | N4 | N5 |
+|---|---|---|---|---|---|---|---|---|
+| Cobra | 0,50 m | 1,9x | 0,950 m | 5,00 | 3,20 | 3,20 | 1,80 | 1,00 |
+| Rato | 0,25 m | 2,8x | 0,679–0,700 m | 3,20 | 2,17 | 2,17 | 1,36 | 0,90 |
+| Barata | 0,05 m | 4,5x | 0,225–0,235 m | 1,90 | 1,38 | 1,38 | 0,98 | 0,75 |
+| Aranha | 0,08 m | 3,6x | 0,288–0,297 m | 2,60 | 1,81 | 1,81 | 1,20 | 0,85 |
+| Sapo | 0,10 m | 3,0x | 0,300–0,326 m | 2,60 | 1,81 | 1,81 | 1,20 | 0,85 |
 
 Distâncias em metros. O nível 3 repete a distância do nível 2 por
 definição: nele muda o movimento, não a proximidade.

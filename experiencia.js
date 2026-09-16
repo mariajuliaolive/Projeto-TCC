@@ -111,6 +111,11 @@ function iniciarExperiencia() {
   const distancia = distanciaDoNivel(animal, nivel);
   const quantidade = nivel.quantidade || 1;
 
+  /* O tamanho com que o animal aparece não é o tamanho real: é o
+     real multiplicado pela escala de apresentação, declarada em
+     dados.js. Sem isso, os animais pequenos ficam invisíveis. */
+  const tamanho = tamanhoApresentado(animal);
+
   /* Sorteio com semente: o mesmo nível monta sempre igual.
      Sem isso, dois participantes veriam disposições diferentes
      e a comparação entre eles perderia sentido. */
@@ -124,7 +129,7 @@ function iniciarExperiencia() {
 
   function calcularPosicoes() {
     const sorteia = sorteador(nivel.numero * 7919 + animal.id.length * 131);
-    const separacao = Math.max(animal.tamanhoReal * 2.2, 0.3);
+    const separacao = Math.max(tamanho * 2.2, 0.35);
     const posicoes = [{ x: 0, z: -distancia }];
 
     for (let i = 1; i < quantidade; i++) {
@@ -133,13 +138,17 @@ function iniciarExperiencia() {
       /* tenta algumas posições e fica com a primeira que não
          encosta em nenhuma das já escolhidas */
       for (let tentativa = 0; tentativa < 40; tentativa++) {
-        const angulo = sorteia(-42, 42) * Math.PI / 180;
-        const raio = distancia * sorteia(0.55, 1.45);
+        const angulo = sorteia(-44, 44) * Math.PI / 180;
+
+        /* o alcance cresce com a quantidade: quinze animais não
+           cabem no mesmo espaço que três */
+        const folga = separacao * Math.sqrt(quantidade);
+        const raio = sorteia(distancia * 0.7, distancia * 1.4 + folga);
 
         const x = Math.sin(angulo) * raio;
         const z = -Math.cos(angulo) * raio;
 
-        if (Math.abs(x) > limites.x || z < limites.zMin || z > -0.8) {
+        if (Math.abs(x) > limites.x || z < limites.zMin || z > -0.55) {
           continue;
         }
 
@@ -182,7 +191,7 @@ function iniciarExperiencia() {
 
   let jaRegistrouMedida = false;
 
-  function ajustarModelo(elemento, tamanhoReal) {
+  function ajustarModelo(elemento, tamanhoAlvo) {
     const objeto = elemento.getObject3D('mesh');
     if (!objeto) {
       return;
@@ -197,7 +206,7 @@ function iniciarExperiencia() {
       return;
     }
 
-    const fator = tamanhoReal / referencia;
+    const fator = tamanhoAlvo / referencia;
     elemento.setAttribute('scale', `${fator} ${fator} ${fator}`);
 
     const baseY = caixa.min.y * fator;
@@ -241,7 +250,7 @@ function iniciarExperiencia() {
       giro.setAttribute('animation__respirar', {
         property: 'position',
         from: '0 0 0',
-        to: '0 ' + (animal.tamanhoReal * 0.04) + ' 0',
+        to: '0 ' + (tamanho * 0.04) + ' 0',
         dir: 'alternate',
         loop: true,
         dur: 2400,
@@ -312,10 +321,10 @@ function iniciarExperiencia() {
     apoio.classList.add('animalApoio');
     apoio.setAttribute('color', '#3A3F4B');
     apoio.setAttribute('opacity', 0.95);
-    apoio.setAttribute('width', animal.tamanhoReal);
-    apoio.setAttribute('height', animal.tamanhoReal * 0.4);
-    apoio.setAttribute('depth', animal.tamanhoReal * 0.4);
-    apoio.setAttribute('position', '0 ' + (animal.tamanhoReal * 0.2) + ' 0');
+    apoio.setAttribute('width', tamanho);
+    apoio.setAttribute('height', tamanho * 0.4);
+    apoio.setAttribute('depth', tamanho * 0.4);
+    apoio.setAttribute('position', '0 ' + (tamanho * 0.2) + ' 0');
 
     reacao.appendChild(modelo);
     reacao.appendChild(apoio);
@@ -330,7 +339,7 @@ function iniciarExperiencia() {
     }
 
     modelo.addEventListener('model-loaded', function () {
-      ajustarModelo(modelo, animal.tamanhoReal);
+      ajustarModelo(modelo, tamanho);
       apoio.setAttribute('visible', false);
       aplicarMovimentoDoCorpo(giro, indice);
     });
@@ -390,7 +399,7 @@ function iniciarExperiencia() {
      Um som só, na posição do animal principal. O navegador
      calcula o volume pela distância, então a progressão dos
      níveis também se ouve. */
-  somAnimal.setAttribute('position', '0 ' + (animal.tamanhoReal * 0.5) + ' ' + (-distancia));
+  somAnimal.setAttribute('position', '0 ' + (tamanho * 0.5) + ' ' + (-distancia));
 
   if (animal.som) {
     somAnimal.setAttribute('sound', 'src', 'url(' + animal.som + ')');
@@ -403,12 +412,16 @@ function iniciarExperiencia() {
      Sem essa inclinação, um animal pequeno a 2 metros fica
      abaixo do campo de visão e simplesmente não aparece.
 
+     O valor subiu de 24 para 28 graus quando os animais passaram
+     a chegar mais perto: a 75 centímetros, o ângulo até o chão é
+     mais fechado.
+
      Escrever rotation="-18 0 0" no HTML NÃO funciona: o
      componente look-controls recalcula a rotação da câmera a
      cada quadro, a partir de dois objetos internos seus.
      Para inclinar de verdade, escrevemos no objeto que ele lê.
      ========================================================= */
-  const INCLINACAO_GRAUS = -24;
+  const INCLINACAO_GRAUS = -28;
 
   function inclinarCamera(graus) {
     const controles = camera.components['look-controls'];
