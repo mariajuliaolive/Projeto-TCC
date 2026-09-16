@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Teste de sensor cardíaco | Diagnóstico</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%234ADE80' d='M12 20s-7-4.6-7-9.3A4 4 0 0 1 12 8a4 4 0 0 1 7-2.7c0 0 0 .9 0 1.4C19 15.4 12 20 12 20z'/></svg>" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0B1120;
+    color: #E8EDF7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.6;
+    padding: 24px 20px 60px;
+  }
+
+  main { max-width: 640px; margin: 0 auto; }
+
+  h1 { font-size: 1.5rem; margin-bottom: 6px; }
+
+  .sub { color: #9AA9C4; font-size: 0.9rem; margin-bottom: 26px; }
+
+  .caixa {
+    background: #121C2E;
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+
+  h2 { font-size: 1rem; margin-bottom: 10px; }
+
+  p.dica { color: #9AA9C4; font-size: 0.87rem; margin-bottom: 14px; }
+
+  button {
+    font: inherit;
+    font-weight: 600;
+    padding: 12px 20px;
+    border: 0;
+    border-radius: 9px;
+    background-image: linear-gradient(135deg, #5B8DEF, #3ED0C0);
+    color: #06121F;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .bpm {
+    font-size: 3.4rem;
+    font-weight: 700;
+    color: #4ADE80;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    padding: 10px 0;
+  }
+
+  #registro {
+    background: #0A0E16;
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 10px;
+    padding: 14px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 120px;
+  }
+
+  .ok   { color: #4ADE80; }
+  .erro { color: #F87171; }
+  .info { color: #9AA9C4; }
+  .destaque { color: #3ED0C0; }
+</style>
+</head>
+<body>
+<main>
+
+  <h1>Teste de sensor cardíaco</h1>
+  <p class="sub">
+    Descobre se um sensor Bluetooth publica o serviço padrão de frequência
+    cardíaca, que é o que a Web Bluetooth consegue ler.
+  </p>
+
+  <div class="caixa">
+    <h2>1. Sensores que anunciam o serviço padrão</h2>
+    <p class="dica">
+      Mostra só os aparelhos que já se apresentam como sensor cardíaco.
+      É o caso das cintas torácicas. Se o seu relógio não aparecer na
+      lista, ele não anuncia o serviço — vá para o teste 2.
+    </p>
+    <button id="btnPadrao">Procurar sensores cardíacos</button>
+  </div>
+
+  <div class="caixa">
+    <h2>2. Qualquer aparelho Bluetooth</h2>
+    <p class="dica">
+      Lista tudo que estiver por perto. Escolha o seu relógio e o teste
+      verifica, já conectado, se ele tem o serviço mesmo sem anunciá-lo.
+    </p>
+    <button id="btnTodos">Listar todos os aparelhos</button>
+  </div>
+
+  <div class="caixa">
+    <h2>Leitura</h2>
+    <div class="bpm" id="bpm">—</div>
+    <div id="registro"><span class="info">Aguardando…</span></div>
+  </div>
+
+</main>
+
+<script>
+const registro = document.querySelector('#registro');
+const mostradorBpm = document.querySelector('#bpm');
+const btnPadrao = document.querySelector('#btnPadrao');
+const btnTodos = document.querySelector('#btnTodos');
+
+function anotar(texto, classe) {
+  const linha = document.createElement('div');
+  linha.className = classe || 'info';
+  linha.textContent = texto;
+  registro.appendChild(linha);
+}
+
+function limpar() {
+  registro.innerHTML = '';
+}
+
+/* ---------------------------------------------------------
+   Verificação inicial: este navegador tem Web Bluetooth?
+   --------------------------------------------------------- */
+if (!navigator.bluetooth) {
+  limpar();
+  anotar('Este navegador não tem Web Bluetooth.', 'erro');
+  anotar('', 'info');
+  anotar('Funciona em: Chrome e Edge no Windows, Mac, Linux e Android.', 'info');
+  anotar('NÃO funciona em: Safari, Firefox e qualquer navegador no iPhone.', 'info');
+  btnPadrao.disabled = true;
+  btnTodos.disabled = true;
+}
+
+/* ---------------------------------------------------------
+   Lê o valor de frequência cardíaca.
+
+   O formato é definido pelo padrão Bluetooth: o primeiro byte
+   traz sinalizadores, e o bit 0 dele diz se o valor vem em
+   8 ou em 16 bits.
+   --------------------------------------------------------- */
+function lerBatimento(evento) {
+  const dados = evento.target.value;
+  const sinalizadores = dados.getUint8(0);
+  const formato16bits = sinalizadores & 0x01;
+  const bpm = formato16bits ? dados.getUint16(1, true) : dados.getUint8(1);
+
+  mostradorBpm.textContent = bpm;
+  anotar('leitura: ' + bpm + ' bpm', 'ok');
+}
+
+/* ---------------------------------------------------------
+   Conecta e tenta ler o serviço de frequência cardíaca.
+   --------------------------------------------------------- */
+async function conectar(dispositivo) {
+  anotar('aparelho escolhido: ' + (dispositivo.name || '(sem nome)'), 'destaque');
+  anotar('conectando…');
+
+  const servidor = await dispositivo.gatt.connect();
+  anotar('conectado.', 'ok');
+
+  dispositivo.addEventListener('gattserverdisconnected', function () {
+    anotar('aparelho desconectado.', 'erro');
+  });
+
+  let servico;
+  try {
+    servico = await servidor.getPrimaryService('heart_rate');
+  } catch (erro) {
+    anotar('', 'info');
+    anotar('RESULTADO: este aparelho NÃO tem o serviço padrão de', 'erro');
+    anotar('frequência cardíaca (0x180D).', 'erro');
+    anotar('', 'info');
+    anotar('Ele provavelmente usa um protocolo próprio, que só o', 'info');
+    anotar('aplicativo do fabricante entende. Não dá para ler pelo', 'info');
+    anotar('navegador. Uma cinta torácica resolveria.', 'info');
+    return;
+  }
+
+  anotar('serviço de frequência cardíaca encontrado!', 'ok');
+
+  const caracteristica = await servico.getCharacteristic('heart_rate_measurement');
+  await caracteristica.startNotifications();
+  caracteristica.addEventListener('characteristicvaluechanged', lerBatimento);
+
+  anotar('', 'info');
+  anotar('RESULTADO: FUNCIONA. Recebendo leituras abaixo.', 'ok');
+  anotar('Use o aparelho por alguns segundos para o sensor medir.', 'info');
+}
+
+function tratarErro(erro) {
+  if (erro.name === 'NotFoundError') {
+    anotar('nenhum aparelho escolhido (ou nenhum encontrado).', 'erro');
+  } else if (erro.name === 'SecurityError') {
+    anotar('bloqueado: a página precisa estar em HTTPS ou localhost.', 'erro');
+  } else {
+    anotar('erro: ' + erro.name + ' — ' + erro.message, 'erro');
+  }
+}
+
+btnPadrao.addEventListener('click', async function () {
+  limpar();
+  anotar('procurando aparelhos que anunciam o serviço padrão…');
+  try {
+    const dispositivo = await navigator.bluetooth.requestDevice({
+      filters: [{ services: ['heart_rate'] }]
+    });
+    await conectar(dispositivo);
+  } catch (erro) {
+    tratarErro(erro);
+  }
+});
+
+btnTodos.addEventListener('click', async function () {
+  limpar();
+  anotar('listando todos os aparelhos Bluetooth por perto…');
+  anotar('escolha o seu relógio na janela que abrir.', 'info');
+  try {
+    const dispositivo = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      // Só dá para acessar serviços declarados aqui.
+      optionalServices: ['heart_rate', 'battery_service', 'device_information']
+    });
+    await conectar(dispositivo);
+  } catch (erro) {
+    tratarErro(erro);
+  }
+});
+</script>
+</body>
+</html>

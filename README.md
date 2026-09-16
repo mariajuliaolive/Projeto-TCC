@@ -143,6 +143,21 @@ respiracao leve sempre, e um giro lento do corpo nos niveis de movimento.
 | rato.glb   | 0,31 MB | 776        | 512x512     | nenhuma                    |
 | barata.glb | ausente | -          | -           | -                          |
 
+## Ferramentas de diagnostico
+
+A pasta `ferramentas/` guarda paginas que ajudam no desenvolvimento, mas
+nao fazem parte do sistema. Elas ficam separadas de proposito: o que o
+participante usa e o que a pesquisadora usa tem publicos diferentes.
+
+- `ferramentas/teste-sensor.html` — verifica se um aparelho Bluetooth
+  publica o servico padrao de frequencia cardiaca (0x180D), que e o unico
+  que a Web Bluetooth consegue ler. Cintas toracicas costumam publicar;
+  relogios de entrada costumam usar protocolo proprio. Precisa de HTTPS
+  (ou localhost) e de Chrome ou Edge; nao funciona em iPhone.
+
+O sistema em si **nao coleta** frequencia cardiaca. A linha existe no HUD
+mostrando a ausencia de sensor.
+
 ## Realidade Virtual (WebXR)
 
 A pagina detecta o suporte a WebXR e informa na barra superior. Quando ha
