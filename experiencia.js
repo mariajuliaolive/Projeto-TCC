@@ -12,6 +12,8 @@ const animalEl = document.querySelector('#animal');
 const giroEl = document.querySelector('#animalGiro');
 const modeloEl = document.querySelector('#animalModelo');
 const apoioEl = document.querySelector('#animalApoio');
+const somAmbiente = document.querySelector('#somAmbiente');
+const somAnimal = document.querySelector('#somAnimal');
 
 /* ---------- interface dentro do óculos ---------- */
 const uiVR = document.querySelector('#uiVR');
@@ -39,6 +41,7 @@ const btnReiniciar = document.querySelector('#btnReiniciar');
 const btnProximo = document.querySelector('#btnProximo');
 const btnProximoTexto = document.querySelector('#btnProximoTexto');
 const hudVR = document.querySelector('#hudVR');
+const btnSomTexto = document.querySelector('#btnSomTexto');
 
 /* =========================================================
    1. LER A ESCOLHA QUE VEIO NA URL
@@ -193,6 +196,13 @@ function iniciarExperiencia() {
   });
 
   modeloEl.setAttribute('gltf-model', 'url(' + animal.modelo + ')');
+
+  /* ---------- som do animal ----------
+     Fica na camada da distância, então o volume acompanha o
+     nível sozinho: o navegador calcula pela posição. */
+  if (animal.som) {
+    somAnimal.setAttribute('sound', 'src', 'url(' + animal.som + ')');
+  }
 
   /* =========================================================
      7. MOVIMENTO DO CORPO INTEIRO
@@ -361,15 +371,118 @@ function iniciarExperiencia() {
   });
 
   /* ---------- Som ----------
-     Ainda não há áudio na cena; isso é a Etapa 13. O botão já
-     guarda o estado para quando houver. */
-  let somLigado = false;
+
+     Navegadores PROIBEM tocar áudio antes de a pessoa interagir
+     com a página. É uma proteção contra sites que tocam som
+     sozinhos. Como quem chega aqui veio de outra página, o
+     clique anterior não conta: precisa de um novo.
+
+     Por isso o som começa desligado e este botão é a permissão.
+     Ele não é um capricho de interface — é a única forma de o
+     áudio funcionar. */
+  /* A escolha fica guardada na aba do navegador. Sem isso, trocar
+     de nível abriria uma página nova com o som desligado, e a
+     pessoa teria que reativar a cada nível.
+
+     Usamos sessionStorage, e não localStorage, de propósito: a
+     preferência dura enquanto a aba estiver aberta e some ao
+     fechar. Cada sessão de uso começa do zero. */
+  const CHAVE_SOM = 'vr-exposicao:som';
+
+  function lerPreferencia() {
+    try {
+      return sessionStorage.getItem(CHAVE_SOM) === 'ligado';
+    } catch (erro) {
+      return false;   // navegação anônima pode bloquear o acesso
+    }
+  }
+
+  function guardarPreferencia(ligado) {
+    try {
+      sessionStorage.setItem(CHAVE_SOM, ligado ? 'ligado' : 'desligado');
+    } catch (erro) {
+      // sem espaço ou sem permissão: seguimos sem guardar
+    }
+  }
+
+  let somLigado = lerPreferencia();
+
+  /* O motor de áudio do navegador começa suspenso e precisa ser
+     retomado a partir de um gesto da pessoa. */
+  function retomarAudio() {
+    const contexto = AFRAME.THREE.AudioContext.getContext();
+    if (contexto && contexto.state === 'suspended') {
+      contexto.resume();
+    }
+  }
+
+  function aplicarSom() {
+    btnSom.setAttribute('aria-pressed', String(somLigado));
+    btnSomTexto.textContent = somLigado ? 'Som ligado' : 'Ativar som';
+
+    [somAmbiente, somAnimal].forEach(function (entidade) {
+      const componente = entidade.components.sound;
+
+      /* O componente pode existir sem estar pronto: o arquivo de
+         áudio ainda está baixando. Mexer nele nesse momento
+         quebra a página. Quando terminar, o evento "sound-loaded"
+         chama esta função de novo. */
+      if (!componente || !componente.pool) {
+        return;
+      }
+
+      if (somLigado) {
+        componente.playSound();
+      } else {
+        componente.pauseSound();
+      }
+    });
+  }
+
+  /* Cada som avisa quando terminou de carregar. */
+  [somAmbiente, somAnimal].forEach(function (entidade) {
+    entidade.addEventListener('sound-loaded', function () {
+      aplicarSom();
+    });
+  });
 
   btnSom.addEventListener('click', function () {
     somLigado = !somLigado;
-    btnSom.setAttribute('aria-pressed', String(somLigado));
-    console.log('Som:', somLigado ? 'ligado' : 'desligado', '(sem áudio ainda)');
+    if (somLigado) {
+      retomarAudio();
+    }
+    guardarPreferencia(somLigado);
+    aplicarSom();
+    console.log('Som:', somLigado ? 'ligado' : 'desligado');
   });
+
+  /* ---------- retomar o som numa página nova ----------
+     A pessoa já tinha ligado o som no nível anterior, mas esta é
+     outra página: o navegador exige um gesto NOVO. Tentamos
+     retomar de imediato e, se ainda estiver bloqueado, esperamos
+     o primeiro toque, clique ou tecla — o que vier primeiro. */
+  if (somLigado) {
+    retomarAudio();
+    aplicarSom();
+
+    const contexto = AFRAME.THREE.AudioContext.getContext();
+
+    if (contexto && contexto.state === 'suspended') {
+      const aoPrimeiroGesto = function () {
+        contexto.resume();
+        aplicarSom();
+        ['click', 'keydown', 'touchstart'].forEach(function (evento) {
+          window.removeEventListener(evento, aoPrimeiroGesto);
+        });
+      };
+
+      ['click', 'keydown', 'touchstart'].forEach(function (evento) {
+        window.addEventListener(evento, aoPrimeiroGesto);
+      });
+    }
+  } else {
+    aplicarSom();
+  }
 
   /* ---------- Reiniciar nível ---------- */
   btnReiniciar.addEventListener('click', function () {
@@ -491,6 +604,11 @@ function iniciarExperiencia() {
   /* ---------- entrar e sair do modo VR ---------- */
   cena.addEventListener('enter-vr', function () {
     uiVR.setAttribute('visible', true);
+
+    /* Entrar em VR exigiu um clique, então o áudio pode voltar. */
+    if (somLigado) {
+      retomarAudio();
+    }
 
     /* Sem controle de mão, a seleção é pelo olhar demorado.
        Se um controle aparecer, desligamos isso para a pessoa
