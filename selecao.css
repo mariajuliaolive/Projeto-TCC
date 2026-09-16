@@ -110,9 +110,8 @@
   border-radius: 50%;
   background-color: rgba(62, 208, 192, 0.12);
   border: 1px solid rgba(62, 208, 192, 0.3);
-  color: var(--verde);
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.4rem;
+  line-height: 1;
 }
 
 .opcao__input:checked + .opcao__conteudo .opcao__marca {

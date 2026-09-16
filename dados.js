@@ -11,12 +11,17 @@
 /* ---------------------------------------------------------
    OS CINCO ESTÍMULOS
 
-   id        → usado na URL (experiencia.html?animal=cobra)
-   nome      → o que aparece na tela
-   fobia     → nome técnico, para a documentação do TCC
-   ambiente  → cenário onde o animal vai aparecer (Etapa 3)
-   modelo    → caminho do arquivo 3D (ainda não existe; Etapa 4)
-   inicial   → letra exibida no marcador do card
+   id          → usado na URL (experiencia.html?animal=cobra)
+   nome        → o que aparece na tela
+   fobia       → nome técnico, para a documentação do TCC
+   ambiente    → cenário onde o animal vai aparecer (Etapa 3)
+   icone       → emoji exibido nos cards
+   modelo      → caminho do arquivo 3D dentro de assets/models/
+   tamanhoReal → maior dimensão do animal, EM METROS. O código usa
+                 este número para redimensionar qualquer modelo 3D
+                 ao tamanho correto, seja qual for a escala do arquivo
+   rotacao     → giro aplicado ao modelo para ele ficar de frente
+                 para quem observa. Ajuste depois de ver o modelo
    --------------------------------------------------------- */
 const ANIMAIS = [
   {
@@ -24,40 +29,55 @@ const ANIMAIS = [
     nome: 'Cobra',
     fobia: 'Ofidiofobia',
     ambiente: 'Jardim',
+    icone: '🐍',
+    inicial: 'C',
     modelo: 'assets/models/cobra.glb',
-    inicial: 'C'
+    tamanhoReal: 1.2,
+    rotacao: '0 0 0'
   },
   {
     id: 'rato',
     nome: 'Rato',
     fobia: 'Musofobia',
     ambiente: 'Porão',
+    icone: '🐀',
+    inicial: 'R',
     modelo: 'assets/models/rato.glb',
-    inicial: 'R'
+    tamanhoReal: 0.25,
+    rotacao: '0 0 0'
   },
   {
     id: 'barata',
     nome: 'Barata',
     fobia: 'Katsaridafobia',
     ambiente: 'Cozinha',
+    icone: '🪳',
+    inicial: 'B',
     modelo: 'assets/models/barata.glb',
-    inicial: 'B'
+    tamanhoReal: 0.05,
+    rotacao: '0 0 0'
   },
   {
     id: 'aranha',
     nome: 'Aranha',
     fobia: 'Aracnofobia',
     ambiente: 'Sótão',
+    icone: '🕷️',
+    inicial: 'A',
     modelo: 'assets/models/aranha.glb',
-    inicial: 'A'
+    tamanhoReal: 0.08,
+    rotacao: '0 0 0'
   },
   {
     id: 'sapo',
     nome: 'Sapo',
     fobia: 'Ranidafobia',
     ambiente: 'Lago',
+    icone: '🐸',
+    inicial: 'S',
     modelo: 'assets/models/sapo.glb',
-    inicial: 'S'
+    tamanhoReal: 0.10,
+    rotacao: '0 0 0'
   }
 ];
 

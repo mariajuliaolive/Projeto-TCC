@@ -67,6 +67,27 @@ experiencia.html?animal=aranha&nivel=4
 
 Os identificadores validos estao em `dados.js`.
 
+## Modelos 3D
+
+Os modelos vao em `assets/models/`, no formato `.glb`, com o nome do `id`
+do animal definido em `dados.js`:
+
+```
+assets/models/cobra.glb
+assets/models/rato.glb
+assets/models/barata.glb
+assets/models/aranha.glb
+assets/models/sapo.glb
+```
+
+Enquanto um arquivo nao existir, a cena mostra uma caixa provisoria com as
+dimensoes reais do animal, e o console avisa qual arquivo falta.
+
+Nao e preciso ajustar a escala do arquivo antes de usar: o codigo mede o
+modelo e o redimensiona para o `tamanhoReal` (em metros) informado em
+`dados.js`, alem de apoiar a base dele no chao. Se o animal aparecer de
+costas ou de lado, ajuste o campo `rotacao` do mesmo arquivo.
+
 ## Controles da cena
 
 | Dispositivo | Olhar          | Andar     | Selecionar            |

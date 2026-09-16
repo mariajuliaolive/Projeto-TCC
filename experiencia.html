@@ -45,19 +45,28 @@
     <a-cylinder position=" 6  1.5 -18" radius="0.3" height="3" color="#5C7A8A"></a-cylinder>
 
     <!-- ============================================================
-         OBJETO DE TESTE
-         A classe "clicavel" autoriza a mira a enxergar este objeto.
-         O script o move conforme o nível escolhido.
+         O ANIMAL
+
+         Três camadas, cada uma com uma responsabilidade:
+
+         #animal        onde ele está no mundo (a distância do nível)
+         #animalModelo  recebe o arquivo 3D, já redimensionado
+         #animalApoio   caixa provisória, do tamanho real do animal,
+                        usada enquanto não houver arquivo 3D
+
+         A classe "clicavel" autoriza a mira a enxergar o conjunto.
          ============================================================ -->
-    <a-box
-      id="cuboTeste"
-      class="clicavel"
-      position="0 1 -4"
-      width="1"
-      height="1"
-      depth="1"
-      color="#4C6EF5">
-    </a-box>
+    <a-entity id="animal" class="clicavel" position="0 0 -4">
+
+      <a-entity id="animalModelo"></a-entity>
+
+      <a-box
+        id="animalApoio"
+        color="#4C6EF5"
+        opacity="0.85">
+      </a-box>
+
+    </a-entity>
 
     <!-- ============================================================
          ILUMINAÇÃO

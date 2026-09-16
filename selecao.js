@@ -23,7 +23,7 @@ ANIMAIS.forEach(function (animal) {
   opcao.innerHTML = `
     <input class="opcao__input" type="radio" name="animal" value="${animal.id}" />
     <span class="opcao__conteudo">
-      <span class="opcao__marca" aria-hidden="true">${animal.inicial}</span>
+      <span class="opcao__marca" aria-hidden="true">${animal.icone}</span>
       <span class="opcao__nome">${animal.nome}</span>
       <span class="opcao__detalhe">Ambiente: ${animal.ambiente}</span>
     </span>
