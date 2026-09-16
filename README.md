@@ -109,6 +109,21 @@ modelo e o redimensiona para o `tamanhoReal` (em metros) informado em
 `dados.js`, alem de apoiar a base dele no chao. Se o animal aparecer de
 costas ou de lado, ajuste o campo `rotacao` do mesmo arquivo.
 
+O campo `medida` diz a qual dimensao o `tamanhoReal` se refere. O padrao
+`'maior'` serve para a maioria dos modelos; use `'altura'`, `'largura'`
+ou `'profundidade'` quando a pose do modelo nao acompanhar a forma do
+animal (a cobra, por exemplo, vem empinada).
+
+### Modelos em uso
+
+| arquivo    | tamanho | triangulos | textura     | animacoes                  |
+|------------|---------|------------|-------------|----------------------------|
+| cobra.glb  | 212 KB  | 1.618      | -           | Idle, Walk, Jump, Attack   |
+| aranha.glb | 438 KB  | 2.712      | -           | Idle, Walk, Jump, Attack, Death |
+| sapo.glb   | 574 KB  | 4.920      | -           | Idle, Jump, Attack, Death  |
+| rato.glb   | 5,03 MB | 776        | 2048x2048   | nenhuma                    |
+| barata.glb | ausente | -          | -           | -                          |
+
 ## Controles da cena
 
 | Dispositivo | Olhar          | Andar     | Selecionar            |

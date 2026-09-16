@@ -19,9 +19,14 @@
                  cozinha, sótão, lago) ficam para uma etapa posterior
    icone       → emoji exibido nos cards
    modelo      → caminho do arquivo 3D dentro de assets/models/
-   tamanhoReal → maior dimensão do animal, EM METROS. O código usa
-                 este número para redimensionar qualquer modelo 3D
-                 ao tamanho correto, seja qual for a escala do arquivo
+   tamanhoReal → tamanho do animal na cena, EM METROS. O código usa
+                 este número para redimensionar qualquer modelo 3D,
+                 seja qual for a escala do arquivo
+   medida      → a qual dimensão do modelo o tamanhoReal se refere:
+                 'maior' (o normal), 'altura', 'largura' ou
+                 'profundidade'. Existe porque a pose do modelo nem
+                 sempre acompanha a forma do animal: a cobra vem
+                 empinada, então a maior dimensão dela é a altura
    rotacao     → giro aplicado ao modelo para ele ficar de frente
                  para quem observa. Ajuste depois de ver o modelo
    distanciaLonge → distância do nível 1, em metros
@@ -43,7 +48,8 @@ const ANIMAIS = [
     modelo: 'assets/models/cobra.glb',
     distanciaLonge: 7.0,
     distanciaPerto: 1.2,
-    tamanhoReal: 1.2,
+    tamanhoReal: 0.5,
+    medida: 'altura',
     rotacao: '0 0 0'
   },
   {
@@ -57,6 +63,7 @@ const ANIMAIS = [
     distanciaLonge: 5.5,
     distanciaPerto: 1.2,
     tamanhoReal: 0.25,
+    medida: 'maior',
     rotacao: '0 0 0'
   },
   {
@@ -70,6 +77,7 @@ const ANIMAIS = [
     distanciaLonge: 3.0,
     distanciaPerto: 1.2,
     tamanhoReal: 0.05,
+    medida: 'maior',
     rotacao: '0 0 0'
   },
   {
@@ -83,6 +91,7 @@ const ANIMAIS = [
     distanciaLonge: 4.0,
     distanciaPerto: 1.2,
     tamanhoReal: 0.08,
+    medida: 'maior',
     rotacao: '0 0 0'
   },
   {
@@ -96,6 +105,7 @@ const ANIMAIS = [
     distanciaLonge: 4.5,
     distanciaPerto: 1.2,
     tamanhoReal: 0.10,
+    medida: 'maior',
     rotacao: '0 0 0'
   }
 ];

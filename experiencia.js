@@ -109,7 +109,20 @@ function iniciarExperiencia() {
 
      b) Origem em lugar qualquer: medimos onde fica a base e
         deslocamos para ela encostar no chão.
+
+     c) Pose imprevisível: a maior dimensão do modelo nem sempre
+        é a que o tamanhoReal descreve. A cobra vem empinada, e
+        escalar pela maior dimensão a deixaria com 1,2 m de
+        ALTURA. Por isso cada animal diz, em dados.js, a qual
+        dimensão o tamanho dele se refere.
      ========================================================= */
+  function dimensaoDeReferencia(medidas, medida) {
+    if (medida === 'altura')       return medidas.y;
+    if (medida === 'largura')      return medidas.x;
+    if (medida === 'profundidade') return medidas.z;
+    return Math.max(medidas.x, medidas.y, medidas.z);   // 'maior'
+  }
+
   function ajustarModelo(elemento, tamanhoReal) {
     const objeto = elemento.getObject3D('mesh');
     if (!objeto) {
@@ -120,12 +133,12 @@ function iniciarExperiencia() {
     const medidas = new AFRAME.THREE.Vector3();
     caixa.getSize(medidas);
 
-    const maiorLado = Math.max(medidas.x, medidas.y, medidas.z);
-    if (maiorLado === 0) {
+    const referencia = dimensaoDeReferencia(medidas, animal.medida);
+    if (referencia === 0) {
       return;
     }
 
-    const fator = tamanhoReal / maiorLado;
+    const fator = tamanhoReal / referencia;
     elemento.setAttribute('scale', `${fator} ${fator} ${fator}`);
 
     const baseY = caixa.min.y * fator;
@@ -133,7 +146,8 @@ function iniciarExperiencia() {
 
     console.log(
       `Modelo medido: ${medidas.x.toFixed(2)} x ${medidas.y.toFixed(2)} x ` +
-      `${medidas.z.toFixed(2)} unidades. Fator aplicado: ${fator.toFixed(4)}`
+      `${medidas.z.toFixed(2)} unidades (medida: ${animal.medida || 'maior'}). ` +
+      `Fator aplicado: ${fator.toFixed(4)}`
     );
   }
 
