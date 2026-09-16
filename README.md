@@ -151,6 +151,13 @@ A pasta `ferramentas/` guarda paginas que ajudam no desenvolvimento, mas
 nao fazem parte do sistema. Elas ficam separadas de proposito: o que o
 participante usa e o que a pesquisadora usa tem publicos diferentes.
 
+- `ferramentas/teste-sistema.html` — percorre as 25 combinacoes de animal
+  e nivel, verifica se cada uma carrega, se o modelo foi dimensionado e
+  apoiado corretamente, se o animal fica dentro do campo de visao, e mede
+  os quadros por segundo. Gera um relatorio em texto pronto para o TCC.
+  Vale rodar em cada aparelho que for usado nos testes com usuarios: os
+  numeros de desempenho sao do aparelho, nao do sistema.
+- `ferramentas/gerar-sons.py` — gera os sons provisorios.
 - `ferramentas/teste-sensor.html` — verifica se um aparelho Bluetooth
   publica o servico padrao de frequencia cardiaca (0x180D), que e o unico
   que a Web Bluetooth consegue ler. Cintas toracicas costumam publicar;

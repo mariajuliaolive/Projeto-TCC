@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Testes do sistema | Diagnóstico</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%234ADE80' d='M5 12l5 5L20 7' stroke='%234ADE80' stroke-width='2' fill='none'/></svg>" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0B1120; color: #E8EDF7; line-height: 1.55;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    padding: 20px 16px 60px;
+  }
+  main { max-width: 940px; margin: 0 auto; }
+  h1 { font-size: 1.45rem; margin-bottom: 4px; }
+  .sub { color: #9AA9C4; font-size: 0.88rem; margin-bottom: 22px; }
+  .caixa {
+    background: #121C2E; border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 12px; padding: 16px; margin-bottom: 14px;
+  }
+  h2 { font-size: 0.95rem; margin-bottom: 10px; }
+  button {
+    font: inherit; font-weight: 600; padding: 12px 20px; border: 0;
+    border-radius: 9px; cursor: pointer;
+    background-image: linear-gradient(135deg, #5B8DEF, #3ED0C0); color: #06121F;
+  }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.secundario {
+    background: transparent; border: 1px solid rgba(255,255,255,0.18); color: #E8EDF7;
+  }
+  .linha-botoes { display: flex; gap: 10px; flex-wrap: wrap; }
+  .barra { height: 6px; background: #0A0E16; border-radius: 3px; overflow: hidden; margin-top: 12px; }
+  .barra > div { height: 100%; width: 0; background: #4ADE80; transition: width 0.2s; }
+  .estado { font-size: 0.82rem; color: #9AA9C4; margin-top: 8px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  th { color: #9AA9C4; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .ok { color: #4ADE80; } .falha { color: #F87171; } .aviso { color: #FBBF24; }
+  .rolagem { overflow-x: auto; }
+
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 12.5px; }
+  dt { color: #9AA9C4; }
+  dd { word-break: break-word; }
+
+  #palco {
+    width: 100%; height: 300px; border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 10px; background: #000; display: block;
+  }
+  #relatorio {
+    width: 100%; min-height: 200px; margin-top: 10px; padding: 12px;
+    background: #0A0E16; color: #C7D2E0; border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 8px; font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 11.5px; white-space: pre; overflow: auto;
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <h1>Testes do sistema</h1>
+  <p class="sub">
+    Percorre todas as combinações de animal e nível, verifica se cada uma
+    carrega corretamente e mede o desempenho neste aparelho.
+  </p>
+
+  <div class="caixa">
+    <h2>Este aparelho</h2>
+    <dl id="aparelho"></dl>
+  </div>
+
+  <div class="caixa">
+    <div class="linha-botoes">
+      <button id="btnRodar">Executar testes</button>
+      <button id="btnRelatorio" class="secundario" disabled>Gerar relatório</button>
+    </div>
+    <div class="barra"><div id="progresso"></div></div>
+    <p class="estado" id="estado">Pronto para começar.</p>
+  </div>
+
+  <div class="caixa">
+    <h2>Cena em teste</h2>
+    <iframe id="palco" title="Cena em teste"></iframe>
+  </div>
+
+  <div class="caixa rolagem">
+    <h2>Resultados</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Animal</th><th>Nível</th><th>Modelo</th>
+          <th class="num">Tamanho</th><th class="num">Distância</th>
+          <th>Visível</th><th class="num">Quadros/s</th><th>Situação</th>
+        </tr>
+      </thead>
+      <tbody id="corpo"></tbody>
+    </table>
+  </div>
+
+  <div class="caixa">
+    <h2>Relatório</h2>
+    <p class="sub" style="margin-bottom:0">
+      Texto pronto para colar no TCC. Gere depois de executar os testes.
+    </p>
+    <pre id="relatorio">—</pre>
+  </div>
+
+</main>
+
+<script>
+/* =========================================================
+   Cada teste abre uma combinação dentro do <iframe>, espera a
+   cena carregar, mede e registra o resultado.
+
+   O iframe vem do mesmo endereço que esta página, então temos
+   acesso ao conteúdo dele. Isso não valeria para um site de
+   outro domínio — o navegador bloqueia por segurança.
+   ========================================================= */
+
+const palco = document.querySelector('#palco');
+const corpo = document.querySelector('#corpo');
+const estado = document.querySelector('#estado');
+const progresso = document.querySelector('#progresso');
+const btnRodar = document.querySelector('#btnRodar');
+const btnRelatorio = document.querySelector('#btnRelatorio');
+
+/* Estas listas espelham dados.js. Se um animal for acrescentado
+   lá, acrescente aqui também. */
+const ANIMAIS_TESTE = ['cobra', 'rato', 'barata', 'aranha', 'sapo'];
+const NIVEIS_TESTE = [1, 2, 3, 4, 5];
+
+const resultados = [];
+
+/* ---------------------------------------------------------
+   Informações do aparelho — o que descreve o contexto do teste
+   --------------------------------------------------------- */
+function descreverAparelho() {
+  const tela = `${screen.width} x ${screen.height}`;
+  const janela = `${window.innerWidth} x ${window.innerHeight}`;
+
+  let placa = 'não identificada';
+  try {
+    const gl = document.createElement('canvas').getContext('webgl');
+    const info = gl && gl.getExtension('WEBGL_debug_renderer_info');
+    if (info) { placa = gl.getParameter(info.UNMASKED_RENDERER_WEBGL); }
+  } catch (erro) { /* alguns navegadores escondem essa informação */ }
+
+  return {
+    'Navegador': navigator.userAgent,
+    'Tela': tela + ' pixels',
+    'Janela': janela + ' pixels',
+    'Densidade': window.devicePixelRatio + 'x',
+    'Placa de vídeo': placa,
+    'WebXR': navigator.xr ? 'disponível no navegador' : 'não disponível',
+    'Data': new Date().toLocaleString('pt-BR')
+  };
+}
+
+const aparelho = descreverAparelho();
+const listaAparelho = document.querySelector('#aparelho');
+aparelho['Área renderizada'] = palco.clientWidth + ' x ' + palco.clientHeight + ' pixels';
+Object.entries(aparelho).forEach(function ([chave, valor]) {
+  listaAparelho.insertAdjacentHTML('beforeend',
+    `<dt>${chave}</dt><dd>${valor}</dd>`);
+});
+
+/* ---------------------------------------------------------
+   Espera: uma promessa que se resolve quando a condição for
+   verdadeira, ou desiste depois do tempo limite.
+   --------------------------------------------------------- */
+function esperar(condicao, limiteMs) {
+  return new Promise(function (resolver) {
+    const inicio = Date.now();
+    const verificar = function () {
+      let pronto = false;
+      try { pronto = condicao(); } catch (erro) { pronto = false; }
+      if (pronto) { return resolver(true); }
+      if (Date.now() - inicio > limiteMs) { return resolver(false); }
+      setTimeout(verificar, 120);
+    };
+    verificar();
+  });
+}
+
+function pausa(ms) {
+  return new Promise(function (r) { setTimeout(r, ms); });
+}
+
+/* ---------------------------------------------------------
+   Mede quantos quadros por segundo a cena consegue desenhar.
+
+   Contamos chamadas de requestAnimationFrame durante um
+   intervalo. O navegador chama essa função uma vez por quadro,
+   então o total dividido pelo tempo dá a taxa.
+   --------------------------------------------------------- */
+function medirQuadros(janela, duracaoMs) {
+  return new Promise(function (resolver) {
+    let quadros = 0;
+    const inicio = janela.performance.now();
+
+    const contar = function () {
+      quadros++;
+      if (janela.performance.now() - inicio < duracaoMs) {
+        janela.requestAnimationFrame(contar);
+      } else {
+        const decorrido = (janela.performance.now() - inicio) / 1000;
+        resolver(Math.round(quadros / decorrido));
+      }
+    };
+
+    janela.requestAnimationFrame(contar);
+  });
+}
+
+/* ---------------------------------------------------------
+   Um teste: abre a combinação e mede.
+   --------------------------------------------------------- */
+async function testar(animal, nivel) {
+  estado.textContent = `Testando ${animal}, nível ${nivel}…`;
+
+  const pronto = new Promise(function (r) {
+    palco.onload = r;
+  });
+  palco.src = `../experiencia.html?animal=${animal}&nivel=${nivel}`;
+  await pronto;
+
+  const janela = palco.contentWindow;
+  const doc = janela.document;
+
+  /* erros que acontecerem daqui em diante */
+  const erros = [];
+  janela.onerror = function (mensagem) { erros.push(String(mensagem)); };
+
+  const carregou = await esperar(function () {
+    const cena = doc.querySelector('#cena');
+    return cena && cena.hasLoaded;
+  }, 25000);
+
+  if (!carregou) {
+    return { animal, nivel, situacao: 'falha', detalhe: 'a cena não carregou' };
+  }
+
+  /* o modelo entra depois da cena */
+  await esperar(function () {
+    return !doc.querySelector('#animalApoio').getAttribute('visible');
+  }, 20000);
+
+  await pausa(1200);
+  const quadros = await medirQuadros(janela, 2200);
+
+  const medidas = janela.eval ? null : null;   // evitado de propósito
+  const dados = (function () {
+    const A = janela.AFRAME;
+    const el = doc.querySelector('#animalModelo');
+    const malha = el.getObject3D('mesh');
+    const apoio = doc.querySelector('#animalApoio');
+    const alvo = malha || apoio.object3D;
+
+    const caixa = new A.THREE.Box3().setFromObject(alvo);
+    const t = new A.THREE.Vector3();
+    caixa.getSize(t);
+
+    const camera = doc.querySelector('#camera').components.camera.camera;
+    const centro = new A.THREE.Vector3();
+    caixa.getCenter(centro);
+    const proj = centro.clone().project(camera);
+    const x = (proj.x + 1) / 2 * janela.innerWidth;
+    const y = (1 - proj.y) / 2 * janela.innerHeight;
+
+    return {
+      modeloCarregou: Boolean(malha),
+      maiorLado: Math.max(t.x, t.y, t.z),
+      baseNoChao: Math.abs(caixa.min.y) < 0.02,
+      distancia: -doc.querySelector('#animal').getAttribute('position').z,
+      naTela: x >= 0 && x <= janela.innerWidth && y >= 0 && y <= janela.innerHeight,
+      somCarregou: Boolean(doc.querySelector('#somAnimal').components.sound?.pool?.children?.length)
+    };
+  })();
+
+  let situacao = 'ok';
+  const notas = [];
+
+  if (!dados.modeloCarregou) { situacao = 'falha'; notas.push('modelo não carregou'); }
+  if (!dados.naTela)         { situacao = 'falha'; notas.push('fora do campo de visão'); }
+  if (!dados.baseNoChao)     { situacao = 'aviso'; notas.push('não apoiado no chão'); }
+  if (!dados.somCarregou)    { situacao = 'aviso'; notas.push('som não carregou'); }
+  if (quadros < 30 && situacao === 'ok') { situacao = 'aviso'; notas.push('abaixo de 30 quadros/s'); }
+  if (erros.length)          { situacao = 'falha'; notas.push(erros[0]); }
+
+  return {
+    animal, nivel, quadros,
+    tamanho: dados.maiorLado,
+    distancia: dados.distancia,
+    naTela: dados.naTela,
+    modeloCarregou: dados.modeloCarregou,
+    situacao,
+    detalhe: notas.join('; ') || '—'
+  };
+}
+
+/* ---------------------------------------------------------
+   Executa tudo
+   --------------------------------------------------------- */
+async function rodarTudo() {
+  btnRodar.disabled = true;
+  btnRelatorio.disabled = true;
+  corpo.innerHTML = '';
+  resultados.length = 0;
+
+  const total = ANIMAIS_TESTE.length * NIVEIS_TESTE.length;
+  let feitos = 0;
+
+  for (const animal of ANIMAIS_TESTE) {
+    for (const nivel of NIVEIS_TESTE) {
+      const r = await testar(animal, nivel);
+      resultados.push(r);
+
+      const classe = r.situacao === 'ok' ? 'ok' : (r.situacao === 'aviso' ? 'aviso' : 'falha');
+      corpo.insertAdjacentHTML('beforeend', `
+        <tr>
+          <td>${r.animal}</td>
+          <td>${r.nivel}</td>
+          <td class="${r.modeloCarregou ? 'ok' : 'falha'}">${r.modeloCarregou ? 'sim' : 'não'}</td>
+          <td class="num">${r.tamanho ? r.tamanho.toFixed(3) + ' m' : '—'}</td>
+          <td class="num">${r.distancia ? r.distancia.toFixed(2) + ' m' : '—'}</td>
+          <td class="${r.naTela ? 'ok' : 'falha'}">${r.naTela ? 'sim' : 'NÃO'}</td>
+          <td class="num">${r.quadros || '—'}</td>
+          <td class="${classe}">${r.detalhe}</td>
+        </tr>`);
+
+      feitos++;
+      progresso.style.width = (feitos / total * 100) + '%';
+    }
+  }
+
+  const falhas = resultados.filter(function (r) { return r.situacao === 'falha'; }).length;
+  const avisos = resultados.filter(function (r) { return r.situacao === 'aviso'; }).length;
+
+  estado.textContent =
+    `Concluído: ${total} combinações, ${total - falhas - avisos} sem problemas, ` +
+    `${avisos} com aviso, ${falhas} com falha.`;
+
+  btnRodar.disabled = false;
+  btnRelatorio.disabled = false;
+}
+
+/* ---------------------------------------------------------
+   Relatório em texto, pronto para o TCC
+   --------------------------------------------------------- */
+function gerarRelatorio() {
+  const quadrosLista = resultados.map(function (r) { return r.quadros || 0; })
+                                 .filter(function (q) { return q > 0; });
+  const media = Math.round(quadrosLista.reduce(function (a, b) { return a + b; }, 0) / quadrosLista.length);
+  const minimo = Math.min(...quadrosLista);
+  const maximo = Math.max(...quadrosLista);
+
+  const falhas = resultados.filter(function (r) { return r.situacao === 'falha'; });
+  const avisos = resultados.filter(function (r) { return r.situacao === 'aviso'; });
+
+  let texto = 'RELATÓRIO DE TESTES TÉCNICOS\n';
+  texto += '='.repeat(60) + '\n\n';
+
+  texto += 'AMBIENTE DE TESTE\n';
+  Object.entries(aparelho).forEach(function ([chave, valor]) {
+    texto += `  ${chave}: ${valor}\n`;
+  });
+  texto += `  Área renderizada: ${palco.clientWidth} x ${palco.clientHeight} pixels\n`;
+  texto += '    (a cena roda dentro de um quadro nesta página, menor que a tela\n';
+  texto += '     cheia; em tela cheia o desempenho tende a ser um pouco menor)\n';
+
+  texto += '\nRESUMO\n';
+  texto += `  Combinações testadas: ${resultados.length}\n`;
+  texto += `  Sem problemas: ${resultados.length - falhas.length - avisos.length}\n`;
+  texto += `  Com aviso: ${avisos.length}\n`;
+  texto += `  Com falha: ${falhas.length}\n`;
+  texto += `  Quadros por segundo — média ${media}, mínimo ${minimo}, máximo ${maximo}\n`;
+
+  texto += '\nRESULTADOS POR COMBINAÇÃO\n';
+  texto += '  animal   nível  tamanho   distância  quadros/s  situação\n';
+  resultados.forEach(function (r) {
+    texto += '  ' + r.animal.padEnd(9) + String(r.nivel).padEnd(7) +
+      (r.tamanho ? r.tamanho.toFixed(3) + ' m' : '—').padEnd(10) +
+      (r.distancia ? r.distancia.toFixed(2) + ' m' : '—').padEnd(11) +
+      String(r.quadros || '—').padEnd(11) + r.detalhe + '\n';
+  });
+
+  if (falhas.length) {
+    texto += '\nFALHAS\n';
+    falhas.forEach(function (r) {
+      texto += `  ${r.animal} nível ${r.nivel}: ${r.detalhe}\n`;
+    });
+  }
+
+  document.querySelector('#relatorio').textContent = texto;
+}
+
+btnRodar.addEventListener('click', rodarTudo);
+btnRelatorio.addEventListener('click', gerarRelatorio);
+</script>
+</body>
+</html>
