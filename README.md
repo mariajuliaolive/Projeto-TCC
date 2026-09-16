@@ -141,7 +141,9 @@ respiracao leve sempre, e um giro lento do corpo nos niveis de movimento.
 | aranha.glb | 438 KB  | 2.712      | -           | Idle, Walk, Jump, Attack, Death |
 | sapo.glb   | 574 KB  | 4.920      | -           | Idle, Jump, Attack, Death  |
 | rato.glb   | 0,31 MB | 776        | 512x512     | nenhuma                    |
-| barata.glb | ausente | -          | -           | -                          |
+| barata.glb | 0,53 MB | 576        | 512x256     | idle, walking, Attack, Death, flying x2 |
+
+Os cinco animais estao implementados.
 
 ## Ferramentas de diagnostico
 

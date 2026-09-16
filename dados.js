@@ -43,6 +43,12 @@
                  que alguns modelos trazem: um animal que ataca
                  produz susto, e susto é o oposto de exposição
                  gradual e controlada.
+
+                 'reagindo' vale null quando o modelo não tem uma
+                 animação de reação aceitável. É o caso da barata,
+                 cujas únicas opções seriam atacar ou voar para
+                 cima de quem observa. Nesses casos o código gera
+                 um sobressalto curto, feito de um giro rápido.
    distanciaLonge → distância do nível 1, em metros
    distanciaPerto → distância do nível 5, em metros
 
@@ -93,7 +99,7 @@ const ANIMAIS = [
     inicial: 'B',
     modelo: 'assets/models/barata.glb',
     som: 'assets/sounds/barata.wav',
-    animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: 'Jump' },
+    animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: null },
     distanciaLonge: 3.0,
     distanciaPerto: 1.2,
     tamanhoReal: 0.05,

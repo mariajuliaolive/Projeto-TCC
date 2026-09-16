@@ -10,6 +10,7 @@ const camera = document.querySelector('#camera');
 const mira = document.querySelector('#mira');
 const animalEl = document.querySelector('#animal');
 const giroEl = document.querySelector('#animalGiro');
+const reacaoEl = document.querySelector('#animalReacao');
 const modeloEl = document.querySelector('#animalModelo');
 const apoioEl = document.querySelector('#animalApoio');
 const somAmbiente = document.querySelector('#somAmbiente');
@@ -513,24 +514,36 @@ function iniciarExperiencia() {
     console.log('Animal selecionado pela mira.');
 
     /* O animal reage uma vez e volta ao que estava fazendo.
-       Usamos "Jump", nunca "Attack": o objetivo é resposta ao
+       Usamos o salto, nunca o ataque: o objetivo é resposta ao
        contato, não susto. */
     const animador = modeloEl.components.animador;
+    const temReacaoPropria = animal.animacoes && animal.animacoes.reagindo;
 
-    if (animador && animal.animacoes) {
+    if (animador && temReacaoPropria) {
       animador.tocarUmaVez(animal.animacoes.reagindo);
-    } else {
-      // sem animação própria: um pulinho curto feito por nós
-      giroEl.setAttribute('animation__reagir', {
-        property: 'position',
-        from: '0 0 0',
-        to: '0 ' + (animal.tamanhoReal * 0.5) + ' 0',
-        dir: 'alternate',
-        loop: 1,
-        dur: 260,
-        easing: 'easeOutQuad'
-      });
+      return;
     }
+
+    /* Sem animação de reação aceitável (rato e barata): um
+       sobressalto curto, feito por nós.
+
+       É um giro rápido, e não um pulo, por dois motivos: um
+       animal assustado que se vira é mais natural que um que
+       salta, e o giro independe da direção para a qual ele
+       estava olhando.
+
+       Fica na camada #animalReacao, que não é usada por mais
+       nada. Se ficasse em #animalGiro, brigaria com a respiração
+       e com o giro lento, que também escrevem ali. */
+    reacaoEl.setAttribute('animation__reagir', {
+      property: 'rotation',
+      from: '0 0 0',
+      to: '0 38 0',
+      dir: 'alternate',
+      loop: 1,
+      dur: 190,
+      easing: 'easeOutQuad'
+    });
   });
 
   /* =========================================================

@@ -23,6 +23,9 @@ honestidade acadêmica.
 | Licença | *(a confirmar na página de download)* |
 | Baixado em | *(preencher)* |
 
+Modelo de 576 triângulos com textura 512x256 — o mais leve do conjunto.
+Traz seis animações, das quais o projeto usa apenas `idle` e `walking`.
+
 ### Cobra — `assets/models/cobra.glb`
 
 | campo | valor |

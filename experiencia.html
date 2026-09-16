@@ -288,7 +288,8 @@
        O ANIMAL
 
        #animal        onde ele está no mundo (a distância do nível)
-       #animalGiro    o movimento do corpo todo (girar, balançar)
+       #animalGiro    o movimento contínuo (girar devagar, respirar)
+       #animalReacao  o sobressalto ao ser tocado (Nível 5)
        #animalModelo  recebe o arquivo 3D, já redimensionado
        #animalApoio   caixa provisória, do tamanho real do animal
 
@@ -311,8 +312,10 @@
                      volume: 0.9"></a-entity>
 
     <a-entity id="animalGiro">
-      <a-entity id="animalModelo"></a-entity>
-      <a-box id="animalApoio" color="#3A3F4B" opacity="0.95"></a-box>
+      <a-entity id="animalReacao">
+        <a-entity id="animalModelo"></a-entity>
+        <a-box id="animalApoio" color="#3A3F4B" opacity="0.95"></a-box>
+      </a-entity>
     </a-entity>
   </a-entity>
 
