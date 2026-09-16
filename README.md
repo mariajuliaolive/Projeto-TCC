@@ -65,7 +65,29 @@ assets/
 ```
 
 Arquivos `base.*` sao compartilhados. Os demais levam o nome da pagina a
-que pertencem.
+que pertencem. `cenarios.js`, `animador.js` e `painel.js` sao componentes
+e construtores usados pela cena 3D.
+
+## Cenarios
+
+Cada estimulo aparece no ambiente onde seria encontrado de verdade:
+
+| animal | cenario  | o que tem |
+|--------|----------|-----------|
+| Cobra  | Floresta | arvores, arbustos, troncos caidos, chao de terra e folhas |
+| Barata | Cozinha  | piso ladrilhado, bancada, pia, armarios, geladeira, fogao, lixeira |
+| Aranha | Sala     | sofa, mesa de centro, estante com televisao, tapete, luminaria |
+| Rato   | Sala     | o mesmo cenario da aranha |
+| Sapo   | Quintal  | gramado, muro, canteiro, tanque de agua, varal, arvores |
+
+Todos sao construidos com primitivas do A-Frame em `cenarios.js`, sem
+nenhum arquivo externo. Para acrescentar um cenario, escreva a funcao e
+registre-a em `CENARIOS`, no fim do arquivo.
+
+Dois padroes de chao (o ladrilho da cozinha e o solo organico da floresta
+e do quintal) sao **pintados num canvas** e usados como textura repetida.
+A primeira versao desenhava dezenas de pecas separadas para o mesmo
+efeito; pintar uma vez e repetir custa um desenho em vez de noventa.
 
 ## Fluxo de navegacao
 

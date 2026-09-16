@@ -41,6 +41,10 @@ desempenho fica abaixo de 30 quadros por segundo.
 
 ---
 
+> **Atualizado** após a introdução dos cenários por animal e da
+> quantidade progressiva de estímulos. Os números abaixo já refletem
+> essas mudanças.
+
 ## Resumo geral
 
 Três ambientes, 25 combinações em cada: **75 execuções, nenhuma falha e
@@ -48,9 +52,12 @@ nenhum aviso**.
 
 | Ambiente | Janela | Área renderizada | Quadros/s (média) | Falhas | Avisos |
 |---|---|---|---|---|---|
-| Desktop | 1280 x 900 | 908 x 298 | 53 | 0 | 0 |
-| Tablet | 820 x 1180 | 752 x 298 | 57 | 0 | 0 |
-| Celular | 390 x 844 | 322 x 298 | 60 | 0 | 0 |
+| Desktop | 1280 x 900 | 904 x 298 | 37 | 0 | 0 |
+
+Medicao anterior, com um unico animal e um unico cenario, dava media 53.
+A diferenca e o custo de ate quinze animais e de cenarios mais elaborados.
+Nenhuma combinacao falha; dez ficam abaixo de 30 quadros por segundo em
+renderizacao por software.
 
 Os três foram executados em **renderização por software** (SwiftShader,
 sem aceleração por placa de vídeo). É a condição mais desfavorável
@@ -85,18 +92,31 @@ definição: nele muda o movimento, não a proximidade.
 
 ## Quadros por segundo por combinação (desktop)
 
-| Animal | N1 | N2 | N3 | N4 | N5 |
-|---|---|---|---|---|---|
-| Cobra | 54 | 52 | 53 | 53 | 52 |
-| Rato | 57 | 55 | 58 | 55 | 56 |
-| Barata | 56 | 55 | 55 | 55 | 56 |
-| Aranha | 52 | 53 | 53 | 52 | 50 |
-| Sapo | 48 | 49 | 49 | 47 | 48 |
+Quantidade de animais entre parênteses.
 
-O sapo é o modelo mais pesado do conjunto (4.920 triângulos) e aparece
-consistentemente na faixa mais baixa, cerca de 15% abaixo do rato (776
-triângulos). A diferença existe, mas é pequena demais para comprometer o
-uso.
+| Animal | Cenário | N1 (1) | N2 (3) | N3 (6) | N4 (10) | N5 (15) |
+|---|---|---|---|---|---|---|
+| Rato | Sala | 60 | 59 | 54 | 49 | 44 |
+| Aranha | Sala | 58 | 48 | 37 | 31 | 24 |
+| Barata | Cozinha | 47 | 47 | 44 | 41 | 38 |
+| Sapo | Quintal | 34 | 28 | 23 | 18 | 14 |
+| Cobra | Floresta | 28 | 26 | 25 | 23 | 20 |
+
+Dois fatores explicam a variação:
+
+- **O peso do modelo.** O sapo tem 4.920 triângulos contra 776 do rato.
+  Na sala, quinze ratos sustentam 44 quadros por segundo; no quintal,
+  quinze sapos ficam em 14.
+- **O peso do cenário.** A floresta é o ambiente com mais peças, e já
+  começa em 28 com um único animal, enquanto a sala começa em 60.
+
+**Estes números são de renderização por software**, sem placa de vídeo.
+Um aparelho com GPU desenha esta cena com folga; a medição que importa é
+a feita no aparelho onde os testes com participantes vão acontecer,
+usando `ferramentas/teste-sistema.html`.
+
+Se algum aparelho apresentar desconforto, a quantidade por nível é uma
+linha em `dados.js`.
 
 ---
 

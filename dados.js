@@ -14,9 +14,11 @@
    id          → usado na URL (experiencia.html?animal=cobra)
    nome        → o que aparece na tela
    fobia       → nome técnico, para a documentação do TCC
-   ambiente    → cenário onde o animal aparece. Por enquanto todos
-                 usam o mesmo quarto; ambientes próprios (jardim, porão,
-                 cozinha, sótão, lago) ficam para uma etapa posterior
+   ambiente    → nome do cenário, exibido na tela de seleção
+   cenario     → qual cenário montar em cena. Os cenários são
+                 construídos por cenarios.js. Dois animais podem
+                 compartilhar o mesmo cenário (a aranha e o rato
+                 aparecem os dois numa sala)
    icone       → emoji exibido nos cards
    modelo      → caminho do arquivo 3D dentro de assets/models/
    som         → caminho do som do animal dentro de assets/sounds/.
@@ -62,7 +64,8 @@ const ANIMAIS = [
     id: 'cobra',
     nome: 'Cobra',
     fobia: 'Ofidiofobia',
-    ambiente: 'Quarto',
+    ambiente: 'Floresta',
+    cenario: 'floresta',
     icone: '🐍',
     inicial: 'C',
     modelo: 'assets/models/cobra.glb',
@@ -78,7 +81,8 @@ const ANIMAIS = [
     id: 'rato',
     nome: 'Rato',
     fobia: 'Musofobia',
-    ambiente: 'Quarto',
+    ambiente: 'Sala',
+    cenario: 'sala',
     icone: '🐀',
     inicial: 'R',
     modelo: 'assets/models/rato.glb',
@@ -94,7 +98,8 @@ const ANIMAIS = [
     id: 'barata',
     nome: 'Barata',
     fobia: 'Katsaridafobia',
-    ambiente: 'Quarto',
+    ambiente: 'Cozinha',
+    cenario: 'cozinha',
     icone: '🪳',
     inicial: 'B',
     modelo: 'assets/models/barata.glb',
@@ -110,7 +115,8 @@ const ANIMAIS = [
     id: 'aranha',
     nome: 'Aranha',
     fobia: 'Aracnofobia',
-    ambiente: 'Quarto',
+    ambiente: 'Sala',
+    cenario: 'sala',
     icone: '🕷️',
     inicial: 'A',
     modelo: 'assets/models/aranha.glb',
@@ -126,7 +132,8 @@ const ANIMAIS = [
     id: 'sapo',
     nome: 'Sapo',
     fobia: 'Ranidafobia',
-    ambiente: 'Quarto',
+    ambiente: 'Quintal',
+    cenario: 'quintal',
     icone: '🐸',
     inicial: 'S',
     modelo: 'assets/models/sapo.glb',
@@ -150,6 +157,9 @@ const ANIMAIS = [
                1 = na distância mais longe, 0 = na mais próxima.
                Assim a mesma progressão vale para todos os animais,
                em distâncias adequadas ao tamanho de cada um
+   quantidade → quantos animais aparecem. A progressão dos níveis
+                acontece em duas dimensões ao mesmo tempo: eles ficam
+                mais perto E em maior número
    movimento → o animal se move? (Etapa 7)
    interacao → o usuário pode interagir? (Etapa 9)
    instrucao → texto exibido no painel de instruções
@@ -165,6 +175,7 @@ const NIVEIS = [
     instrucao: 'O estímulo está distante. Observe no seu tempo. '
              + 'Você pode sair a qualquer momento.',
     proporcao: 1.0,
+    quantidade: 1,
     movimento: false,
     interacao: false
   },
@@ -175,6 +186,7 @@ const NIVEIS = [
     instrucao: 'O estímulo está mais próximo. Respire com calma e '
              + 'avance apenas quando se sentir pronta.',
     proporcao: 0.55,
+    quantidade: 3,
     movimento: false,
     interacao: false
   },
@@ -185,6 +197,7 @@ const NIVEIS = [
     instrucao: 'O estímulo começa a se mover, na mesma distância. '
              + 'Continue observando no seu ritmo.',
     proporcao: 0.55,
+    quantidade: 6,
     movimento: true,
     interacao: false
   },
@@ -195,6 +208,7 @@ const NIVEIS = [
     instrucao: 'O estímulo está perto. Permaneça o tempo que precisar '
              + 'antes de seguir.',
     proporcao: 0.2,
+    quantidade: 10,
     movimento: true,
     interacao: false
   },
@@ -205,6 +219,7 @@ const NIVEIS = [
     instrucao: 'Você pode se aproximar e interagir. Avance somente '
              + 'se estiver confortável.',
     proporcao: 0.0,
+    quantidade: 15,
     movimento: true,
     interacao: true
   }

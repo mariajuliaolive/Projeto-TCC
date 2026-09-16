@@ -90,7 +90,7 @@
     <table>
       <thead>
         <tr>
-          <th>Animal</th><th>Nível</th><th>Modelo</th>
+          <th>Animal</th><th>Nível</th><th class="num">Qtd.</th><th>Modelo</th>
           <th class="num">Tamanho</th><th class="num">Distância</th>
           <th>Visível</th><th class="num">Quadros/s</th><th>Situação</th>
         </tr>
@@ -242,10 +242,14 @@ async function testar(animal, nivel) {
     return { animal, nivel, situacao: 'falha', detalhe: 'a cena não carregou' };
   }
 
-  /* o modelo entra depois da cena */
+  /* os modelos entram depois da cena: espera todos trocarem a
+     caixa provisória pelo modelo de verdade */
   await esperar(function () {
-    return !doc.querySelector('#animalApoio').getAttribute('visible');
-  }, 20000);
+    const apoios = [...doc.querySelectorAll('.animalApoio')];
+    return apoios.length > 0 && apoios.every(function (a) {
+      return !a.getAttribute('visible');
+    });
+  }, 30000);
 
   await pausa(1200);
   const quadros = await medirQuadros(janela, 2200);
@@ -253,10 +257,15 @@ async function testar(animal, nivel) {
   const medidas = janela.eval ? null : null;   // evitado de propósito
   const dados = (function () {
     const A = janela.AFRAME;
-    const el = doc.querySelector('#animalModelo');
-    const malha = el.getObject3D('mesh');
-    const apoio = doc.querySelector('#animalApoio');
-    const alvo = malha || apoio.object3D;
+    const raizes = [...doc.querySelectorAll('.animal')];
+    const modelos = raizes.map(function (r) {
+      return r.querySelector('.animalModelo').getObject3D('mesh');
+    });
+
+    /* o primeiro é o que define a experiência: fica na distância
+       exata do nível, à frente de quem observa */
+    const principal = raizes[0];
+    const alvo = modelos[0] || principal.querySelector('.animalApoio').object3D;
 
     const caixa = new A.THREE.Box3().setFromObject(alvo);
     const t = new A.THREE.Vector3();
@@ -270,10 +279,12 @@ async function testar(animal, nivel) {
     const y = (1 - proj.y) / 2 * janela.innerHeight;
 
     return {
-      modeloCarregou: Boolean(malha),
+      quantidade: raizes.length,
+      modeloCarregou: modelos.every(Boolean),
+      pecasDoCenario: doc.querySelectorAll('#cenario *').length,
       maiorLado: Math.max(t.x, t.y, t.z),
       baseNoChao: Math.abs(caixa.min.y) < 0.02,
-      distancia: -doc.querySelector('#animal').getAttribute('position').z,
+      distancia: -principal.getAttribute('position').z,
       naTela: x >= 0 && x <= janela.innerWidth && y >= 0 && y <= janela.innerHeight,
       somCarregou: Boolean(doc.querySelector('#somAnimal').components.sound?.pool?.children?.length)
     };
@@ -282,7 +293,7 @@ async function testar(animal, nivel) {
   let situacao = 'ok';
   const notas = [];
 
-  if (!dados.modeloCarregou) { situacao = 'falha'; notas.push('modelo não carregou'); }
+  if (!dados.modeloCarregou) { situacao = 'falha'; notas.push('algum modelo não carregou'); }
   if (!dados.naTela)         { situacao = 'falha'; notas.push('fora do campo de visão'); }
   if (!dados.baseNoChao)     { situacao = 'aviso'; notas.push('não apoiado no chão'); }
   if (!dados.somCarregou)    { situacao = 'aviso'; notas.push('som não carregou'); }
@@ -291,6 +302,8 @@ async function testar(animal, nivel) {
 
   return {
     animal, nivel, quadros,
+    quantidade: dados.quantidade,
+    pecasDoCenario: dados.pecasDoCenario,
     tamanho: dados.maiorLado,
     distancia: dados.distancia,
     naTela: dados.naTela,
@@ -322,6 +335,7 @@ async function rodarTudo() {
         <tr>
           <td>${r.animal}</td>
           <td>${r.nivel}</td>
+          <td class="num">${r.quantidade || '—'}</td>
           <td class="${r.modeloCarregou ? 'ok' : 'falha'}">${r.modeloCarregou ? 'sim' : 'não'}</td>
           <td class="num">${r.tamanho ? r.tamanho.toFixed(3) + ' m' : '—'}</td>
           <td class="num">${r.distancia ? r.distancia.toFixed(2) + ' m' : '—'}</td>
@@ -378,9 +392,10 @@ function gerarRelatorio() {
   texto += `  Quadros por segundo — média ${media}, mínimo ${minimo}, máximo ${maximo}\n`;
 
   texto += '\nRESULTADOS POR COMBINAÇÃO\n';
-  texto += '  animal   nível  tamanho   distância  quadros/s  situação\n';
+  texto += '  animal   nível  qtd  tamanho   distância  quadros/s  situação\n';
   resultados.forEach(function (r) {
     texto += '  ' + r.animal.padEnd(9) + String(r.nivel).padEnd(7) +
+      String(r.quantidade || '—').padEnd(5) +
       (r.tamanho ? r.tamanho.toFixed(3) + ' m' : '—').padEnd(10) +
       (r.distancia ? r.distancia.toFixed(2) + ' m' : '—').padEnd(11) +
       String(r.quadros || '—').padEnd(11) + r.detalhe + '\n';

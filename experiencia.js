@@ -8,11 +8,8 @@
 const cena = document.querySelector('#cena');
 const camera = document.querySelector('#camera');
 const mira = document.querySelector('#mira');
-const animalEl = document.querySelector('#animal');
-const giroEl = document.querySelector('#animalGiro');
-const reacaoEl = document.querySelector('#animalReacao');
-const modeloEl = document.querySelector('#animalModelo');
-const apoioEl = document.querySelector('#animalApoio');
+const cenarioEl = document.querySelector('#cenario');
+const animaisEl = document.querySelector('#animais');
 const somAmbiente = document.querySelector('#somAmbiente');
 const somAnimal = document.querySelector('#somAnimal');
 
@@ -92,28 +89,76 @@ function iniciarExperiencia() {
   hudConcluido.textContent = Math.round(nivel.numero / NIVEIS.length * 100) + '%';
 
   /* =========================================================
-     3. POSICIONAR O ANIMAL
-     A distância vem do nível, ajustada ao tamanho do animal.
-     Z negativo = para a frente, longe de quem observa.
+     3. MONTAR O CENÁRIO
+
+     Cada animal tem o ambiente onde ele seria encontrado de
+     verdade. A função devolve os limites do lugar, para os
+     animais não atravessarem paredes nem sumirem atrás do muro.
      ========================================================= */
-  const distancia = distanciaDoNivel(animal, nivel);
-  animalEl.setAttribute('position', '0 0 ' + (-distancia));
+  const limites = montarCenario(animal.cenario, cenarioEl);
 
   /* =========================================================
-     4. CAIXA PROVISÓRIA (enquanto não houver arquivo 3D)
-     Tem as dimensões reais do animal, para já dar pra avaliar
-     escala e distância.
+     4. ONDE CADA ANIMAL FICA
+
+     A progressão dos níveis acontece em duas dimensões: os
+     animais ficam mais PERTO e em maior NÚMERO.
+
+     O primeiro fica exatamente na distância do nível, à frente
+     de quem observa — é ele que define a experiência. Os demais
+     se espalham num arco em volta, dentro do campo de visão e
+     sem se sobrepor.
      ========================================================= */
-  function mostrarApoio(tamanho) {
-    apoioEl.setAttribute('width', tamanho);
-    apoioEl.setAttribute('height', tamanho * 0.4);
-    apoioEl.setAttribute('depth', tamanho * 0.4);
-    apoioEl.setAttribute('position', '0 ' + (tamanho * 0.2) + ' 0');
-    apoioEl.setAttribute('visible', true);
+  const distancia = distanciaDoNivel(animal, nivel);
+  const quantidade = nivel.quantidade || 1;
+
+  /* Sorteio com semente: o mesmo nível monta sempre igual.
+     Sem isso, dois participantes veriam disposições diferentes
+     e a comparação entre eles perderia sentido. */
+  function sorteador(semente) {
+    let estado = semente;
+    return function (minimo, maximo) {
+      estado = (estado * 1103515245 + 12345) % 2147483648;
+      return minimo + (estado / 2147483648) * (maximo - minimo);
+    };
+  }
+
+  function calcularPosicoes() {
+    const sorteia = sorteador(nivel.numero * 7919 + animal.id.length * 131);
+    const separacao = Math.max(animal.tamanhoReal * 2.2, 0.3);
+    const posicoes = [{ x: 0, z: -distancia }];
+
+    for (let i = 1; i < quantidade; i++) {
+      let melhor = null;
+
+      /* tenta algumas posições e fica com a primeira que não
+         encosta em nenhuma das já escolhidas */
+      for (let tentativa = 0; tentativa < 40; tentativa++) {
+        const angulo = sorteia(-42, 42) * Math.PI / 180;
+        const raio = distancia * sorteia(0.55, 1.45);
+
+        const x = Math.sin(angulo) * raio;
+        const z = -Math.cos(angulo) * raio;
+
+        if (Math.abs(x) > limites.x || z < limites.zMin || z > -0.8) {
+          continue;
+        }
+
+        const colide = posicoes.some(function (p) {
+          return Math.hypot(p.x - x, p.z - z) < separacao;
+        });
+
+        if (!colide) { melhor = { x, z }; break; }
+        if (!melhor) { melhor = { x, z }; }
+      }
+
+      if (melhor) { posicoes.push(melhor); }
+    }
+
+    return posicoes;
   }
 
   /* =========================================================
-     5. AJUSTAR O MODELO 3D CARREGADO
+     5. AJUSTAR UM MODELO 3D CARREGADO
 
      a) Escala imprevisível: cada arquivo vem numa unidade
         diferente. Medimos o modelo e calculamos o fator que o
@@ -134,6 +179,8 @@ function iniciarExperiencia() {
     if (medida === 'profundidade') return medidas.z;
     return Math.max(medidas.x, medidas.y, medidas.z);   // 'maior'
   }
+
+  let jaRegistrouMedida = false;
 
   function ajustarModelo(elemento, tamanhoReal) {
     const objeto = elemento.getObject3D('mesh');
@@ -156,57 +203,20 @@ function iniciarExperiencia() {
     const baseY = caixa.min.y * fator;
     elemento.setAttribute('position', '0 ' + (-baseY) + ' 0');
 
-    console.log(
-      `Modelo medido: ${medidas.x.toFixed(2)} x ${medidas.y.toFixed(2)} x ` +
-      `${medidas.z.toFixed(2)} unidades (medida: ${animal.medida || 'maior'}). ` +
-      `Fator aplicado: ${fator.toFixed(4)}`
-    );
+    /* o registro sai uma vez só: são até quinze cópias do mesmo
+       modelo, e quinze linhas iguais no console não ajudam */
+    if (!jaRegistrouMedida) {
+      jaRegistrouMedida = true;
+      console.log(
+        `Modelo medido: ${medidas.x.toFixed(2)} x ${medidas.y.toFixed(2)} x ` +
+        `${medidas.z.toFixed(2)} unidades (medida: ${animal.medida || 'maior'}). ` +
+        `Fator aplicado: ${fator.toFixed(4)}`
+      );
+    }
   }
 
   /* =========================================================
-     6. CARREGAR O MODELO DO ANIMAL
-     Se o arquivo não existir, "model-error" dispara e a caixa
-     provisória continua no lugar.
-     ========================================================= */
-  mostrarApoio(animal.tamanhoReal);
-  modeloEl.setAttribute('rotation', animal.rotacao);
-
-  /* Se o arquivo traz animações, o componente "animador" cuida
-     delas. Qual tocar depende do nível. */
-  if (animal.animacoes) {
-    modeloEl.setAttribute('animador', {
-      clipe: nivel.movimento ? animal.animacoes.movendo : animal.animacoes.parado
-    });
-  }
-
-  modeloEl.addEventListener('model-loaded', function () {
-    ajustarModelo(modeloEl, animal.tamanhoReal);
-    apoioEl.setAttribute('visible', false);
-    console.log('Modelo carregado:', animal.modelo);
-
-    // Só depois de medir e ajustar é que o corpo começa a se mexer:
-    // medir um modelo já girado daria um tamanho errado.
-    aplicarMovimentoDoCorpo();
-  });
-
-  modeloEl.addEventListener('model-error', function () {
-    console.warn(
-      `Modelo não encontrado: ${animal.modelo}. ` +
-      'Mostrando a caixa provisória. Coloque o arquivo .glb em assets/models/.'
-    );
-  });
-
-  modeloEl.setAttribute('gltf-model', 'url(' + animal.modelo + ')');
-
-  /* ---------- som do animal ----------
-     Fica na camada da distância, então o volume acompanha o
-     nível sozinho: o navegador calcula pela posição. */
-  if (animal.som) {
-    somAnimal.setAttribute('sound', 'src', 'url(' + animal.som + ')');
-  }
-
-  /* =========================================================
-     7. MOVIMENTO DO CORPO INTEIRO
+     6. MOVIMENTO DO CORPO INTEIRO
 
      As animações de dentro do arquivo mexem as patas, a cabeça,
      o corpo — mas o animal continua no mesmo lugar, como quem
@@ -216,23 +226,26 @@ function iniciarExperiencia() {
      Isso também é o plano B do rato, que não traz animação
      nenhuma: sem o giro e o balanço, ele seria uma estátua.
 
+     Cada cópia recebe uma defasagem própria, senão os quinze
+     animais girariam em sincronia, como um corpo de baile.
+
      Tudo é lento de propósito. Movimento brusco em Realidade
      Virtual causa desconforto e, num sistema de exposição
      gradual, tira de quem usa o controle do próprio ritmo.
      ========================================================= */
-  function aplicarMovimentoDoCorpo() {
+  function aplicarMovimentoDoCorpo(giro, indice) {
     const temAnimacoes = Boolean(animal.animacoes);
+    const defasagem = indice * 260;
 
-    /* Respiração: um sobe-e-desce quase imperceptível.
-       Só para quem não tem animação própria de "parado". */
     if (!temAnimacoes) {
-      giroEl.setAttribute('animation__respirar', {
+      giro.setAttribute('animation__respirar', {
         property: 'position',
         from: '0 0 0',
         to: '0 ' + (animal.tamanhoReal * 0.04) + ' 0',
         dir: 'alternate',
         loop: true,
         dur: 2400,
+        delay: defasagem,
         easing: 'easeInOutSine'
       });
     }
@@ -241,27 +254,147 @@ function iniciarExperiencia() {
       return;   // níveis 1 e 2: o animal fica onde está
     }
 
-    /* Giro lento de um lado para o outro, como um animal que
-       olha em volta. Quem não tem animação gira um pouco mais,
-       para compensar a falta de movimento das patas. */
     const amplitude = temAnimacoes ? 30 : 42;
     const duracao = temAnimacoes ? 7000 : 5200;
 
-    giroEl.setAttribute('animation__girar', {
+    giro.setAttribute('animation__girar', {
       property: 'rotation',
       from: '0 ' + (-amplitude) + ' 0',
       to: '0 ' + amplitude + ' 0',
       dir: 'alternate',
       loop: true,
       dur: duracao,
+      delay: defasagem,
       easing: 'easeInOutSine'
     });
   }
 
-  /* Sem modelo 3D, a caixa provisória também se mexe. */
-  modeloEl.addEventListener('model-error', function () {
-    aplicarMovimentoDoCorpo();
+  /* =========================================================
+     7. CRIAR O GRUPO DE ANIMAIS
+
+     Cada cópia repete a estrutura de camadas de sempre. Não
+     clonamos o modelo carregado: pedimos o arquivo de novo para
+     cada uma. O navegador guarda o arquivo em cache, então ele é
+     baixado uma vez só, mas cada cópia ganha o seu próprio
+     esqueleto — sem isso as animações se atropelariam.
+     ========================================================= */
+  const copias = [];
+
+  /* Quantas cópias tocam a animação do arquivo.
+
+     Cada modelo animado mantém um "tocador" próprio, que
+     recalcula a posição de cada osso a cada quadro. Quinze deles
+     pesam, e o ganho visual do décimo em diante é mínimo: num
+     grupo, ninguém acompanha quinze bichos ao mesmo tempo.
+
+     As cópias além deste limite continuam se mexendo — elas têm
+     o giro lento do corpo, que é barato — mas ficam na pose
+     parada do arquivo.  */
+  const LIMITE_ANIMADOS = 6;
+
+  function criarAnimal(posicao, indice) {
+    const raiz = document.createElement('a-entity');
+    raiz.classList.add('animal', 'clicavel');
+    raiz.setAttribute('position', `${posicao.x} 0 ${posicao.z}`);
+
+    /* cada um olha para uma direção um pouco diferente */
+    const giro = document.createElement('a-entity');
+    giro.classList.add('animalGiro');
+
+    const reacao = document.createElement('a-entity');
+    reacao.classList.add('animalReacao');
+
+    const modelo = document.createElement('a-entity');
+    modelo.classList.add('animalModelo');
+    modelo.setAttribute('rotation', animal.rotacao);
+
+    const apoio = document.createElement('a-box');
+    apoio.classList.add('animalApoio');
+    apoio.setAttribute('color', '#3A3F4B');
+    apoio.setAttribute('opacity', 0.95);
+    apoio.setAttribute('width', animal.tamanhoReal);
+    apoio.setAttribute('height', animal.tamanhoReal * 0.4);
+    apoio.setAttribute('depth', animal.tamanhoReal * 0.4);
+    apoio.setAttribute('position', '0 ' + (animal.tamanhoReal * 0.2) + ' 0');
+
+    reacao.appendChild(modelo);
+    reacao.appendChild(apoio);
+    giro.appendChild(reacao);
+    raiz.appendChild(giro);
+    animaisEl.appendChild(raiz);
+
+    if (animal.animacoes && indice < LIMITE_ANIMADOS) {
+      modelo.setAttribute('animador', {
+        clipe: nivel.movimento ? animal.animacoes.movendo : animal.animacoes.parado
+      });
+    }
+
+    modelo.addEventListener('model-loaded', function () {
+      ajustarModelo(modelo, animal.tamanhoReal);
+      apoio.setAttribute('visible', false);
+      aplicarMovimentoDoCorpo(giro, indice);
+    });
+
+    modelo.addEventListener('model-error', function () {
+      if (indice === 0) {
+        console.warn(
+          `Modelo não encontrado: ${animal.modelo}. ` +
+          'Mostrando a caixa provisória. Coloque o arquivo .glb em assets/models/.'
+        );
+      }
+      aplicarMovimentoDoCorpo(giro, indice);
+    });
+
+    modelo.setAttribute('gltf-model', 'url(' + animal.modelo + ')');
+
+    /* ---------- reação ao toque ---------- */
+    raiz.addEventListener('click', function () {
+      if (!nivel.interacao) {
+        console.log('Este nível não permite interação.');
+        return;
+      }
+
+      const animador = modelo.components.animador;
+      const temReacaoPropria = animal.animacoes && animal.animacoes.reagindo;
+
+      if (animador && temReacaoPropria) {
+        animador.tocarUmaVez(animal.animacoes.reagindo);
+        return;
+      }
+
+      reacao.setAttribute('animation__reagir', {
+        property: 'rotation',
+        from: '0 0 0',
+        to: '0 38 0',
+        dir: 'alternate',
+        loop: 1,
+        dur: 190,
+        easing: 'easeOutQuad'
+      });
+    });
+
+    return { raiz, giro, reacao, modelo, apoio };
+  }
+
+  calcularPosicoes().forEach(function (posicao, indice) {
+    copias.push(criarAnimal(posicao, indice));
   });
+
+  console.log(
+    `${copias.length} ${copias.length === 1 ? 'animal' : 'animais'} ` +
+    `(${animal.nome}) no cenário "${animal.cenario}", nível ${nivel.numero}. ` +
+    `Com animação do arquivo: ${Math.min(copias.length, LIMITE_ANIMADOS)}.`
+  );
+
+  /* ---------- som do animal ----------
+     Um som só, na posição do animal principal. O navegador
+     calcula o volume pela distância, então a progressão dos
+     níveis também se ouve. */
+  somAnimal.setAttribute('position', '0 ' + (animal.tamanhoReal * 0.5) + ' ' + (-distancia));
+
+  if (animal.som) {
+    somAnimal.setAttribute('sound', 'src', 'url(' + animal.som + ')');
+  }
 
   /* =========================================================
      8. INCLINAR A CÂMERA PARA BAIXO
@@ -502,52 +635,7 @@ function iniciarExperiencia() {
   }
 
   /* =========================================================
-     13. INTERAÇÃO COM O ANIMAL
-     Semente do Nível 5.
-     ========================================================= */
-  animalEl.addEventListener('click', function () {
-    if (!nivel.interacao) {
-      console.log('Este nível não permite interação.');
-      return;
-    }
-
-    console.log('Animal selecionado pela mira.');
-
-    /* O animal reage uma vez e volta ao que estava fazendo.
-       Usamos o salto, nunca o ataque: o objetivo é resposta ao
-       contato, não susto. */
-    const animador = modeloEl.components.animador;
-    const temReacaoPropria = animal.animacoes && animal.animacoes.reagindo;
-
-    if (animador && temReacaoPropria) {
-      animador.tocarUmaVez(animal.animacoes.reagindo);
-      return;
-    }
-
-    /* Sem animação de reação aceitável (rato e barata): um
-       sobressalto curto, feito por nós.
-
-       É um giro rápido, e não um pulo, por dois motivos: um
-       animal assustado que se vira é mais natural que um que
-       salta, e o giro independe da direção para a qual ele
-       estava olhando.
-
-       Fica na camada #animalReacao, que não é usada por mais
-       nada. Se ficasse em #animalGiro, brigaria com a respiração
-       e com o giro lento, que também escrevem ali. */
-    reacaoEl.setAttribute('animation__reagir', {
-      property: 'rotation',
-      from: '0 0 0',
-      to: '0 38 0',
-      dir: 'alternate',
-      loop: 1,
-      dur: 190,
-      easing: 'easeOutQuad'
-    });
-  });
-
-  /* =========================================================
-     14. REALIDADE VIRTUAL (WebXR)
+     13. REALIDADE VIRTUAL (WebXR)
 
      Três coisas mudam quando a pessoa entra no óculos:
 
@@ -592,6 +680,31 @@ function iniciarExperiencia() {
     window.location.href = 'selecao.html';
   });
 
+  /* ---------- traduzir o que o A-Frame escreve em inglês ----------
+
+     O botão de VR e o de sair do VR são criados pelo próprio
+     A-Frame, já com texto em inglês, e não têm como ser
+     configurados. Traduzimos depois que ele os coloca na página.
+
+     A mensagem de permissão dos sensores, essa sim, é
+     configurável: está em experiencia.html, no <a-scene>. */
+  function traduzirBotoesDoAFrame() {
+    const vr = document.querySelector('.a-enter-vr-button');
+    const ar = document.querySelector('.a-enter-ar-button');
+    const sair = document.querySelector('.a-modal button');
+
+    if (vr) {
+      vr.setAttribute('title',
+        'Entrar no modo de Realidade Virtual, com óculos ou em tela cheia');
+    }
+    if (ar) {
+      ar.setAttribute('title', 'Entrar no modo de Realidade Aumentada');
+    }
+    if (sair && sair.textContent.trim() === 'Exit VR') {
+      sair.textContent = 'Sair da Realidade Virtual';
+    }
+  }
+
   /* ---------- avisar se este navegador suporta VR ---------- */
   function verificarSuporteVR() {
     if (!navigator.xr) {
@@ -613,6 +726,7 @@ function iniciarExperiencia() {
   }
 
   verificarSuporteVR();
+  traduzirBotoesDoAFrame();
 
   /* ---------- entrar e sair do modo VR ---------- */
   cena.addEventListener('enter-vr', function () {
@@ -643,7 +757,7 @@ function iniciarExperiencia() {
   });
 
   /* =========================================================
-     15. REGISTROS DE CARREGAMENTO
+     14. REGISTROS DE CARREGAMENTO
      ========================================================= */
   cena.addEventListener('loaded', function () {
     inclinarCamera(INCLINACAO_GRAUS);
