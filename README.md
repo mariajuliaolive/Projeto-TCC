@@ -14,6 +14,22 @@ psicológico e não realiza diagnóstico.
 
 HTML, CSS, JavaScript, A-Frame, Three.js e WebXR.
 
+## Publicacao
+
+O projeto e estatico: HTML, CSS, JavaScript e arquivos de midia, sem
+servidor e sem etapa de build. Qualquer hospedagem de site estatico serve
+(GitHub Pages, Vercel, Netlify, Cloudflare Pages).
+
+Todos os caminhos do codigo sao **relativos**, entao o sistema funciona
+tanto na raiz de um dominio quanto dentro de uma subpasta.
+
+**HTTPS e obrigatorio** para o WebXR e para os sensores do celular. Todas
+as opcoes acima fornecem HTTPS automaticamente; abrir por `http://` ou por
+`file://` desliga o modo VR.
+
+O arquivo `.nojekyll` existe para o GitHub Pages servir os arquivos como
+estao, sem passar pelo Jekyll.
+
 ## Como executar
 
 É necessário um servidor local (arquivos 3D não carregam abrindo o HTML
