@@ -29,6 +29,16 @@
                  empinada, então a maior dimensão dela é a altura
    rotacao     → giro aplicado ao modelo para ele ficar de frente
                  para quem observa. Ajuste depois de ver o modelo
+   animacoes   → quais animações do arquivo usar em cada situação.
+                 Basta um PEDAÇO do nome: o modelo pode chamar de
+                 "SnakeArmature|Snake_Idle", e 'Idle' já encontra.
+                 Vale null quando o modelo não traz animações —
+                 nesse caso o código gera um movimento simples.
+
+                 Deliberadamente NÃO usamos as animações de ataque
+                 que alguns modelos trazem: um animal que ataca
+                 produz susto, e susto é o oposto de exposição
+                 gradual e controlada.
    distanciaLonge → distância do nível 1, em metros
    distanciaPerto → distância do nível 5, em metros
 
@@ -46,6 +56,7 @@ const ANIMAIS = [
     icone: '🐍',
     inicial: 'C',
     modelo: 'assets/models/cobra.glb',
+    animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: 'Jump' },
     distanciaLonge: 7.0,
     distanciaPerto: 1.2,
     tamanhoReal: 0.5,
@@ -60,6 +71,7 @@ const ANIMAIS = [
     icone: '🐀',
     inicial: 'R',
     modelo: 'assets/models/rato.glb',
+    animacoes: null,
     distanciaLonge: 5.5,
     distanciaPerto: 1.2,
     tamanhoReal: 0.25,
@@ -74,6 +86,7 @@ const ANIMAIS = [
     icone: '🪳',
     inicial: 'B',
     modelo: 'assets/models/barata.glb',
+    animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: 'Jump' },
     distanciaLonge: 3.0,
     distanciaPerto: 1.2,
     tamanhoReal: 0.05,
@@ -88,6 +101,7 @@ const ANIMAIS = [
     icone: '🕷️',
     inicial: 'A',
     modelo: 'assets/models/aranha.glb',
+    animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: 'Jump' },
     distanciaLonge: 4.0,
     distanciaPerto: 1.2,
     tamanhoReal: 0.08,
@@ -102,6 +116,7 @@ const ANIMAIS = [
     icone: '🐸',
     inicial: 'S',
     modelo: 'assets/models/sapo.glb',
+    animacoes: { parado: 'Idle', movendo: 'Jump', reagindo: 'Jump' },
     distanciaLonge: 4.5,
     distanciaPerto: 1.2,
     tamanhoReal: 0.10,

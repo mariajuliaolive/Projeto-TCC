@@ -114,6 +114,25 @@ O campo `medida` diz a qual dimensao o `tamanhoReal` se refere. O padrao
 ou `'profundidade'` quando a pose do modelo nao acompanhar a forma do
 animal (a cobra, por exemplo, vem empinada).
 
+## Movimento
+
+O componente `animador` (arquivo `animador.js`) toca as animacoes que ja
+vem dentro do `.glb`. Basta um pedaco do nome: o modelo pode chamar de
+`SnakeArmature|Snake_Idle`, e `Idle` encontra.
+
+| nivel | movimento | animacao        |
+|-------|-----------|-----------------|
+| 1, 2  | nao       | `parado` (Idle) |
+| 3, 4  | sim       | `movendo` (Walk, ou Jump no sapo) |
+| 5     | sim       | `movendo`, e `reagindo` ao ser tocado |
+
+As animacoes de ataque que alguns modelos trazem **nao sao usadas**: um
+animal que ataca produz susto, e susto e o oposto de exposicao gradual e
+controlada.
+
+Modelos sem animacao (o rato) recebem um movimento gerado por codigo:
+respiracao leve sempre, e um giro lento do corpo nos niveis de movimento.
+
 ### Modelos em uso
 
 | arquivo    | tamanho | triangulos | textura     | animacoes                  |
@@ -121,7 +140,7 @@ animal (a cobra, por exemplo, vem empinada).
 | cobra.glb  | 212 KB  | 1.618      | -           | Idle, Walk, Jump, Attack   |
 | aranha.glb | 438 KB  | 2.712      | -           | Idle, Walk, Jump, Attack, Death |
 | sapo.glb   | 574 KB  | 4.920      | -           | Idle, Jump, Attack, Death  |
-| rato.glb   | 5,03 MB | 776        | 2048x2048   | nenhuma                    |
+| rato.glb   | 0,31 MB | 776        | 512x512     | nenhuma                    |
 | barata.glb | ausente | -          | -           | -                          |
 
 ## Controles da cena

@@ -9,6 +9,7 @@ const cena = document.querySelector('#cena');
 const camera = document.querySelector('#camera');
 const mira = document.querySelector('#mira');
 const animalEl = document.querySelector('#animal');
+const giroEl = document.querySelector('#animalGiro');
 const modeloEl = document.querySelector('#animalModelo');
 const apoioEl = document.querySelector('#animalApoio');
 
@@ -159,10 +160,22 @@ function iniciarExperiencia() {
   mostrarApoio(animal.tamanhoReal);
   modeloEl.setAttribute('rotation', animal.rotacao);
 
+  /* Se o arquivo traz animações, o componente "animador" cuida
+     delas. Qual tocar depende do nível. */
+  if (animal.animacoes) {
+    modeloEl.setAttribute('animador', {
+      clipe: nivel.movimento ? animal.animacoes.movendo : animal.animacoes.parado
+    });
+  }
+
   modeloEl.addEventListener('model-loaded', function () {
     ajustarModelo(modeloEl, animal.tamanhoReal);
     apoioEl.setAttribute('visible', false);
     console.log('Modelo carregado:', animal.modelo);
+
+    // Só depois de medir e ajustar é que o corpo começa a se mexer:
+    // medir um modelo já girado daria um tamanho errado.
+    aplicarMovimentoDoCorpo();
   });
 
   modeloEl.addEventListener('model-error', function () {
@@ -175,7 +188,65 @@ function iniciarExperiencia() {
   modeloEl.setAttribute('gltf-model', 'url(' + animal.modelo + ')');
 
   /* =========================================================
-     7. INCLINAR A CÂMERA PARA BAIXO
+     7. MOVIMENTO DO CORPO INTEIRO
+
+     As animações de dentro do arquivo mexem as patas, a cabeça,
+     o corpo — mas o animal continua no mesmo lugar, como quem
+     anda numa esteira. Um giro lento do corpo todo completa a
+     impressão de que ele está vivo e se deslocando.
+
+     Isso também é o plano B do rato, que não traz animação
+     nenhuma: sem o giro e o balanço, ele seria uma estátua.
+
+     Tudo é lento de propósito. Movimento brusco em Realidade
+     Virtual causa desconforto e, num sistema de exposição
+     gradual, tira de quem usa o controle do próprio ritmo.
+     ========================================================= */
+  function aplicarMovimentoDoCorpo() {
+    const temAnimacoes = Boolean(animal.animacoes);
+
+    /* Respiração: um sobe-e-desce quase imperceptível.
+       Só para quem não tem animação própria de "parado". */
+    if (!temAnimacoes) {
+      giroEl.setAttribute('animation__respirar', {
+        property: 'position',
+        from: '0 0 0',
+        to: '0 ' + (animal.tamanhoReal * 0.04) + ' 0',
+        dir: 'alternate',
+        loop: true,
+        dur: 2400,
+        easing: 'easeInOutSine'
+      });
+    }
+
+    if (!nivel.movimento) {
+      return;   // níveis 1 e 2: o animal fica onde está
+    }
+
+    /* Giro lento de um lado para o outro, como um animal que
+       olha em volta. Quem não tem animação gira um pouco mais,
+       para compensar a falta de movimento das patas. */
+    const amplitude = temAnimacoes ? 30 : 42;
+    const duracao = temAnimacoes ? 7000 : 5200;
+
+    giroEl.setAttribute('animation__girar', {
+      property: 'rotation',
+      from: '0 ' + (-amplitude) + ' 0',
+      to: '0 ' + amplitude + ' 0',
+      dir: 'alternate',
+      loop: true,
+      dur: duracao,
+      easing: 'easeInOutSine'
+    });
+  }
+
+  /* Sem modelo 3D, a caixa provisória também se mexe. */
+  modeloEl.addEventListener('model-error', function () {
+    aplicarMovimentoDoCorpo();
+  });
+
+  /* =========================================================
+     8. INCLINAR A CÂMERA PARA BAIXO
 
      Quem está em pé olha para baixo quando há algo no chão.
      Sem essa inclinação, um animal pequeno a 2 metros fica
@@ -197,7 +268,7 @@ function iniciarExperiencia() {
   }
 
   /* =========================================================
-     8. CONTROLES CONFORME O DISPOSITIVO
+     9. CONTROLES CONFORME O DISPOSITIVO
      ========================================================= */
   const ehMobile = AFRAME.utils.device.isMobile();
 
@@ -215,7 +286,7 @@ function iniciarExperiencia() {
   }
 
   /* =========================================================
-     9. TEMPO DA SESSÃO
+     10. TEMPO DA SESSÃO
      setInterval executa a função a cada 1000 ms (1 segundo).
      ========================================================= */
   let segundos = 0;
@@ -232,7 +303,7 @@ function iniciarExperiencia() {
   }, 1000);
 
   /* =========================================================
-     10. ESCALA DE ANSIEDADE (autorrelato de 0 a 10)
+     11. ESCALA DE ANSIEDADE (autorrelato de 0 a 10)
 
      Nenhum sensor mede ansiedade. Quem informa é a própria
      pessoa — é assim que a pesquisa de exposição trabalha.
@@ -272,7 +343,7 @@ function iniciarExperiencia() {
   });
 
   /* =========================================================
-     11. BOTÕES DE AÇÃO
+     12. BOTÕES DE AÇÃO
      ========================================================= */
 
   /* ---------- Ajuda ---------- */
@@ -310,7 +381,7 @@ function iniciarExperiencia() {
   }
 
   /* =========================================================
-     12. INTERAÇÃO COM O ANIMAL
+     13. INTERAÇÃO COM O ANIMAL
      Semente do Nível 5.
      ========================================================= */
   animalEl.addEventListener('click', function () {
@@ -318,11 +389,32 @@ function iniciarExperiencia() {
       console.log('Este nível não permite interação.');
       return;
     }
+
     console.log('Animal selecionado pela mira.');
+
+    /* O animal reage uma vez e volta ao que estava fazendo.
+       Usamos "Jump", nunca "Attack": o objetivo é resposta ao
+       contato, não susto. */
+    const animador = modeloEl.components.animador;
+
+    if (animador && animal.animacoes) {
+      animador.tocarUmaVez(animal.animacoes.reagindo);
+    } else {
+      // sem animação própria: um pulinho curto feito por nós
+      giroEl.setAttribute('animation__reagir', {
+        property: 'position',
+        from: '0 0 0',
+        to: '0 ' + (animal.tamanhoReal * 0.5) + ' 0',
+        dir: 'alternate',
+        loop: 1,
+        dur: 260,
+        easing: 'easeOutQuad'
+      });
+    }
   });
 
   /* =========================================================
-     13. REGISTROS DE CARREGAMENTO
+     14. REGISTROS DE CARREGAMENTO
      ========================================================= */
   cena.addEventListener('loaded', function () {
     inclinarCamera(INCLINACAO_GRAUS);
