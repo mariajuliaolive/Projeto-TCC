@@ -155,8 +155,23 @@ participante usa e o que a pesquisadora usa tem publicos diferentes.
   relogios de entrada costumam usar protocolo proprio. Precisa de HTTPS
   (ou localhost) e de Chrome ou Edge; nao funciona em iPhone.
 
+### Resultado do teste com sensores
+
+| Aparelho testado | Publica o servico 0x180D? | Legivel pelo navegador? |
+|------------------|---------------------------|-------------------------|
+| Relogio X-WATCH  | nao                       | nao                     |
+
+O relogio conecta por Bluetooth normalmente e mede a frequencia cardiaca,
+mas nao publica o servico padrao: transmite por protocolo proprio, legivel
+apenas pelo aplicativo do fabricante. O mesmo vale para a maioria dos
+relogios de entrada e para Apple Watch e Galaxy Watch.
+
+Cintas toracicas (Polar H9/H10, Wahoo TICKR, Garmin HRM-Dual, Coospo,
+Magene) implementam o perfil padrao e seriam legiveis diretamente.
+
 O sistema em si **nao coleta** frequencia cardiaca. A linha existe no HUD
-mostrando a ausencia de sensor.
+mostrando a ausencia de sensor. A coleta efetiva demandaria, alem do
+hardware adequado, aprovacao em Comite de Etica em Pesquisa.
 
 ## Realidade Virtual (WebXR)
 
