@@ -1,4 +1,4 @@
-# Créditos dos recursos
+ # Créditos dos recursos
 
 Registro de origem e licença de todo material de terceiros usado no
 protótipo. Preencher **no momento do download** — reconstituir depois é
