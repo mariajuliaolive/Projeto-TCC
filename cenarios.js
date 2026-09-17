@@ -213,6 +213,45 @@ function arbusto(pai, position, raio, cor) {
 /* =========================================================
    SALA — aranha e rato
    ========================================================= */
+/* Lista preenchida por cada cenário: onde um animal pode estar
+   escondido, e a porta que o revela (quando houver). */
+let esconderijos = [];
+
+/* Um esconderijo guarda três coisas·
+
+   posicao   onde o animal espera, invisível
+   saida     para onde ele corre quando é descoberto
+   porta     a porta que o revela, quando existe uma
+
+   A saída não é escolhida à mão em cada chamada. Todo
+   esconderijo fica encostado em alguma coisa — um armário,
+   a geladeira, um tronco — e todos esses estão nas beiradas
+   do ambiente. Então a saída é sempre "para o meio da sala e
+   um passo à frente"· multiplicar x por 0,72 puxa o animal em
+   direção à linha do centro, e somar em z o traz para perto
+   de quem olha.
+
+   O único cuidado é com os esconderijos que ficam ao lado de
+   quem entra (z próximo de zero)· dar o passo à frente ali
+   colocaria o animal em cima da pessoa, o que é susto, não
+   exposição. Nesses, ele só sai de lado. */
+function esconderijo(x, z, porta) {
+  const passoAFrente = z + 0.5;
+
+  /* quem sai de um armário precisa afastar-se um pouco mais:
+     a porta aberta ocupa justamente o espaço ao lado dele */
+  const puxada = porta ? 0.55 : 0.72;
+
+  esconderijos.push({
+    posicao: { x: x, z: z },
+    saida: {
+      x: x * puxada,
+      z: passoAFrente > -0.5 ? z : passoAFrente
+    },
+    porta: porta || null
+  });
+}
+
 function montarSala(raiz) {
   definirCeu('#8FA8BD');
 
@@ -270,6 +309,13 @@ function montarSala(raiz) {
 
   vaso(raiz, '2.5 0 -7.4');
 
+  /* onde um bicho se esconderia numa sala */
+  esconderijo(-2.1, -4.2);    // sob o sofá
+  esconderijo(-0.35, -4.3);   // sob a mesa de centro
+  esconderijo(2.3, -4.6);     // atrás da estante
+  esconderijo(-2.5, -6.4);    // atrás da luminária
+  esconderijo(2.4, -7.4);     // atrás do vaso
+
   /* ---------- iluminação ---------- */
   criar('a-light', { type: 'ambient', color: '#8C99AB', intensity: 0.55 }, raiz);
   criar('a-light', { type: 'directional', color: '#DCE8F2', intensity: 0.5, position: '0 3 -6' }, raiz);
@@ -304,10 +350,35 @@ function montarCozinha(raiz) {
   criar('a-box', { position: '0 0.44 0', width: 0.6, height: 0.88, depth: 6, color: '#C9BFA8' }, bancada);
   criar('a-box', { position: '0.01 0.9 0', width: 0.66, height: 0.06, depth: 6.1, color: '#3E4146' }, bancada);
   criar('a-box', { position: '0 0.08 0', width: 0.62, height: 0.12, depth: 6, color: '#8A8073' }, bancada);
-  /* puxadores */
+  /* ---------- portas dos armários ----------
+     Cada porta gira em torno de uma dobradiça. Por isso ela é
+     filha de uma entidade posicionada NA dobradiça, e o painel
+     fica deslocado meia largura para o lado: girar o pai faz a
+     porta abrir como uma porta de verdade, e não em torno do
+     próprio meio. */
   for (let i = -2; i <= 2; i++) {
-    criar('a-box', { position: `0.31 0.6 ${i * 1.1}`, width: 0.03, height: 0.03, depth: 0.34, color: '#5A5F66' }, bancada);
-    criar('a-box', { position: `0.3 0.5 ${i * 1.1}`, width: 0.01, height: 0.8, depth: 0.02, color: '#B3AB98' }, bancada);
+    const z = -3.5 + i * 1.12;
+
+    const dobradica = criar('a-entity', {
+      position: `-1.89 0.5 ${z - 0.5}`,
+      class: 'porta clicavel',
+      'porta-armario': ''
+    }, raiz);
+
+    criar('a-box', {
+      position: '0 0 0.5',
+      width: 0.03, height: 0.78, depth: 1.0,
+      color: '#DCD3BC'
+    }, dobradica);
+
+    criar('a-box', {
+      position: '0.03 0 0.92',
+      width: 0.02, height: 0.03, depth: 0.28,
+      color: '#5A5F66'
+    }, dobradica);
+
+    /* dentro do armário, atrás da porta */
+    esconderijo(-2.05, z, dobradica);
   }
 
   /* ---------- pia ---------- */
@@ -344,6 +415,12 @@ function montarCozinha(raiz) {
   const lixeira = criar('a-entity', { position: '1.9 0 -2.6' }, raiz);
   criar('a-cylinder', { position: '0 0.28 0', radius: 0.19, height: 0.56, color: '#6E747B' }, lixeira);
   criar('a-cylinder', { position: '0 0.58 0', radius: 0.2, height: 0.04, color: '#565C63' }, lixeira);
+
+  /* outros cantos onde uma barata se esconderia */
+  esconderijo(1.9, -2.6);      // atrás da lixeira
+  esconderijo(2.05, -6.2);     // sob a geladeira
+  esconderijo(2.1, -4.3);      // atrás do fogão
+  esconderijo(-1.7, -7.0);     // canto do fundo
 
   criar('a-light', { type: 'ambient', color: '#AEB9C6', intensity: 0.7 }, raiz);
   criar('a-light', { type: 'directional', color: '#FFFFFF', intensity: 0.45, position: '1 3 -5' }, raiz);
@@ -399,6 +476,13 @@ function montarFloresta(raiz) {
   [[-1.9, -7.3, 0.28], [2.4, -6.1, 0.22], [-4.6, -9.4, 0.34]].forEach(function (p) {
     criar('a-sphere', { position: `${p[0]} ${p[2] * 0.6} ${p[1]}`, radius: p[2], color: '#7A7A72', roughness: 1 }, raiz);
   });
+
+  /* sob os troncos e entre as pedras */
+  esconderijo(-3.4, -5.5);
+  esconderijo(3.8, -8.2);
+  esconderijo(-1.9, -7.3);
+  esconderijo(2.4, -6.1);
+  esconderijo(-4.6, -9.4);
 
   criar('a-light', { type: 'ambient', color: '#9FB49B', intensity: 0.75 }, raiz);
   criar('a-light', { type: 'directional', color: '#FFF6DC', intensity: 0.85, position: '5 8 -3' }, raiz);
@@ -463,6 +547,13 @@ function montarQuintal(raiz) {
   arvore(raiz, '-7.5 0 -9', 5.2, '#3B6334');
   arvore(raiz, '7.8 0 -9.6', 4.4, '#44703A');
 
+  /* junto da água, do canteiro e dos vasos */
+  esconderijo(-4.2, -5.5);
+  esconderijo(-3.4, 0.2);
+  esconderijo(3.2, 0.4);
+  esconderijo(-2.0, -9.6);
+  esconderijo(2.5, -9.6);
+
   criar('a-light', { type: 'ambient', color: '#BCCBD6', intensity: 0.8 }, raiz);
   criar('a-light', { type: 'directional', color: '#FFF4D8', intensity: 0.9, position: '-4 7 -2' }, raiz);
 }
@@ -494,8 +585,13 @@ function montarCenario(nome, raiz) {
     raiz.removeChild(raiz.firstChild);
   }
 
+  esconderijos = [];
   montar(raiz);
-  console.log('Cenário montado:', nome);
 
-  return LIMITES[nome] || LIMITES.sala;
+  console.log(`Cenário montado: ${nome} — ${esconderijos.length} esconderijos.`);
+
+  return {
+    limites: LIMITES[nome] || LIMITES.sala,
+    esconderijos: esconderijos
+  };
 }

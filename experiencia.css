@@ -396,6 +396,74 @@ html, body {
 .hud-acao[aria-pressed="true"]  .risco-som { display: none; }
 
 /* =========================================================
+   CONTROLE DE ANDAR
+
+   Um círculo grande com um botão menor dentro. Arrastar o
+   menor a partir do centro indica direção e intensidade — o
+   mesmo gesto dos jogos de celular.
+
+   touch-action: none impede o navegador de interpretar o
+   arrasto como rolagem da página.
+   ========================================================= */
+/* O atributo hidden do HTML vale "display: none", mas a regra
+   abaixo declara "display: grid" e, sendo mais específica,
+   venceria. Por isso o hidden precisa ser dito aqui também —
+   senão o controle aparece no computador, onde há teclado e
+   ele só atrapalha. */
+.controle-andar[hidden] {
+  display: none;
+}
+
+.controle-andar {
+  position: absolute;
+  /* fora do painel "Seu progresso", que ocupa o canto esquerdo */
+  left: 330px;
+  bottom: 22px;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: rgba(14, 18, 25, 0.5);
+  border: 1px solid var(--hud-borda);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.controle-andar--ativo {
+  background: rgba(20, 40, 44, 0.65);
+  border-color: rgba(62, 208, 192, 0.5);
+}
+
+.controle-andar__manete {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(62, 208, 192, 0.3);
+  border: 2px solid var(--hud-ciano);
+  pointer-events: none;
+  transition: transform 0.08s linear;
+}
+
+.controle-andar--ativo .controle-andar__manete {
+  transition: none;   /* durante o arrasto, acompanha o dedo direto */
+}
+
+.controle-andar__rotulo {
+  position: absolute;
+  bottom: -20px;
+  font-size: 11px;
+  color: var(--hud-suave);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* =========================================================
    PRÓXIMO NÍVEL
    ========================================================= */
 .hud-proximo {
@@ -450,7 +518,8 @@ html, body {
 @media (max-width: 900px) {
   .hud-instrucoes {
     top: auto;
-    bottom: 96px;
+    /* acima do controle de andar, que ocupa o canto de baixo */
+    bottom: 224px;
     right: 12px;
     left: 12px;
     width: auto;
@@ -458,7 +527,19 @@ html, body {
   }
 
   .hud-progresso {
-    display: none;   /* reaparece ao tocar em "Ajuda" */
+    display: none;   /* o canto é do controle de andar */
+  }
+
+  .controle-andar {
+    left: 16px;
+    bottom: 96px;
+    width: 116px;
+    height: 116px;
+  }
+
+  .controle-andar__manete {
+    width: 50px;
+    height: 50px;
   }
 
   .hud-ajuda {

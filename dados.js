@@ -48,6 +48,21 @@
                  empinada, então a maior dimensão dela é a altura
    rotacao     → giro aplicado ao modelo para ele ficar de frente
                  para quem observa. Ajuste depois de ver o modelo
+   fatorQuantidade
+               → ajuste fino do número de cópias deste animal, em
+                 cima da quantidade que o nível pede. Vale 1 quando
+                 não está escrito.
+
+                 Existe porque "muitos" não quer dizer a mesma
+                 coisa para todo bicho. Uma cozinha com vinte e
+                 quatro baratas é uma cena reconhecível; uma mata
+                 com quinze cobras de 1,4 m não é — vira um
+                 tapete de cobras, que é exagero e ainda pesa na
+                 taxa de quadros. Por isso a barata multiplica e a
+                 cobra divide.
+
+                 O Nível 1 ignora este fator: o primeiro contato é
+                 sempre com UM animal, para todos.
    animacoes   → quais animações do arquivo usar em cada situação.
                  Basta um PEDAÇO do nome: o modelo pode chamar de
                  "SnakeArmature|Snake_Idle", e 'Idle' já encontra.
@@ -62,8 +77,9 @@
                  'reagindo' vale null quando o modelo não tem uma
                  animação de reação aceitável. É o caso da barata,
                  cujas únicas opções seriam atacar ou voar para
-                 cima de quem observa. Nesses casos o código gera
-                 um sobressalto curto, feito de um giro rápido.
+                 cima de quem observa, e da cobra, cujo arquivo traz
+                 uma animação só. Nesses casos o código gera um
+                 sobressalto curto, feito de um giro rápido.
    distanciaLonge → distância do nível 1, em metros
    distanciaPerto → distância do nível 5, em metros
 
@@ -83,13 +99,14 @@ const ANIMAIS = [
     inicial: 'C',
     modelo: 'assets/models/cobra.glb',
     som: 'assets/sounds/cobra.wav',
-    animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: 'Jump' },
-    distanciaLonge: 5.0,
-    distanciaPerto: 1.0,
-    tamanhoReal: 0.5,
-    escalaVisual: 1.9,
-    medida: 'altura',
-    rotacao: '0 0 0'
+    animacoes: { parado: 'Animation', movendo: 'Animation', reagindo: null },
+    distanciaLonge: 5.5,
+    distanciaPerto: 1.3,
+    tamanhoReal: 1.4,
+    escalaVisual: 1.0,
+    medida: 'maior',
+    rotacao: '0 0 0',
+    fatorQuantidade: 0.5
   },
   {
     id: 'rato',
@@ -101,11 +118,11 @@ const ANIMAIS = [
     inicial: 'R',
     modelo: 'assets/models/rato.glb',
     som: 'assets/sounds/rato.wav',
-    animacoes: null,
+    animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: 'Jump' },
     distanciaLonge: 3.2,
     distanciaPerto: 0.9,
     tamanhoReal: 0.25,
-    escalaVisual: 2.8,
+    escalaVisual: 1.8,
     medida: 'maior',
     rotacao: '0 0 0'
   },
@@ -125,7 +142,8 @@ const ANIMAIS = [
     tamanhoReal: 0.05,
     escalaVisual: 4.5,
     medida: 'maior',
-    rotacao: '0 0 0'
+    rotacao: '0 0 0',
+    fatorQuantidade: 1.6
   },
   {
     id: 'aranha',
@@ -266,6 +284,23 @@ function distanciaDoNivel(animal, nivel) {
    --------------------------------------------------------- */
 function tamanhoApresentado(animal) {
   return animal.tamanhoReal * (animal.escalaVisual || 1);
+}
+
+/* ---------------------------------------------------------
+   QUANTAS CÓPIAS DESTE ANIMAL NESTE NÍVEL
+
+   O nível diz a quantidade base; o animal ajusta. O Nível 1
+   é sempre um só, para todos — é o primeiro contato, e ele
+   precisa ser igual e previsível para qualquer participante.
+   --------------------------------------------------------- */
+function quantidadeDoNivel(animal, nivel) {
+  const base = nivel.quantidade || 1;
+
+  if (nivel.numero === 1) {
+    return 1;
+  }
+
+  return Math.max(1, Math.round(base * (animal.fatorQuantidade || 1)));
 }
 
 /* ---------------------------------------------------------

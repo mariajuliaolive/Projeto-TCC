@@ -58,6 +58,12 @@ selecao.js         monta as opcoes e gera o link da experiencia
 experiencia.css    estilos da cena
 experiencia.js     le a escolha na URL e prepara a cena
 
+animador.js        toca as animacoes que vem dentro do .glb
+painel.js          paineis de texto desenhados num canvas (usados no VR)
+cenarios.js        monta os quatro ambientes e lista os esconderijos
+descoberta.js      portas de armario e animais que aparecem ao serem achados
+controles.js       controle de andar no celular (joystick de toque)
+
 assets/
   models/          modelos 3D dos animais (.glb)
   textures/        imagens e texturas
@@ -65,8 +71,8 @@ assets/
 ```
 
 Arquivos `base.*` sao compartilhados. Os demais levam o nome da pagina a
-que pertencem. `cenarios.js`, `animador.js` e `painel.js` sao componentes
-e construtores usados pela cena 3D.
+que pertencem. `cenarios.js`, `animador.js`, `painel.js`, `descoberta.js`
+e `controles.js` sao componentes e construtores usados pela cena 3D.
 
 ## Cenarios
 
@@ -117,14 +123,54 @@ duas. A funcao `distanciaDoNivel(animal, nivel)` faz a conta.
 
 | animal | n1     | n2     | n3     | n4     | n5     |
 |--------|--------|--------|--------|--------|--------|
-| Cobra  | 7,00 m | 4,39 m | 4,39 m | 2,36 m | 1,20 m |
-| Rato   | 5,50 m | 3,57 m | 3,57 m | 2,06 m | 1,20 m |
-| Sapo   | 4,50 m | 3,01 m | 3,01 m | 1,86 m | 1,20 m |
-| Aranha | 4,00 m | 2,74 m | 2,74 m | 1,76 m | 1,20 m |
-| Barata | 3,00 m | 2,19 m | 2,19 m | 1,56 m | 1,20 m |
+| Cobra  | 5,50 m | 3,61 m | 3,61 m | 2,14 m | 1,30 m |
+| Rato   | 3,20 m | 2,17 m | 2,17 m | 1,36 m | 0,90 m |
+| Aranha | 2,60 m | 1,81 m | 1,81 m | 1,20 m | 0,85 m |
+| Sapo   | 2,60 m | 1,81 m | 1,81 m | 1,20 m | 0,85 m |
+| Barata | 1,90 m | 1,38 m | 1,38 m | 0,98 m | 0,75 m |
 
-O minimo de 1,20 m e a camera inclinada 24 graus para baixo garantem que
-o animal fique dentro do campo de visao em todas as combinacoes.
+A camera inclinada 28 graus para baixo garante que o animal fique dentro
+do campo de visao em todas as 25 combinacoes.
+
+## Quantidade por nivel
+
+O nivel diz a quantidade base; o animal ajusta com o campo
+`fatorQuantidade` (`dados.js`). "Muitos" nao quer dizer a mesma coisa
+para todo bicho: uma cozinha com 24 baratas e uma cena reconhecivel, uma
+mata com 15 cobras de 1,4 m nao e. O nivel 1 ignora o fator — o primeiro
+contato e sempre com UM animal, para todos os participantes.
+
+| animal | fator | n1 | n2 | n3 | n4 | n5 |
+|--------|-------|----|----|----|----|----|
+| Barata | 1,6   | 1  | 5  | 10 | 16 | 24 |
+| Rato   | 1     | 1  | 3  | 6  | 10 | 15 |
+| Aranha | 1     | 1  | 3  | 6  | 10 | 15 |
+| Sapo   | 1     | 1  | 3  | 6  | 10 | 15 |
+| Cobra  | 0,5   | 1  | 2  | 3  | 5  | 8  |
+
+## Animais escondidos
+
+Do nivel 2 em diante, parte dos animais comeca **invisivel**, dentro de
+um armario ou atras de um movel, e so aparece quando a pessoa o encontra.
+Sao 35% das copias nos niveis 2 e 3, e 45% nos niveis 4 e 5.
+
+Cada cenario declara seus esconderijos com a funcao `esconderijo(x, z,
+porta)`, em `cenarios.js`. Sao 21 no total: 5 na sala, 9 na cozinha
+(5 deles dentro dos armarios, com porta), 5 na floresta e 5 no quintal.
+
+Dois modos de aparecer, no componente `revela-perto` (`descoberta.js`):
+
+| esconderijo | como aparece |
+|-------------|--------------|
+| com porta   | so quando a pessoa **abre a porta do armario** (clique ou mira) |
+| sem porta   | quando a pessoa **chega a menos de 1,6 m** dele |
+
+Ao aparecer, o animal corre para fora do esconderijo, em direcao ao meio
+do ambiente. O HUD mostra "Animais encontrados: X de Y" — sem isso, quem
+explora desiste achando que ja viu tudo.
+
+A exposicao passa a acontecer no ritmo de quem explora: e a pessoa que
+decide quando abrir a proxima porta, e o controle continua com ela.
 
 ## Modelos 3D
 
@@ -158,30 +204,66 @@ O componente `animador` (arquivo `animador.js`) toca as animacoes que ja
 vem dentro do `.glb`. Basta um pedaco do nome: o modelo pode chamar de
 `SnakeArmature|Snake_Idle`, e `Idle` encontra.
 
-| nivel | movimento | animacao        |
-|-------|-----------|-----------------|
-| 1, 2  | nao       | `parado` (Idle) |
-| 3, 4  | sim       | `movendo` (Walk, ou Jump no sapo) |
-| 5     | sim       | `movendo`, e `reagindo` ao ser tocado |
-
 As animacoes de ataque que alguns modelos trazem **nao sao usadas**: um
 animal que ataca produz susto, e susto e o oposto de exposicao gradual e
-controlada.
+controlada. Modelos sem animacao recebem um movimento gerado por codigo.
 
-Modelos sem animacao (o rato) recebem um movimento gerado por codigo:
-respiracao leve sempre, e um giro lento do corpo nos niveis de movimento.
+### Comportamento de cada copia
+
+Um grupo em que todos se mexem igual nao parece um grupo, parece um
+enfeite. Cada copia recebe um comportamento sorteado **com semente**, o
+que significa que o mesmo nivel monta sempre igual — sem isso, dois
+participantes veriam cenas diferentes e a comparacao entre eles perderia
+sentido.
+
+| comportamento | o que faz | custo |
+|---------------|-----------|-------|
+| `quieto`    | so respira (balanco vertical lento) | barato: nao recebe o tocador de animacao |
+| `inquieto`  | toca a animacao `parado` e gira o corpo, olhando em volta | medio |
+| `andarilho` | toca a animacao `movendo`, gira e ainda caminha devagar entre dois pontos proximos | maior |
+
+Sorteio: nos niveis 1 e 2, 65% ficam quietos; do nivel 3 em diante, 25%
+quietos, 40% inquietos e 35% andarilhos.
+
+Tres regras fixas:
+
+1. **Nenhuma copia fica totalmente imovel.** Quem nao toca animacao
+   recebe pelo menos a respiracao. Sempre ha movimento na cena.
+2. **Sempre ha alguma copia parada.** Sem contraste, o grupo inteiro vira
+   um borrao de movimento e nada chama atencao.
+3. **O animal principal (o primeiro) nunca passeia.** Ele esta na
+   distancia exata que define o nivel, e sair do lugar desmancharia a
+   progressao que estamos medindo. Mas tambem nunca fica parado: toca a
+   animacao e olha em volta.
+
+No maximo 8 copias tocam a animacao do arquivo ao mesmo tempo
+(`LIMITE_ANIMADOS`, em `experiencia.js`). Cada modelo animado recalcula a
+posicao de cada osso a cada quadro; a nona copia em diante custa caro e
+ninguem acompanha 24 bichos ao mesmo tempo. As demais continuam
+respirando e girando, que e barato.
 
 ### Modelos em uso
 
-| arquivo    | tamanho | triangulos | textura     | animacoes                  |
-|------------|---------|------------|-------------|----------------------------|
-| cobra.glb  | 212 KB  | 1.618      | -           | Idle, Walk, Jump, Attack   |
-| aranha.glb | 438 KB  | 2.712      | -           | Idle, Walk, Jump, Attack, Death |
-| sapo.glb   | 574 KB  | 4.920      | -           | Idle, Jump, Attack, Death  |
-| rato.glb   | 0,31 MB | 776        | 512x512     | nenhuma                    |
-| barata.glb | 0,53 MB | 576        | 512x256     | idle, walking, Attack, Death, flying x2 |
+| arquivo    | tamanho | triangulos | texturas | animacoes usadas | animacoes no arquivo |
+|------------|---------|------------|----------|------------------|----------------------|
+| cobra.glb  | 3,82 MB | 4.380      | 5 x 512  | Animation        | Animation |
+| aranha.glb | 0,43 MB | 2.712      | -        | Idle, Walk, Jump | + Attack, Death |
+| sapo.glb   | 0,56 MB | 4.920      | -        | Idle, Jump       | + Attack, Death |
+| rato.glb   | 0,53 MB | 4.004      | -        | Idle, Walk, Jump | + Run, Attack, Death |
+| barata.glb | 0,52 MB | 576        | 1 x 512  | idle, walking    | + Attack, death, flying x2 |
 
 Os cinco animais estao implementados.
+
+A cobra teve as cinco texturas reduzidas de 1024x1024 para 512x512 com
+`ferramentas/reduzir-texturas.py`: o arquivo caiu de 6,13 MB para 3,82 MB
+e a memoria de video ocupada por ela caiu de cerca de 20 MB para 5 MB.
+
+```bash
+python3 ferramentas/reduzir-texturas.py assets/models/cobra.glb 512
+```
+
+Os arquivos `cobra1.glb` e `rato1.glb` sao os modelos anteriores, guardados
+como reserva. Nao sao carregados por nenhuma pagina.
 
 ## Ferramentas de diagnostico
 
@@ -286,9 +368,28 @@ deslocar.
 | Dispositivo | Olhar          | Andar     | Selecionar            |
 |-------------|----------------|-----------|-----------------------|
 | Computador  | arrastar mouse | W A S D   | clique                |
-| Celular     | girar aparelho | -         | manter a mira no alvo |
+| Celular     | girar aparelho | controle circular no canto da tela | manter a mira no alvo |
 | Oculos VR   | mover a cabeca | andar no espaco fisico | raio do controle, ou olhar demorado |
 
 A camera fica a 1,6 m do chao (altura media dos olhos) e a velocidade de
-caminhada e de cerca de 1,8 m/s, proxima da caminhada humana. Valores mais
+caminhada e de cerca de 1,4 m/s, proxima da caminhada humana. Valores mais
 altos causam desconforto em Realidade Virtual.
+
+### Andar no celular
+
+No computador existe teclado, e o A-Frame ja traz o `wasd-controls`. No
+celular nao ha teclado nenhum: girar o aparelho olha em volta, mas nao
+move ninguem do lugar — e sem andar nao da para explorar o ambiente nem
+encontrar os animais escondidos.
+
+O componente `andar-toque` (`controles.js`) desenha um controle circular
+no canto de baixo. Arrastar o dedo a partir do centro anda naquela
+direcao, como nos jogos de celular. Dois cuidados:
+
+- a direcao e **relativa ao olhar**: empurrar para cima anda para onde a
+  pessoa esta olhando, nao para o norte do mundo;
+- o deslocamento e **aparado pelos limites do cenario** (declarados em
+  `LIMITES`, no fim de `cenarios.js`), com 45 cm de folga, para ninguem
+  atravessar parede.
+
+O controle so aparece em aparelhos com tela sensivel ao toque.

@@ -12,6 +12,7 @@ const cenarioEl = document.querySelector('#cenario');
 const animaisEl = document.querySelector('#animais');
 const somAmbiente = document.querySelector('#somAmbiente');
 const somAnimal = document.querySelector('#somAnimal');
+const rig = document.querySelector('#rig');
 
 /* ---------- interface dentro do óculos ---------- */
 const uiVR = document.querySelector('#uiVR');
@@ -32,6 +33,8 @@ const hudEscala = document.querySelector('#hudEscala');
 const hudEscalaBotoes = document.querySelector('#hudEscalaBotoes');
 const hudAjuda = document.querySelector('#hudAjuda');
 const hudAjudaTexto = document.querySelector('#hudAjudaTexto');
+const hudEncontrados = document.querySelector('#hudEncontrados');
+const hudEncontradosLinha = document.querySelector('#hudEncontradosLinha');
 
 const btnSom = document.querySelector('#btnSom');
 const btnAjuda = document.querySelector('#btnAjuda');
@@ -95,7 +98,9 @@ function iniciarExperiencia() {
      verdade. A função devolve os limites do lugar, para os
      animais não atravessarem paredes nem sumirem atrás do muro.
      ========================================================= */
-  const limites = montarCenario(animal.cenario, cenarioEl);
+  const cenario = montarCenario(animal.cenario, cenarioEl);
+  const limites = cenario.limites;
+  const esconderijos = cenario.esconderijos;
 
   /* =========================================================
      4. ONDE CADA ANIMAL FICA
@@ -109,7 +114,7 @@ function iniciarExperiencia() {
      sem se sobrepor.
      ========================================================= */
   const distancia = distanciaDoNivel(animal, nivel);
-  const quantidade = nivel.quantidade || 1;
+  const quantidade = quantidadeDoNivel(animal, nivel);
 
   /* O tamanho com que o animal aparece não é o tamanho real: é o
      real multiplicado pela escala de apresentação, declarada em
@@ -127,23 +132,46 @@ function iniciarExperiencia() {
     };
   }
 
-  function calcularPosicoes() {
-    const sorteia = sorteador(nivel.numero * 7919 + animal.id.length * 131);
-    const separacao = Math.max(tamanho * 2.2, 0.35);
-    const posicoes = [{ x: 0, z: -distancia }];
+  const sorteia = sorteador(nivel.numero * 7919 + animal.id.length * 131);
+  const separacao = Math.max(tamanho * 2.2, 0.35);
 
-    for (let i = 1; i < quantidade; i++) {
+  /* Quantos animais começam escondidos.
+
+     Do nível 2 em diante, parte deles fica dentro de armários,
+     sob móveis ou atrás de obstáculos, e só aparece quando a
+     pessoa abre a porta ou chega perto. Assim a exposição
+     acontece no ritmo de quem explora, e não de uma vez.
+
+     No nível 1 ninguém se esconde: o primeiro contato deve ser
+     previsível. */
+  function quantosEscondidos() {
+    if (nivel.numero < 2 || esconderijos.length === 0) {
+      return 0;
+    }
+    const fracao = nivel.numero >= 4 ? 0.45 : 0.35;
+    return Math.min(esconderijos.length, Math.round(quantidade * fracao));
+  }
+
+  function calcularPosicoes() {
+    const escondidos = quantosEscondidos();
+    const aVista = quantidade - escondidos;
+
+    /* o primeiro fica sempre na distância exata do nível, à
+       frente de quem observa: é ele que define a experiência */
+    const posicoes = [{ x: 0, z: -distancia, esconderijo: null }];
+
+    /* ---------- os que ficam à vista ---------- */
+    for (let i = 1; i < aVista; i++) {
       let melhor = null;
 
-      /* tenta algumas posições e fica com a primeira que não
-         encosta em nenhuma das já escolhidas */
       for (let tentativa = 0; tentativa < 40; tentativa++) {
-        const angulo = sorteia(-44, 44) * Math.PI / 180;
+        /* o arco abre conforme o nível: no começo todos à frente,
+           depois espalhados pelos lados, para dar o que explorar */
+        const abertura = 40 + nivel.numero * 16;
+        const angulo = sorteia(-abertura, abertura) * Math.PI / 180;
 
-        /* o alcance cresce com a quantidade: quinze animais não
-           cabem no mesmo espaço que três */
         const folga = separacao * Math.sqrt(quantidade);
-        const raio = sorteia(distancia * 0.7, distancia * 1.4 + folga);
+        const raio = sorteia(distancia * 0.7, distancia * 1.5 + folga);
 
         const x = Math.sin(angulo) * raio;
         const z = -Math.cos(angulo) * raio;
@@ -156,11 +184,24 @@ function iniciarExperiencia() {
           return Math.hypot(p.x - x, p.z - z) < separacao;
         });
 
-        if (!colide) { melhor = { x, z }; break; }
-        if (!melhor) { melhor = { x, z }; }
+        if (!colide) { melhor = { x, z, esconderijo: null }; break; }
+        if (!melhor) { melhor = { x, z, esconderijo: null }; }
       }
 
       if (melhor) { posicoes.push(melhor); }
+    }
+
+    /* ---------- os escondidos ---------- */
+    const disponiveis = esconderijos.slice();
+    for (let i = 0; i < escondidos && disponiveis.length; i++) {
+      const escolhido = disponiveis.splice(
+        Math.floor(sorteia(0, disponiveis.length)) % disponiveis.length, 1)[0];
+
+      posicoes.push({
+        x: escolhido.posicao.x,
+        z: escolhido.posicao.z,
+        esconderijo: escolhido
+      });
     }
 
     return posicoes;
@@ -242,25 +283,36 @@ function iniciarExperiencia() {
      Virtual causa desconforto e, num sistema de exposição
      gradual, tira de quem usa o controle do próprio ritmo.
      ========================================================= */
-  function aplicarMovimentoDoCorpo(giro, indice) {
+  function aplicarMovimentoDoCorpo(giro, indice, comportamento) {
     const temAnimacoes = Boolean(animal.animacoes);
     const defasagem = indice * 260;
 
-    if (!temAnimacoes) {
+    /* O balánço de respiração é o movimento mínimo: nenhuma
+       cópia fica completamente imóvel na cena. Quem toca a
+       animação do arquivo já respira por conta própria — somar
+       os dois deixaria o bicho pulando. */
+    const respiraSozinho = temAnimacoes
+                           && comportamento !== 'quieto'
+                           && indice < LIMITE_ANIMADOS;
+
+    if (!respiraSozinho) {
       giro.setAttribute('animation__respirar', {
         property: 'position',
         from: '0 0 0',
         to: '0 ' + (tamanho * 0.04) + ' 0',
         dir: 'alternate',
         loop: true,
-        dur: 2400,
+        dur: comportamento === 'quieto' ? 3400 : 2400,
         delay: defasagem,
         easing: 'easeInOutSine'
       });
     }
 
-    if (!nivel.movimento) {
-      return;   // níveis 1 e 2: o animal fica onde está
+    /* o quieto só respira. É ele que dá o contraste: sem
+       nenhum parado, o grupo inteiro vira um só borrão de
+       movimento e nada chama atenção. */
+    if (comportamento === 'quieto') {
+      return;
     }
 
     const amplitude = temAnimacoes ? 30 : 42;
@@ -278,6 +330,41 @@ function iniciarExperiencia() {
     });
   }
 
+  /* ---------------------------------------------------------
+     O PASSEIO
+
+     Girar no lugar já dá vida ao bicho, mas só quem sai do
+     lugar parece que está indo a algum lugar. O andarilho vai
+     e volta devagar entre dois pontos próximos.
+
+     O trecho é curto de propósito: o animal não pode
+     atravessar parede nem chegar mais perto do que o nível
+     combinou. Por isso o destino é sempre aparado pelos
+     limites do cenário e nunca passa de z = -0,6 (que é
+     logo à frente de quem entra).
+     --------------------------------------------------------- */
+  function aplicarPasseio(raiz, base, indice) {
+    const alcance = Math.max(tamanho * 1.6, 0.45);
+    const angulo = sorteia(0, Math.PI * 2);
+
+    let destinoX = base.x + Math.sin(angulo) * alcance;
+    let destinoZ = base.z + Math.cos(angulo) * alcance;
+
+    destinoX = Math.max(-limites.x + 0.2, Math.min(limites.x - 0.2, destinoX));
+    destinoZ = Math.max(limites.zMin + 0.2, Math.min(-0.6, destinoZ));
+
+    raiz.setAttribute('animation__passear', {
+      property: 'position',
+      from: `${base.x} 0 ${base.z}`,
+      to: `${destinoX} 0 ${destinoZ}`,
+      dir: 'alternate',
+      loop: true,
+      dur: 9000 + indice * 450,
+      delay: indice * 300,
+      easing: 'easeInOutSine'
+    });
+  }
+
   /* =========================================================
      7. CRIAR O GRUPO DE ANIMAIS
 
@@ -289,6 +376,24 @@ function iniciarExperiencia() {
      ========================================================= */
   const copias = [];
 
+  /* contadores da cena, para o registro no console e para o HUD */
+  let animadas = 0;            // quantas tocam a animação do arquivo
+  let escondidosNoTotal = 0;   // quantas começam escondidas
+  let encontrados = 0;         // quantas já foram descobertas
+
+  /* Quem está explorando precisa saber que ainda falta procurar
+     — senão desiste achando que já viu tudo. A linha só aparece
+     quando existe alguém escondido. */
+  function mostrarEncontrados() {
+    if (!hudEncontrados || escondidosNoTotal === 0) {
+      return;
+    }
+    hudEncontradosLinha.hidden = false;
+    hudEncontrados.textContent = encontrados + ' de ' + escondidosNoTotal;
+    hudEncontrados.classList.toggle(
+      'hud-medida__valor--vazio', encontrados === 0);
+  }
+
   /* Quantas cópias tocam a animação do arquivo.
 
      Cada modelo animado mantém um "tocador" próprio, que
@@ -299,9 +404,49 @@ function iniciarExperiencia() {
      As cópias além deste limite continuam se mexendo — elas têm
      o giro lento do corpo, que é barato — mas ficam na pose
      parada do arquivo.  */
-  const LIMITE_ANIMADOS = 6;
+  const LIMITE_ANIMADOS = 8;
+
+  /* ---------------------------------------------------------
+     O QUE CADA CÓPIA FAZ
+
+     Um grupo em que todos se mexem igual não parece um grupo,
+     parece um enfeite. Cada cópia recebe um comportamento
+     próprio, sorteado com semente — logo, sempre o mesmo:
+
+     quieto     fica parado, respirando. Sem a animação do
+                arquivo, que é a parte cara: um bicho imóvel
+                não precisa de esqueleto animado
+     inquieto   toca a animação e gira o corpo, olhando em volta
+     andarilho  o mesmo, e ainda se desloca devagar pelo chão
+
+     Nos níveis 1 e 2 a maioria fica quieta; a partir do 3, a
+     maioria se mexe. Mas nunca são todos de um jeito só: sempre
+     há algum movimento na cena, e sempre algum animal parado.
+     --------------------------------------------------------- */
+  function comportamentoDaCopia(indice) {
+    if (indice === 0) {
+      /* O principal nunca fica parado — é o que a pessoa veio
+         ver — mas também não passeia: ele está na distância
+         exata que define o nível, e sair do lugar desmancharia
+         a progressão que estamos medindo. */
+      return 'inquieto';
+    }
+
+    const sorte = sorteia(0, 1);
+
+    if (!nivel.movimento) {
+      return sorte < 0.65 ? 'quieto' : 'inquieto';
+    }
+
+    if (sorte < 0.25) { return 'quieto'; }
+    if (sorte < 0.65) { return 'inquieto'; }
+    return 'andarilho';
+  }
 
   function criarAnimal(posicao, indice) {
+    const comportamento = comportamentoDaCopia(indice);
+    const esconderijo = posicao.esconderijo;
+
     const raiz = document.createElement('a-entity');
     raiz.classList.add('animal', 'clicavel');
     raiz.setAttribute('position', `${posicao.x} 0 ${posicao.z}`);
@@ -332,16 +477,38 @@ function iniciarExperiencia() {
     raiz.appendChild(giro);
     animaisEl.appendChild(raiz);
 
-    if (animal.animacoes && indice < LIMITE_ANIMADOS) {
+    /* O quieto não recebe o tocador de animação: um bicho que
+       só respira não precisa de esqueleto recalculado a cada
+       quadro. É assim que dá para ter quinze baratas na cozinha
+       sem derrubar a taxa de quadros. */
+    const usaAnimacao = Boolean(animal.animacoes)
+                        && comportamento !== 'quieto'
+                        && indice < LIMITE_ANIMADOS;
+
+    if (usaAnimacao) {
+      animadas = animadas + 1;
       modelo.setAttribute('animador', {
-        clipe: nivel.movimento ? animal.animacoes.movendo : animal.animacoes.parado
+        clipe: comportamento === 'andarilho'
+          ? animal.animacoes.movendo
+          : animal.animacoes.parado
       });
+    }
+
+    function darVida() {
+      aplicarMovimentoDoCorpo(giro, indice, comportamento);
+
+      /* quem começa escondido só passeia depois de aparecer:
+         a saída do esconderijo já usa a posição, e duas
+         animações na mesma propriedade brigam entre si */
+      if (comportamento === 'andarilho' && !esconderijo) {
+        aplicarPasseio(raiz, posicao, indice);
+      }
     }
 
     modelo.addEventListener('model-loaded', function () {
       ajustarModelo(modelo, tamanho);
       apoio.setAttribute('visible', false);
-      aplicarMovimentoDoCorpo(giro, indice);
+      darVida();
     });
 
     modelo.addEventListener('model-error', function () {
@@ -351,10 +518,49 @@ function iniciarExperiencia() {
           'Mostrando a caixa provisória. Coloque o arquivo .glb em assets/models/.'
         );
       }
-      aplicarMovimentoDoCorpo(giro, indice);
+      darVida();
     });
 
     modelo.setAttribute('gltf-model', 'url(' + animal.modelo + ')');
+
+    /* ---------- escondido até ser encontrado ----------
+
+       Dois jeitos de aparecer, conforme o esconderijo:
+
+       com porta    ele só sai quando alguém ABRE a porta do
+                    armário. Chegar perto não basta — por isso
+                    a distância vai a zero, desligando a
+                    verificação por aproximação.
+       sem porta    atrás da lixeira, sob o tronco, no canto do
+                    muro: aparece quando alguém chega perto.
+       ---------------------------------------------------- */
+    if (esconderijo) {
+      raiz.setAttribute('revela-perto', {
+        distancia: esconderijo.porta ? 0 : 1.6,
+        saida: { x: esconderijo.saida.x, y: 0, z: esconderijo.saida.z }
+      });
+
+      if (esconderijo.porta) {
+        esconderijo.porta.addEventListener('porta-aberta', function () {
+          raiz.emit('revelar', null, false);
+        });
+      }
+
+      escondidosNoTotal = escondidosNoTotal + 1;
+
+      raiz.addEventListener('animal-descoberto', function () {
+        encontrados = encontrados + 1;
+        mostrarEncontrados();
+
+        if (comportamento === 'andarilho') {
+          /* espera a saída terminar antes de começar a passear,
+             senão as duas animações disputam a posição */
+          setTimeout(function () {
+            aplicarPasseio(raiz, esconderijo.saida, indice);
+          }, 1400);
+        }
+      });
+    }
 
     /* ---------- reação ao toque ---------- */
     raiz.addEventListener('click', function () {
@@ -389,10 +595,12 @@ function iniciarExperiencia() {
     copias.push(criarAnimal(posicao, indice));
   });
 
+  mostrarEncontrados();
+
   console.log(
     `${copias.length} ${copias.length === 1 ? 'animal' : 'animais'} ` +
     `(${animal.nome}) no cenário "${animal.cenario}", nível ${nivel.numero}. ` +
-    `Com animação do arquivo: ${Math.min(copias.length, LIMITE_ANIMADOS)}.`
+    `Com animação do arquivo: ${animadas}. Escondidos: ${escondidosNoTotal}.`
   );
 
   /* ---------- som do animal ----------
@@ -436,17 +644,61 @@ function iniciarExperiencia() {
      ========================================================= */
   const ehMobile = AFRAME.utils.device.isMobile();
 
+  /* Alguns aparelhos com tela sensível ao toque não são
+     reconhecidos como celular (tablets, notebooks híbridos).
+     Checar o toque diretamente pega todos eles. */
+  const temToque = ehMobile
+                   || 'ontouchstart' in window
+                   || navigator.maxTouchPoints > 0;
+
+  const controleAndar = document.querySelector('#controleAndar');
+
+  /* O cenário só existe depois de montado, então é agora que
+     o controle fica sabendo até onde pode andar. Sem isso,
+     atravessaria a parede.
+
+     Este arquivo roda antes de o A-Frame terminar de montar a
+     cena, então o componente pode ainda não existir. Quando for
+     o caso, esperamos o evento "loaded" da entidade. */
+  function avisarOsLimites() {
+    const componente = rig && rig.components['andar-toque'];
+    if (componente) {
+      componente.definirLimites(limites);
+    }
+  }
+
+  if (rig && rig.hasLoaded) {
+    avisarOsLimites();
+  } else if (rig) {
+    rig.addEventListener('loaded', avisarOsLimites);
+  }
+
+  if (temToque && controleAndar) {
+    controleAndar.hidden = false;
+  }
+
+  const comoAndar = temToque
+    ? 'Arraste o dedo no círculo "andar", no canto da tela, para caminhar '
+      + 'pelo ambiente. '
+    : 'Use as teclas W, A, S e D para andar pelo ambiente. ';
+
+  const comoProcurar = escondidosNoTotal > 0
+    ? 'Nem todos os animais estão à vista: alguns aparecem quando você '
+      + 'chega perto, e outros só quando você abre a porta do armário. '
+    : '';
+
   if (ehMobile) {
     mira.setAttribute('fuse', true);
     hudAjudaTexto.textContent =
-      'Gire o aparelho para olhar em volta. Mire no animal e segure o '
-      + 'olhar por um instante para selecionar. Use "Sair" para voltar '
-      + 'à escolha de estímulo a qualquer momento.';
+      'Gire o aparelho para olhar em volta. ' + comoAndar
+      + 'Mire e segure o olhar por um instante para selecionar. '
+      + comoProcurar
+      + 'Use "Sair" para voltar à escolha de estímulo a qualquer momento.';
   } else {
     hudAjudaTexto.textContent =
-      'Arraste o mouse para olhar em volta. Use as teclas W, A, S e D '
-      + 'para andar pelo quarto. Clique para selecionar. Use "Sair" para '
-      + 'voltar à escolha de estímulo a qualquer momento.';
+      'Arraste o mouse para olhar em volta. ' + comoAndar
+      + 'Clique para selecionar. ' + comoProcurar
+      + 'Use "Sair" para voltar à escolha de estímulo a qualquer momento.';
   }
 
   /* =========================================================

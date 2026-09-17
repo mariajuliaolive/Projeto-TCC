@@ -41,9 +41,10 @@ desempenho fica abaixo de 30 quadros por segundo.
 
 ---
 
-> **Atualizado** após a introdução dos cenários por animal e da
-> quantidade progressiva de estímulos. Os números abaixo já refletem
-> essas mudanças.
+> **Atenção à ordem.** As duas seções a seguir descrevem a rodada feita
+> após a introdução dos cenários por animal. Os números mais recentes,
+> já com os animais escondidos e o controle de andar no celular, estão em
+> "Verificacao apos os ajustes de exploracao".
 
 ## Resumo geral
 
@@ -79,11 +80,15 @@ pose durante a medição.
 
 | Animal | Real | Escala | Mostrado | N1 | N2 | N3 | N4 | N5 |
 |---|---|---|---|---|---|---|---|---|
-| Cobra | 0,50 m | 1,9x | 0,950 m | 5,00 | 3,20 | 3,20 | 1,80 | 1,00 |
-| Rato | 0,25 m | 2,8x | 0,679–0,700 m | 3,20 | 2,17 | 2,17 | 1,36 | 0,90 |
-| Barata | 0,05 m | 4,5x | 0,225–0,235 m | 1,90 | 1,38 | 1,38 | 0,98 | 0,75 |
-| Aranha | 0,08 m | 3,6x | 0,288–0,297 m | 2,60 | 1,81 | 1,81 | 1,20 | 0,85 |
-| Sapo | 0,10 m | 3,0x | 0,300–0,326 m | 2,60 | 1,81 | 1,81 | 1,20 | 0,85 |
+| Cobra | 1,40 m | 1,0x | 1,28–1,55 m | 5,50 | 3,61 | 3,61 | 2,14 | 1,30 |
+| Rato | 0,25 m | 1,8x | 0,46 m | 3,20 | 2,17 | 2,17 | 1,36 | 0,90 |
+| Barata | 0,05 m | 4,5x | 0,24 m | 1,90 | 1,38 | 1,38 | 0,98 | 0,75 |
+| Aranha | 0,08 m | 3,6x | 0,31 m | 2,60 | 1,81 | 1,81 | 1,20 | 0,85 |
+| Sapo | 0,10 m | 3,0x | 0,34 m | 2,60 | 1,81 | 1,81 | 1,20 | 0,85 |
+
+A cobra varia mais que os outros porque o clipe dela dura 40 segundos e a
+percorre inteira: medida em poses diferentes, ela vai de 1,28 m a 1,55 m.
+O valor declarado, 1,40 m, e o do meio.
 
 Distâncias em metros. O nível 3 repete a distância do nível 2 por
 definição: nele muda o movimento, não a proximidade.
@@ -91,6 +96,10 @@ definição: nele muda o movimento, não a proximidade.
 ---
 
 ## Quadros por segundo por combinação (desktop)
+
+> **Superado.** Esta medição é anterior aos ajustes de setembro. Os
+> números atuais estão em "Verificacao apos os ajustes de exploracao",
+> mais abaixo.
 
 Quantidade de animais entre parênteses.
 
@@ -117,6 +126,109 @@ usando `ferramentas/teste-sistema.html`.
 
 Se algum aparelho apresentar desconforto, a quantidade por nível é uma
 linha em `dados.js`.
+
+---
+
+## Verificacao apos os ajustes de exploracao
+
+Esta secao substitui os numeros das secoes anteriores. Ela cobre os
+ajustes de setembro: andar no celular, animais escondidos, portas de
+armario, comportamento por copia, quantidade por animal e correcao da
+escala da cobra.
+
+Duas medicoes, na mesma maquina:
+
+- **desempenho** com `ferramentas/teste-sistema.html`, area renderizada
+  de 904 x 298, para poder comparar antes e depois pelo mesmo criterio;
+- **comportamento** com Playwright sobre o Chromium, janela de 1280 x 800
+  em tela inteira.
+
+As duas em renderizacao por software (SwiftShader, sem placa de video) —
+a condicao mais desfavoravel possivel.
+
+### As 25 combinacoes
+
+| Verificacao | Resultado |
+|---|---|
+| Cena carrega e modelo substitui a caixa provisoria | 25 de 25 |
+| Animal principal dentro do campo de visao | 25 de 25 |
+| Base do modelo apoiada no chao (< 6 cm) | 25 de 25 |
+| Toda copia visivel com algum movimento | 25 de 25 |
+| Erros de execucao | nenhum |
+
+**Combinacoes com problema: 0 de 25.**
+
+### Quadros por segundo, antes e depois dos ajustes
+
+Mesma maquina, mesma ferramenta (`ferramentas/teste-sistema.html`), mesma
+area renderizada (904 x 298), renderizacao por software. "Antes" e o
+commit anterior a estes ajustes.
+
+| Animal | Cenario | N1 | N2 | N3 | N4 | N5 |
+|---|---|---|---|---|---|---|
+| Cobra antes | Floresta | 16 (1) | 11 (3) | 8 (6) | 6 (10) | 4 (15) |
+| **Cobra depois** | Floresta | **21** (1) | **20** (2) | **19** (3) | **18** (5) | **16** (8) |
+| Rato antes | Sala | 43 (1) | 35 (3) | 26 (6) | 20 (10) | 15 (15) |
+| **Rato depois** | Sala | **46** (1) | **40** (3) | **31** (6) | **30** (10) | **21** (15) |
+| Barata antes | Cozinha | 37 (1) | 35 (3) | 34 (6) | 32 (10) | 29 (15) |
+| **Barata depois** | Cozinha | 37 (1) | 36 (5) | 34 (10) | 32 (16) | 29 (**24**) |
+| Aranha antes | Sala | 44 (1) | 37 (3) | 29 (6) | 24 (10) | 19 (15) |
+| **Aranha depois** | Sala | **47** (1) | **41** (3) | **35** (6) | **32** (10) | **25** (15) |
+| Sapo antes | Quintal | 26 (1) | 22 (3) | 18 (6) | 14 (10) | 11 (15) |
+| **Sapo depois** | Quintal | 26 (1) | **24** (3) | **21** (6) | **19** (10) | **14** (15) |
+
+Quantidade de animais entre parenteses.
+
+| | Antes | Depois |
+|---|---|---|
+| Media das 25 combinacoes | 24 quadros/s | **29 quadros/s** |
+| Combinacoes sem aviso | 8 | **12** |
+| Combinacoes com falha | 0 | 0 |
+
+Tres leituras:
+
+- **A cozinha passou de 15 para 24 baratas sem perder nada** (29 quadros
+  por segundo nos dois casos, no nivel 5). O que paga por isso e o
+  comportamento `quieto`, que dispensa o tocador de animacao, somado ao
+  limite de 8 copias animadas.
+- **A floresta saiu de 4 para 16 quadros por segundo no nivel 5.** Duas
+  causas somadas: as texturas da cobra reduzidas para 512x512 e a
+  quantidade de cobras pela metade.
+- **A mesma quantidade ficou mais barata.** Com 15 ratos, 15 -> 21
+  quadros por segundo; com 15 aranhas, 19 -> 25. Nada mudou no modelo nem
+  no cenario: a diferenca e so o comportamento `quieto`.
+
+Este tambem foi o teste que registrou o **erro de escala da cobra**: na
+coluna TAMANHO, o modelo aparecia com 13 a 16 metros. Depois do ajuste (`medida: 'maior'`, `tamanhoReal: 1.4`), a
+coluna mostra de 1,46 m a 1,51 m — a variacao vem da propria animacao.
+
+### Exploracao e descoberta
+
+| Verificacao | Resultado |
+|---|---|
+| Portas de armario na cozinha | 5, todas clicaveis |
+| Abrir uma porta revela um animal | sim; 9 escondidos -> 8 |
+| Abrir as cinco portas | 9 escondidos -> 4; HUD "5 de 9" |
+| Sentido de abertura da porta | para dentro da sala (95 graus), sem atravessar a parede |
+| Animal sai do esconderijo ao ser revelado | sim, 1,1 s ate a posicao de saida |
+| Revelacao por aproximacao (sem porta) | dispara a menos de 1,6 m |
+| Animal atras de porta **nao** aparece por aproximacao | correto (distancia 0) |
+| Linha "Animais encontrados" no HUD | escondida no nivel 1, visivel do nivel 2 em diante |
+
+### Controle de andar no celular
+
+Emulacao de Pixel 7 (390 x 844, com toque).
+
+| Verificacao | Resultado |
+|---|---|
+| Controle aparece no celular | sim |
+| Controle escondido no computador | sim |
+| Arrastar o dedo desloca a camera | 1,4 m/s, na direcao do olhar |
+| Soltar o dedo para o deslocamento | imediato |
+| Limite da parede da frente (zMin -6,8 + 0,45) | parou em z = -6,35 |
+| Limite lateral (x 1,6 - 0,45) | parou em x = -1,15 |
+| Limite de tras | parou em z = 1,00 |
+| Sobreposicao com a caixa de instrucoes ou com os botoes | ausente |
 
 ---
 
@@ -153,13 +265,20 @@ os números de desempenho descrevem o aparelho, não o sistema.
 
 | Recurso | Tamanho |
 |---|---|
-| Modelos 3D (5 arquivos) | 2,1 MB |
+| Modelos 3D em uso (5 arquivos) | 5,8 MB |
+| Modelos de reserva (cobra1, rato1) | 0,53 MB |
 | Sons (6 arquivos) | 1,4 MB |
-| Código do projeto | cerca de 90 KB |
+| Código do projeto | cerca de 110 KB |
 | A-Frame (CDN) | cerca de 1,2 MB |
 
-O modelo do rato foi otimizado: sua textura foi reduzida de 2048x2048
-para 512x512 pixels, levando o arquivo de 5,03 MB para 0,31 MB, com cerca
-de 16 MB a menos de memória de vídeo e sem diferença visível no tamanho em
-que o animal aparece.
+Duas otimizações de textura foram feitas com
+`ferramentas/reduzir-texturas.py`:
+
+| Modelo | Textura | Antes | Depois | Memória de vídeo |
+|---|---|---|---|---|
+| rato (versão antiga) | 2048x2048 -> 512x512 | 5,03 MB | 0,31 MB | −16 MB |
+| cobra (versão atual) | 5 x 1024x1024 -> 512x512 | 6,13 MB | 3,82 MB | −15 MB |
+
+Em nenhum dos dois casos há diferença visível no tamanho em que o animal
+aparece na cena.
 
