@@ -14,9 +14,11 @@
    id          → usado na URL (experiencia.html?animal=cobra)
    nome        → o que aparece na tela
    fobia       → nome técnico, para a documentação do TCC
-   ambiente    → cenário onde o animal aparece. Por enquanto todos
-                 usam o mesmo quarto; ambientes próprios (jardim, porão,
-                 cozinha, sótão, lago) ficam para uma etapa posterior
+   ambiente    → nome do cenário, exibido na tela de seleção
+   cenario     → qual cenário montar em cena. Os cenários são
+                 construídos por cenarios.js. Dois animais podem
+                 compartilhar o mesmo cenário (a aranha e o rato
+                 aparecem os dois numa sala)
    icone       → emoji exibido nos cards
    modelo      → caminho do arquivo 3D dentro de assets/models/
    som         → caminho do som do animal dentro de assets/sounds/.
@@ -26,6 +28,19 @@
    tamanhoReal → tamanho do animal na cena, EM METROS. O código usa
                  este número para redimensionar qualquer modelo 3D,
                  seja qual for a escala do arquivo
+   escalaVisual → quantas vezes o animal é mostrado maior que o
+                 tamanho real.
+
+                 Existe porque tamanho real e estímulo perceptível
+                 são coisas diferentes. Uma barata de 5 cm a 3
+                 metros ocupa 5 pixels na tela: fisicamente
+                 correto e visualmente inútil. Mostrada 4,5 vezes
+                 maior, ela vira um estímulo de verdade.
+
+                 O tamanho real fica registrado acima, separado,
+                 para o TCC poder declarar os dois números: o do
+                 animal e o da apresentação.
+
    medida      → a qual dimensão do modelo o tamanhoReal se refere:
                  'maior' (o normal), 'altura', 'largura' ou
                  'profundidade'. Existe porque a pose do modelo nem
@@ -43,6 +58,12 @@
                  que alguns modelos trazem: um animal que ataca
                  produz susto, e susto é o oposto de exposição
                  gradual e controlada.
+
+                 'reagindo' vale null quando o modelo não tem uma
+                 animação de reação aceitável. É o caso da barata,
+                 cujas únicas opções seriam atacar ou voar para
+                 cima de quem observa. Nesses casos o código gera
+                 um sobressalto curto, feito de um giro rápido.
    distanciaLonge → distância do nível 1, em metros
    distanciaPerto → distância do nível 5, em metros
 
@@ -56,15 +77,17 @@ const ANIMAIS = [
     id: 'cobra',
     nome: 'Cobra',
     fobia: 'Ofidiofobia',
-    ambiente: 'Quarto',
+    ambiente: 'Floresta',
+    cenario: 'floresta',
     icone: '🐍',
     inicial: 'C',
     modelo: 'assets/models/cobra.glb',
     som: 'assets/sounds/cobra.wav',
     animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: 'Jump' },
-    distanciaLonge: 7.0,
-    distanciaPerto: 1.2,
+    distanciaLonge: 5.0,
+    distanciaPerto: 1.0,
     tamanhoReal: 0.5,
+    escalaVisual: 1.9,
     medida: 'altura',
     rotacao: '0 0 0'
   },
@@ -72,15 +95,17 @@ const ANIMAIS = [
     id: 'rato',
     nome: 'Rato',
     fobia: 'Musofobia',
-    ambiente: 'Quarto',
+    ambiente: 'Sala',
+    cenario: 'sala',
     icone: '🐀',
     inicial: 'R',
     modelo: 'assets/models/rato.glb',
     som: 'assets/sounds/rato.wav',
     animacoes: null,
-    distanciaLonge: 5.5,
-    distanciaPerto: 1.2,
+    distanciaLonge: 3.2,
+    distanciaPerto: 0.9,
     tamanhoReal: 0.25,
+    escalaVisual: 2.8,
     medida: 'maior',
     rotacao: '0 0 0'
   },
@@ -88,15 +113,17 @@ const ANIMAIS = [
     id: 'barata',
     nome: 'Barata',
     fobia: 'Katsaridafobia',
-    ambiente: 'Quarto',
+    ambiente: 'Cozinha',
+    cenario: 'cozinha',
     icone: '🪳',
     inicial: 'B',
     modelo: 'assets/models/barata.glb',
     som: 'assets/sounds/barata.wav',
-    animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: 'Jump' },
-    distanciaLonge: 3.0,
-    distanciaPerto: 1.2,
+    animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: null },
+    distanciaLonge: 1.9,
+    distanciaPerto: 0.75,
     tamanhoReal: 0.05,
+    escalaVisual: 4.5,
     medida: 'maior',
     rotacao: '0 0 0'
   },
@@ -104,15 +131,17 @@ const ANIMAIS = [
     id: 'aranha',
     nome: 'Aranha',
     fobia: 'Aracnofobia',
-    ambiente: 'Quarto',
+    ambiente: 'Sala',
+    cenario: 'sala',
     icone: '🕷️',
     inicial: 'A',
     modelo: 'assets/models/aranha.glb',
     som: 'assets/sounds/aranha.wav',
     animacoes: { parado: 'Idle', movendo: 'Walk', reagindo: 'Jump' },
-    distanciaLonge: 4.0,
-    distanciaPerto: 1.2,
+    distanciaLonge: 2.6,
+    distanciaPerto: 0.85,
     tamanhoReal: 0.08,
+    escalaVisual: 3.6,
     medida: 'maior',
     rotacao: '0 0 0'
   },
@@ -120,15 +149,17 @@ const ANIMAIS = [
     id: 'sapo',
     nome: 'Sapo',
     fobia: 'Ranidafobia',
-    ambiente: 'Quarto',
+    ambiente: 'Quintal',
+    cenario: 'quintal',
     icone: '🐸',
     inicial: 'S',
     modelo: 'assets/models/sapo.glb',
     som: 'assets/sounds/sapo.wav',
     animacoes: { parado: 'Idle', movendo: 'Jump', reagindo: 'Jump' },
-    distanciaLonge: 4.5,
-    distanciaPerto: 1.2,
+    distanciaLonge: 2.6,
+    distanciaPerto: 0.85,
     tamanhoReal: 0.10,
+    escalaVisual: 3.0,
     medida: 'maior',
     rotacao: '0 0 0'
   }
@@ -144,6 +175,9 @@ const ANIMAIS = [
                1 = na distância mais longe, 0 = na mais próxima.
                Assim a mesma progressão vale para todos os animais,
                em distâncias adequadas ao tamanho de cada um
+   quantidade → quantos animais aparecem. A progressão dos níveis
+                acontece em duas dimensões ao mesmo tempo: eles ficam
+                mais perto E em maior número
    movimento → o animal se move? (Etapa 7)
    interacao → o usuário pode interagir? (Etapa 9)
    instrucao → texto exibido no painel de instruções
@@ -159,6 +193,7 @@ const NIVEIS = [
     instrucao: 'O estímulo está distante. Observe no seu tempo. '
              + 'Você pode sair a qualquer momento.',
     proporcao: 1.0,
+    quantidade: 1,
     movimento: false,
     interacao: false
   },
@@ -169,6 +204,7 @@ const NIVEIS = [
     instrucao: 'O estímulo está mais próximo. Respire com calma e '
              + 'avance apenas quando se sentir pronta.',
     proporcao: 0.55,
+    quantidade: 3,
     movimento: false,
     interacao: false
   },
@@ -179,6 +215,7 @@ const NIVEIS = [
     instrucao: 'O estímulo começa a se mover, na mesma distância. '
              + 'Continue observando no seu ritmo.',
     proporcao: 0.55,
+    quantidade: 6,
     movimento: true,
     interacao: false
   },
@@ -189,6 +226,7 @@ const NIVEIS = [
     instrucao: 'O estímulo está perto. Permaneça o tempo que precisar '
              + 'antes de seguir.',
     proporcao: 0.2,
+    quantidade: 10,
     movimento: true,
     interacao: false
   },
@@ -199,6 +237,7 @@ const NIVEIS = [
     instrucao: 'Você pode se aproximar e interagir. Avance somente '
              + 'se estiver confortável.',
     proporcao: 0.0,
+    quantidade: 15,
     movimento: true,
     interacao: true
   }
@@ -217,6 +256,16 @@ const NIVEIS = [
 function distanciaDoNivel(animal, nivel) {
   const intervalo = animal.distanciaLonge - animal.distanciaPerto;
   return animal.distanciaPerto + intervalo * nivel.proporcao;
+}
+
+/* ---------------------------------------------------------
+   TAMANHO COM QUE O ANIMAL É MOSTRADO
+
+   Separado do tamanho real de propósito: o real descreve o
+   animal, este descreve a apresentação.
+   --------------------------------------------------------- */
+function tamanhoApresentado(animal) {
+  return animal.tamanhoReal * (animal.escalaVisual || 1);
 }
 
 /* ---------------------------------------------------------

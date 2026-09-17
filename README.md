@@ -14,6 +14,22 @@ psicológico e não realiza diagnóstico.
 
 HTML, CSS, JavaScript, A-Frame, Three.js e WebXR.
 
+## Publicacao
+
+O projeto e estatico: HTML, CSS, JavaScript e arquivos de midia, sem
+servidor e sem etapa de build. Qualquer hospedagem de site estatico serve
+(GitHub Pages, Vercel, Netlify, Cloudflare Pages).
+
+Todos os caminhos do codigo sao **relativos**, entao o sistema funciona
+tanto na raiz de um dominio quanto dentro de uma subpasta.
+
+**HTTPS e obrigatorio** para o WebXR e para os sensores do celular. Todas
+as opcoes acima fornecem HTTPS automaticamente; abrir por `http://` ou por
+`file://` desliga o modo VR.
+
+O arquivo `.nojekyll` existe para o GitHub Pages servir os arquivos como
+estao, sem passar pelo Jekyll.
+
 ## Como executar
 
 É necessário um servidor local (arquivos 3D não carregam abrindo o HTML
@@ -49,7 +65,29 @@ assets/
 ```
 
 Arquivos `base.*` sao compartilhados. Os demais levam o nome da pagina a
-que pertencem.
+que pertencem. `cenarios.js`, `animador.js` e `painel.js` sao componentes
+e construtores usados pela cena 3D.
+
+## Cenarios
+
+Cada estimulo aparece no ambiente onde seria encontrado de verdade:
+
+| animal | cenario  | o que tem |
+|--------|----------|-----------|
+| Cobra  | Floresta | arvores, arbustos, troncos caidos, chao de terra e folhas |
+| Barata | Cozinha  | piso ladrilhado, bancada, pia, armarios, geladeira, fogao, lixeira |
+| Aranha | Sala     | sofa, mesa de centro, estante com televisao, tapete, luminaria |
+| Rato   | Sala     | o mesmo cenario da aranha |
+| Sapo   | Quintal  | gramado, muro, canteiro, tanque de agua, varal, arvores |
+
+Todos sao construidos com primitivas do A-Frame em `cenarios.js`, sem
+nenhum arquivo externo. Para acrescentar um cenario, escreva a funcao e
+registre-a em `CENARIOS`, no fim do arquivo.
+
+Dois padroes de chao (o ladrilho da cozinha e o solo organico da floresta
+e do quintal) sao **pintados num canvas** e usados como textura repetida.
+A primeira versao desenhava dezenas de pecas separadas para o mesmo
+efeito; pintar uma vez e repetir custa um desenho em vez de noventa.
 
 ## Fluxo de navegacao
 
@@ -141,7 +179,9 @@ respiracao leve sempre, e um giro lento do corpo nos niveis de movimento.
 | aranha.glb | 438 KB  | 2.712      | -           | Idle, Walk, Jump, Attack, Death |
 | sapo.glb   | 574 KB  | 4.920      | -           | Idle, Jump, Attack, Death  |
 | rato.glb   | 0,31 MB | 776        | 512x512     | nenhuma                    |
-| barata.glb | ausente | -          | -           | -                          |
+| barata.glb | 0,53 MB | 576        | 512x256     | idle, walking, Attack, Death, flying x2 |
+
+Os cinco animais estao implementados.
 
 ## Ferramentas de diagnostico
 
@@ -149,6 +189,13 @@ A pasta `ferramentas/` guarda paginas que ajudam no desenvolvimento, mas
 nao fazem parte do sistema. Elas ficam separadas de proposito: o que o
 participante usa e o que a pesquisadora usa tem publicos diferentes.
 
+- `ferramentas/teste-sistema.html` — percorre as 25 combinacoes de animal
+  e nivel, verifica se cada uma carrega, se o modelo foi dimensionado e
+  apoiado corretamente, se o animal fica dentro do campo de visao, e mede
+  os quadros por segundo. Gera um relatorio em texto pronto para o TCC.
+  Vale rodar em cada aparelho que for usado nos testes com usuarios: os
+  numeros de desempenho sao do aparelho, nao do sistema.
+- `ferramentas/gerar-sons.py` — gera os sons provisorios.
 - `ferramentas/teste-sensor.html` — verifica se um aparelho Bluetooth
   publica o servico padrao de frequencia cardiaca (0x180D), que e o unico
   que a Web Bluetooth consegue ler. Cintas toracicas costumam publicar;
