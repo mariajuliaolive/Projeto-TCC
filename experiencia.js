@@ -14,38 +14,30 @@ const somAmbiente = document.querySelector('#somAmbiente');
 const somAnimal = document.querySelector('#somAnimal');
 const rig = document.querySelector('#rig');
 
-/* ---------- interface dentro do óculos ---------- */
+/* ---------- a interface, que vive dentro da cena 3D ----------
+
+   Não há mais HUD em HTML. Toda a informação — nível, instrução,
+   tempo, animais encontrados, desconforto relatado — é objeto da
+   cena, desenhado em canvas e usado como textura.
+
+   Sobraram em HTML apenas duas coisas, e as duas por bom motivo:
+   o controle de andar, que precisa ser uma superfície de toque de
+   verdade, e o botão de entrar em Realidade Virtual, que é criado
+   pelo próprio A-Frame. */
 const consoleCena = document.querySelector('#consoleCena');
 const painelConsole = document.querySelector('#painelConsole');
 const avisoAbertura = document.querySelector('#avisoAbertura');
+const painelAjuda = document.querySelector('#painelAjuda');
+const escalaAnsiedade = document.querySelector('#escalaAnsiedade');
+const botoesEscala = document.querySelector('#botoesEscala');
+const tituloEscala = document.querySelector('#tituloEscala');
+
 const btn3dProximo = document.querySelector('#btn3dProximo');
 const btn3dSom = document.querySelector('#btn3dSom');
+const btn3dAjuda = document.querySelector('#btn3dAjuda');
+const btn3dAnsiedade = document.querySelector('#btn3dAnsiedade');
 const btn3dReiniciar = document.querySelector('#btn3dReiniciar');
 const btn3dSair = document.querySelector('#btn3dSair');
-
-/* ---------- elementos do HUD ---------- */
-const hudFobia = document.querySelector('#hudFobia');
-const hudIcone = document.querySelector('#hudIcone');
-const hudNivel = document.querySelector('#hudNivel');
-const hudTrilha = document.querySelector('#hudTrilha');
-const hudTempo = document.querySelector('#hudTempo');
-const hudInstrucao = document.querySelector('#hudInstrucao');
-const hudConcluido = document.querySelector('#hudConcluido');
-const hudAnsiedade = document.querySelector('#hudAnsiedade');
-const hudEscala = document.querySelector('#hudEscala');
-const hudEscalaBotoes = document.querySelector('#hudEscalaBotoes');
-const hudAjuda = document.querySelector('#hudAjuda');
-const hudAjudaTexto = document.querySelector('#hudAjudaTexto');
-const hudEncontrados = document.querySelector('#hudEncontrados');
-const hudEncontradosLinha = document.querySelector('#hudEncontradosLinha');
-
-const btnSom = document.querySelector('#btnSom');
-const btnAjuda = document.querySelector('#btnAjuda');
-const btnReiniciar = document.querySelector('#btnReiniciar');
-const btnProximo = document.querySelector('#btnProximo');
-const btnProximoTexto = document.querySelector('#btnProximoTexto');
-const hudVR = document.querySelector('#hudVR');
-const btnSomTexto = document.querySelector('#btnSomTexto');
 
 /* =========================================================
    1. LER A ESCOLHA QUE VEIO NA URL
@@ -73,26 +65,16 @@ if (!animal || !nivel) {
 function iniciarExperiencia() {
 
   /* =========================================================
-     2. PREENCHER O HUD
+     2. ESTADO DA SESSÃO
+
+     O que antes era escrito direto no HUD em HTML agora vive em
+     variáveis, e o console da cena lê daqui. A diferença importa:
+     o texto deixou de morar no documento e passou a morar no
+     programa, o que é o certo quando a mesma informação precisa
+     aparecer em dois lugares (o console e o aviso de abertura).
      ========================================================= */
-  hudFobia.textContent = animal.fobia;
-  hudIcone.textContent = animal.icone;
-  hudNivel.textContent = `Nível ${nivel.numero} — ${nivel.nome}`;
-  hudInstrucao.textContent = nivel.instrucao;
-
-  /* ---------- trilha de bolinhas, uma por nível ---------- */
-  NIVEIS.forEach(function (n) {
-    const passo = document.createElement('li');
-    passo.className = 'hud-trilha__passo';
-    if (n.numero <= nivel.numero) {
-      passo.classList.add('hud-trilha__passo--feito');
-    }
-    passo.title = `Nível ${n.numero}: ${n.nome}`;
-    hudTrilha.appendChild(passo);
-  });
-
-  /* ---------- quanto da progressão já foi percorrido ---------- */
-  hudConcluido.textContent = Math.round(nivel.numero / NIVEIS.length * 100) + '%';
+  let tempoTexto = '00:00';
+  let desconfortoTexto = '';
 
   /* =========================================================
      3. MONTAR O CENÁRIO
@@ -388,14 +370,9 @@ function iniciarExperiencia() {
      — senão desiste achando que já viu tudo. A linha só aparece
      quando existe alguém escondido. */
   function mostrarEncontrados() {
-    if (!hudEncontrados || escondidosNoTotal === 0) {
+    if (escondidosNoTotal === 0) {
       return;
     }
-    hudEncontradosLinha.hidden = false;
-    hudEncontrados.textContent = encontrados + ' de ' + escondidosNoTotal;
-    hudEncontrados.classList.toggle(
-      'hud-medida__valor--vazio', encontrados === 0);
-
     atualizarConsole();
   }
 
@@ -658,6 +635,32 @@ function iniciarExperiencia() {
 
   const controleAndar = document.querySelector('#controleAndar');
 
+  /* O cenário só existe depois de montado, então é agora que o
+     controle de andar fica sabendo até onde pode ir. Sem isso,
+     atravessaria a parede.
+
+     Este arquivo roda antes de o A-Frame terminar de montar a
+     cena, então o componente pode ainda não existir. Quando for
+     o caso, esperamos o evento "loaded" da entidade. */
+  function avisarOsLimites() {
+    const componente = rig && rig.components['andar-toque'];
+    if (componente) {
+      componente.definirLimites(limites);
+    }
+  }
+
+  if (rig && rig.hasLoaded) {
+    avisarOsLimites();
+  } else if (rig) {
+    rig.addEventListener('loaded', avisarOsLimites);
+  }
+
+  /* o controle de andar só aparece em aparelho com toque: no
+     computador há teclado, e ali ele só ocuparia tela */
+  if (temToque && controleAndar) {
+    controleAndar.hidden = false;
+  }
+
   /* ---------- onde o console cabe neste aparelho ----------
 
      O console está montado para uma tela larga. Num celular em
@@ -672,18 +675,18 @@ function iniciarExperiencia() {
      LATERAL (computador e óculos): painel à esquerda, com os
      quatro botões embaixo dele. Sobra tela de lado.
 
-     CELULAR: o painel desce e centraliza, aproveitando a altura
-     que a tela em pé tem de sobra, e os botões 3D saem de cena.
-     Não por falta de espaço apenas, mas porque no celular já
-     existe coisa melhor: a barra de botões em HTML, que é um
-     alvo de toque de verdade, com o tamanho que um dedo pede.
+     CELULAR: tudo centraliza e encolhe, aproveitando a altura
+     que a tela em pé tem de sobra. O painel sobe, os botões
+     ficam menores e mais juntos, e os três pares cabem acima
+     dos 40 graus que a metade do campo vertical permite.
 
-     A divisão que isso desenha vale para o projeto inteiro: a
-     INFORMAÇÃO vai para dentro da cena 3D, que era o pedido da
-     orientação; os CONTROLES ficam onde funcionam melhor em
-     cada aparelho — e num celular sem óculos, isso é a tela. */
+     É o mesmo console nos dois casos, com as mesmas medidas em
+     metros recalculadas — e não duas interfaces diferentes. A
+     pessoa que testar no computador e depois no óculos encontra
+     a mesma coisa nos dois. */
 
-  const botoes3d = [btn3dProximo, btn3dSom, btn3dReiniciar, btn3dSair];
+  const botoes3d = [btn3dProximo, btn3dSom, btn3dAjuda,
+                    btn3dAnsiedade, btn3dReiniciar, btn3dSair];
 
   function layoutLateral() {
     consoleCena.setAttribute('position', '-0.479 1.306 -0.766');
@@ -693,15 +696,22 @@ function iniciarExperiencia() {
 
     botoes3d.forEach(function (botao) { botao.setAttribute('visible', true); });
     medirBotoes(0.265, 0.075, 0.145, 0.185, 0.087);
+    painelAjuda.setAttribute('painel-texto', { largura: 0.92, altura: 0.42 });
   }
 
   function layoutCelular() {
-    consoleCena.setAttribute('position', '0 1.162 -0.899');
-    consoleCena.setAttribute('rotation', '-26 0 0');
-    painelConsole.setAttribute('console-cena', { largura: 0.46, altura: 0.29 });
-    painelConsole.setAttribute('position', '0 0 0');
+    consoleCena.setAttribute('position', '0 1.392 -0.978');
+    consoleCena.setAttribute('rotation', '-12 0 0');
+    painelConsole.setAttribute('console-cena', { largura: 0.46, altura: 0.26 });
+    painelConsole.setAttribute('position', '0 0.02 0');
 
-    botoes3d.forEach(function (botao) { botao.setAttribute('visible', false); });
+    botoes3d.forEach(function (botao) { botao.setAttribute('visible', true); });
+    medirBotoes(0.225, 0.058, 0.118, 0.165, 0.068);
+
+    /* 0,92 m a 1,10 m de distância dão 45 graus de largura, e a
+       tela de um celular em pé só tem 42: o painel de ajuda
+       encolhe junto. */
+    painelAjuda.setAttribute('painel-texto', { largura: 0.78, altura: 0.46 });
   }
 
   /* Os botões acompanham o painel: se ele muda de tamanho e
@@ -709,8 +719,10 @@ function iniciarExperiencia() {
   function medirBotoes(largura, altura, meio, primeiraLinha, espacamento) {
     [[btn3dProximo, -meio, -primeiraLinha],
      [btn3dSom, meio, -primeiraLinha],
-     [btn3dReiniciar, -meio, -primeiraLinha - espacamento],
-     [btn3dSair, meio, -primeiraLinha - espacamento]
+     [btn3dAjuda, -meio, -primeiraLinha - espacamento],
+     [btn3dAnsiedade, meio, -primeiraLinha - espacamento],
+     [btn3dReiniciar, -meio, -primeiraLinha - espacamento * 2],
+     [btn3dSair, meio, -primeiraLinha - espacamento * 2]
     ].forEach(function (item) {
       item[0].setAttribute('position', `${item[1]} ${item[2]} 0`);
       item[0].setAttribute('painel-texto', { largura: largura, altura: altura });
@@ -722,6 +734,11 @@ function iniciarExperiencia() {
      o arranjo lateral volta — com os botões 3D, que passam a
      ser os únicos que existem. */
   function escolherLayout() {
+    /* trocar de arranjo com um painel aberto o deixaria flutuando
+       fora de lugar */
+    mostrarEscala(false);
+    mostrarAjuda(false);
+
     if (temToque && !cena.is('vr-mode')) {
       layoutCelular();
     } else {
@@ -741,19 +758,27 @@ function iniciarExperiencia() {
       + 'chega perto, e outros só quando você abre a porta do armário. '
     : '';
 
+  let textoAjuda;
+
   if (ehMobile) {
     mira.setAttribute('fuse', true);
-    hudAjudaTexto.textContent =
+    textoAjuda =
       'Gire o aparelho para olhar em volta. ' + comoAndar
       + 'Mire e segure o olhar por um instante para selecionar. '
       + comoProcurar
       + 'Use "Sair" para voltar à escolha de estímulo a qualquer momento.';
   } else {
-    hudAjudaTexto.textContent =
+    textoAjuda =
       'Arraste o mouse para olhar em volta. ' + comoAndar
       + 'Clique para selecionar. ' + comoProcurar
       + 'Use "Sair" para voltar à escolha de estímulo a qualquer momento.';
   }
+
+  painelAjuda.setAttribute('painel-texto', {
+    titulo: 'Como usar',
+    texto: textoAjuda + '  Este é um protótipo acadêmico· não é tratamento '
+           + 'nem diagnóstico.'
+  });
 
   /* =========================================================
      10. TEMPO DA SESSÃO
@@ -769,60 +794,162 @@ function iniciarExperiencia() {
     segundos = segundos + 1;
     const min = Math.floor(segundos / 60);
     const seg = segundos % 60;
-    hudTempo.textContent = doisDigitos(min) + ':' + doisDigitos(seg);
+    tempoTexto = doisDigitos(min) + ':' + doisDigitos(seg);
     atualizarConsole();
   }, 1000);
 
   /* =========================================================
-     11. ESCALA DE ANSIEDADE (autorrelato de 0 a 10)
+     11. ESCALA DE DESCONFORTO (autorrelato de 0 a 10)
 
-     Nenhum sensor mede ansiedade. Quem informa é a própria
-     pessoa — é assim que a pesquisa de exposição trabalha.
-     O valor fica só nesta página: não é enviado nem gravado.
+     Nenhum sensor mede desconforto. Quem informa é a própria
+     pessoa — é assim que a pesquisa de exposição trabalha, e é
+     o único dado honesto que este sistema tem sobre como alguém
+     está se sentindo.
+
+     Os onze botões vêm em DUAS fileiras. Numa fileira só, onze
+     botões de 9,5 cm dariam mais de um metro de largura, o que
+     não cabe no campo de visão de um celular em pé.
      ========================================================= */
-  for (let valor = 0; valor <= 10; valor++) {
-    const botao = document.createElement('button');
-    botao.className = 'hud-escala__botao';
-    botao.textContent = valor;
-    botao.setAttribute('aria-pressed', 'false');
-    botao.dataset.valor = valor;
-    hudEscalaBotoes.appendChild(botao);
+  const LARGURA_NOTA = 0.095;
+  const ALTURA_NOTA = 0.08;
+  const FOLGA_NOTA = 0.012;
+
+  let desconfortoEscolhido = null;
+  const notas = [];
+
+  function posicionarNota(valor) {
+    /* primeira fileira 0 a 5, segunda 6 a 10 */
+    const fileira = valor <= 5 ? 0 : 1;
+    const indice = valor <= 5 ? valor : valor - 6;
+    const quantos = fileira === 0 ? 6 : 5;
+
+    const passo = LARGURA_NOTA + FOLGA_NOTA;
+    const larguraFileira = quantos * passo - FOLGA_NOTA;
+    const x = -larguraFileira / 2 + LARGURA_NOTA / 2 + indice * passo;
+    const y = -fileira * (ALTURA_NOTA + FOLGA_NOTA);
+
+    return { x: x, y: y };
   }
 
-  hudEscalaBotoes.addEventListener('click', function (evento) {
-    const botao = evento.target.closest('.hud-escala__botao');
-    if (!botao) {
-      return;
-    }
+  for (let valor = 0; valor <= 10; valor++) {
+    const nota = document.createElement('a-entity');
+    const onde = posicionarNota(valor);
 
-    // desmarca todos e marca o escolhido
-    hudEscalaBotoes.querySelectorAll('.hud-escala__botao').forEach(function (b) {
-      b.setAttribute('aria-pressed', String(b === botao));
+    nota.classList.add('notaEscala', 'clicavel');
+    nota.setAttribute('position', `${onde.x} ${onde.y} 0`);
+    nota.setAttribute('painel-texto', {
+      largura: LARGURA_NOTA,
+      altura: ALTURA_NOTA,
+      centralizar: true,
+      texto: String(valor)
     });
 
-    hudAnsiedade.textContent = botao.dataset.valor + '/10';
+    nota.addEventListener('click', function () {
+      registrarDesconforto(valor);
+    });
+
+    /* destaque ao apontar, mas sem apagar a marcação de quem já
+       foi escolhido — por isso a checagem */
+    nota.addEventListener('mouseenter', function () {
+      if (desconfortoEscolhido !== valor) {
+        nota.setAttribute('painel-texto', 'destacado', true);
+      }
+    });
+    nota.addEventListener('mouseleave', function () {
+      if (desconfortoEscolhido !== valor) {
+        nota.setAttribute('painel-texto', 'destacado', false);
+      }
+    });
+
+    notas.push(nota);
+    botoesEscala.appendChild(nota);
+  }
+
+  function registrarDesconforto(valor) {
+    desconfortoEscolhido = valor;
+    desconfortoTexto = valor + '/10';
+
+    notas.forEach(function (nota, i) {
+      nota.setAttribute('painel-texto', 'destacado', i === valor);
+    });
+
+    atualizarConsole();
+    mostrarEscala(false);
+
+    /* Por enquanto o valor fica só no registro do navegador. Ele
+       passa a ser gravado quando a camada de persistência entrar. */
     console.log(
       `Autorrelato — nível ${nivel.numero}, ${animal.nome}, ` +
-      `${segundos}s: ${botao.dataset.valor}/10`
+      `${segundos}s: ${valor}/10`
     );
+  }
+
+  /* A ajuda e a escala abrem à FRENTE de quem olha, e o console
+     fica à esquerda. Em tela larga os dois se cruzam no caminho,
+     e um painel atravessando o outro é pior do que qualquer um
+     dos dois sozinho.
+
+     Por isso o console sai de cena enquanto há painel aberto.
+     Além de resolver a sobreposição em qualquer campo de visão,
+     tem sentido próprio: quem parou para ler a ajuda ou para
+     dizer como se sente não está consultando o nível. */
+  function mostrarEscala(mostrar) {
+    escalaAnsiedade.setAttribute('visible', mostrar);
+    btn3dAnsiedade.setAttribute('painel-texto', 'texto',
+      mostrar ? 'Fechar' : 'Como me sinto');
+    ajustarConsoleAosPaineis();
+  }
+
+  function mostrarAjuda(mostrar) {
+    painelAjuda.setAttribute('visible', mostrar);
+    btn3dAjuda.setAttribute('painel-texto', 'texto',
+      mostrar ? 'Fechar ajuda' : 'Ajuda');
+    ajustarConsoleAosPaineis();
+  }
+
+  function ajustarConsoleAosPaineis() {
+    const algumAberto = painelAjuda.getAttribute('visible') === true
+                     || escalaAnsiedade.getAttribute('visible') === true
+                     || avisoAbertura.getAttribute('visible') === true;
+    consoleCena.setAttribute('visible', !algumAberto);
+  }
+
+  /* O aviso de abertura segue a mesma regra, e por isso o console
+     só aparece quando ele sai. Não é só evitar a sobreposição:
+     nos primeiros segundos a pessoa tem uma coisa para ler, e
+     duas seriam uma a mais. */
+  avisoAbertura.addEventListener('aviso-encerrado', ajustarConsoleAosPaineis);
+  ajustarConsoleAosPaineis();
+
+  /* Um de cada vez: dois painéis abertos no mesmo lugar ficariam
+     um dentro do outro. */
+  btn3dAnsiedade.addEventListener('click', function () {
+    const abrindo = escalaAnsiedade.getAttribute('visible') === false;
+    mostrarAjuda(false);
+    mostrarEscala(abrindo);
   });
 
-  hudAnsiedade.addEventListener('click', function () {
-    const aberto = hudEscala.hidden;
-    hudEscala.hidden = !aberto;
-    hudAnsiedade.setAttribute('aria-expanded', String(aberto));
+  btn3dAjuda.addEventListener('click', function () {
+    const abrindo = painelAjuda.getAttribute('visible') === false;
+    mostrarEscala(false);
+    mostrarAjuda(abrindo);
+  });
+
+  /* Com o console escondido, o botão que abriu some junto — então
+     cada painel precisa fechar por si. A ajuda fecha ao ser
+     tocada; a escala, ao receber uma nota ou ao tocar no título,
+     que é a saída de quem abriu sem querer. */
+  painelAjuda.addEventListener('click', function () {
+    mostrarAjuda(false);
+  });
+
+  tituloEscala.addEventListener('click', function () {
+    mostrarEscala(false);
   });
 
   /* =========================================================
      12. BOTÕES DE AÇÃO
      ========================================================= */
-
-  /* ---------- Ajuda ---------- */
-  btnAjuda.addEventListener('click', function () {
-    const aberto = hudAjuda.hidden;
-    hudAjuda.hidden = !aberto;
-    btnAjuda.setAttribute('aria-expanded', String(aberto));
-  });
 
   /* ---------- Som ----------
 
@@ -871,8 +998,8 @@ function iniciarExperiencia() {
   }
 
   function aplicarSom() {
-    btnSom.setAttribute('aria-pressed', String(somLigado));
-    btnSomTexto.textContent = somLigado ? 'Som ligado' : 'Ativar som';
+    btn3dSom.setAttribute('painel-texto', 'texto',
+      somLigado ? 'Som ligado' : 'Ativar som');
 
     [somAmbiente, somAnimal].forEach(function (entidade) {
       const componente = entidade.components.sound;
@@ -900,7 +1027,7 @@ function iniciarExperiencia() {
     });
   });
 
-  btnSom.addEventListener('click', function () {
+  btn3dSom.addEventListener('click', function () {
     somLigado = !somLigado;
     if (somLigado) {
       retomarAudio();
@@ -939,20 +1066,25 @@ function iniciarExperiencia() {
   }
 
   /* ---------- Reiniciar nível ---------- */
-  btnReiniciar.addEventListener('click', function () {
+  btn3dReiniciar.addEventListener('click', function () {
     window.location.reload();
   });
 
   /* ---------- Próximo nível ---------- */
   const proximoNumero = nivel.numero + 1;
+  const proximoEndereco = buscarNivel(proximoNumero)
+    ? `experiencia.html?animal=${animal.id}&nivel=${proximoNumero}`
+    : null;
 
-  if (buscarNivel(proximoNumero)) {
-    btnProximo.href = `experiencia.html?animal=${animal.id}&nivel=${proximoNumero}`;
-  } else {
-    // já está no último nível
-    btnProximoTexto.textContent = 'Último nível';
-    btnProximo.classList.add('hud-proximo--fim');
-  }
+  btn3dProximo.addEventListener('click', function () {
+    if (proximoEndereco) {
+      window.location.href = proximoEndereco;
+    }
+  });
+
+  btn3dSair.addEventListener('click', function () {
+    window.location.href = 'selecao.html';
+  });
 
   /* =========================================================
      13. REALIDADE VIRTUAL (WebXR)
@@ -983,7 +1115,8 @@ function iniciarExperiencia() {
       total: NIVEIS.length,
       nivelNome: nivel.nome,
       instrucao: nivel.instrucao,
-      tempo: hudTempo.textContent,
+      tempo: tempoTexto,
+      desconforto: desconfortoTexto,
       encontrados: escondidosNoTotal > 0
         ? encontrados + ' de ' + escondidosNoTotal
         : ''
@@ -999,7 +1132,7 @@ function iniciarExperiencia() {
     destacado: true
   });
 
-  if (!buscarNivel(nivel.numero + 1)) {
+  if (!proximoEndereco) {
     btn3dProximo.setAttribute('painel-texto', 'texto', 'Último nível');
   }
 
@@ -1020,24 +1153,6 @@ function iniciarExperiencia() {
      Reaproveitamos os botões do HUD em HTML: um clique no
      objeto 3D dispara o mesmo código que já existe, em vez de
      duplicar a lógica em dois lugares. */
-  btn3dProximo.addEventListener('click', function () {
-    if (btnProximo.href) {
-      window.location.href = btnProximo.href;
-    }
-  });
-
-  btn3dSom.addEventListener('click', function () {
-    btnSom.click();
-  });
-
-  btn3dReiniciar.addEventListener('click', function () {
-    btnReiniciar.click();
-  });
-
-  btn3dSair.addEventListener('click', function () {
-    window.location.href = 'selecao.html';
-  });
-
   /* ---------- traduzir o que o A-Frame escreve em inglês ----------
 
      O botão de VR e o de sair do VR são criados pelo próprio
@@ -1063,23 +1178,31 @@ function iniciarExperiencia() {
     }
   }
 
-  /* ---------- avisar se este navegador suporta VR ---------- */
+  /* ---------- avisar se este navegador suporta VR ----------
+
+     A informação entra no painel de ajuda, e não numa barra
+     própria. Ela interessa sobretudo a quem está montando a
+     sessão de testes: saber, antes de entregar o óculos, se
+     aquele aparelho aceita Realidade Virtual. */
+  function anunciarSuporteVR(aviso) {
+    painelAjuda.setAttribute('painel-texto', 'texto',
+      textoAjuda
+      + '  Este é um protótipo acadêmico· não é tratamento nem '
+      + 'diagnóstico.  ' + aviso);
+  }
+
   function verificarSuporteVR() {
     if (!navigator.xr) {
-      hudVR.textContent = 'VR não disponível neste navegador';
-      hudVR.hidden = false;
+      anunciarSuporteVR('Realidade Virtual não disponível neste navegador.');
       return;
     }
 
     navigator.xr.isSessionSupported('immersive-vr').then(function (suportado) {
-      hudVR.textContent = suportado
-        ? 'VR disponível — use o botão no canto'
-        : 'VR não disponível neste aparelho';
-      hudVR.classList.toggle('hud-vr--ok', suportado);
-      hudVR.hidden = false;
+      anunciarSuporteVR(suportado
+        ? 'Realidade Virtual disponível· use o botão no canto da tela.'
+        : 'Realidade Virtual não disponível neste aparelho.');
     }).catch(function () {
-      hudVR.textContent = 'VR não disponível neste aparelho';
-      hudVR.hidden = false;
+      anunciarSuporteVR('Realidade Virtual não disponível neste aparelho.');
     });
   }
 

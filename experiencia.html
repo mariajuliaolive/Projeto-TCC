@@ -14,109 +14,24 @@
 <body>
 
 <!-- =============================================================
-     INTERFACE (HUD) — camada HTML por cima da cena 3D
+     CAMADA DE HTML
+
+     Sobrou quase nada aqui, e de propósito. Toda a informação da
+     experiência — nível, instrução, tempo, animais encontrados,
+     desconforto relatado — vive dentro da cena 3D, como objeto.
+
+     Dois motivos. Dentro do óculos esta camada simplesmente não
+     existe: o WebXR mostra apenas o mundo 3D, e tudo o que
+     estivesse aqui desapareceria. E, mesmo fora do óculos, os
+     painéis tapavam o cenário.
+
+     Ficou só o controle de andar, porque ele não é informação: é
+     uma superfície de toque, e um dedo precisa de uma área de
+     tela de verdade para arrastar. O outro elemento em HTML é o
+     botão de entrar em Realidade Virtual, criado pelo próprio
+     A-Frame.
      ============================================================= -->
 <div id="hud">
-
-  <!-- ---------- BARRA SUPERIOR ---------- -->
-  <header class="hud-topo">
-
-    <div class="hud-topo__lado">
-      <p class="hud-marca">Exposição Virtual</p>
-      <p class="hud-fobia">Fobia: <span id="hudFobia">—</span> <span id="hudIcone"></span></p>
-    </div>
-
-    <div class="hud-topo__centro">
-      <p class="hud-nivel" id="hudNivel">Nível —</p>
-      <ol class="hud-trilha" id="hudTrilha" aria-label="Progresso pelos níveis"></ol>
-    </div>
-
-    <div class="hud-topo__lado hud-topo__lado--dir">
-      <div class="hud-tempo">
-        <p class="hud-tempo__rotulo">Tempo da sessão</p>
-        <p class="hud-tempo__valor" id="hudTempo">00:00</p>
-      </div>
-      <p class="hud-vr" id="hudVR" hidden></p>
-      <a class="hud-sair" href="selecao.html">
-        Sair
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M16 16l4-4-4-4M20 12H10" />
-        </svg>
-      </a>
-    </div>
-
-  </header>
-
-  <!-- ---------- INSTRUÇÕES ---------- -->
-  <aside class="hud-caixa hud-instrucoes">
-    <h2 class="hud-caixa__titulo">Instruções</h2>
-    <p id="hudInstrucao">Carregando…</p>
-  </aside>
-
-  <!-- ---------- AJUDA (escondida até ser pedida) ---------- -->
-  <aside class="hud-caixa hud-ajuda" id="hudAjuda" hidden>
-    <h2 class="hud-caixa__titulo">Como usar</h2>
-    <p id="hudAjudaTexto"></p>
-    <p class="hud-ajuda__aviso">
-      Protótipo acadêmico. Não é tratamento nem diagnóstico.
-    </p>
-  </aside>
-
-  <!-- ---------- PROGRESSO ---------- -->
-  <section class="hud-caixa hud-progresso">
-    <h2 class="hud-caixa__titulo">Seu progresso</h2>
-
-    <ul class="hud-medidas">
-
-      <li class="hud-medida">
-        <svg class="hud-medida__icone" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 20s-7-4.6-7-9.3A4 4 0 0 1 12 8a4 4 0 0 1 7-2.7c0 0 0 .9 0 1.4C19 15.4 12 20 12 20z" />
-        </svg>
-        <span class="hud-medida__nome">Frequência cardíaca</span>
-        <span class="hud-medida__valor hud-medida__valor--vazio" id="hudBpm">— bpm</span>
-        <span class="hud-medida__nota">sem sensor conectado</span>
-      </li>
-
-      <li class="hud-medida">
-        <svg class="hud-medida__icone" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3 12h4l2.5-6 4 12 2.5-6h5" />
-        </svg>
-        <span class="hud-medida__nome">Nível de ansiedade</span>
-        <button class="hud-medida__valor hud-medida__botao" id="hudAnsiedade"
-                aria-expanded="false" aria-controls="hudEscala">informar</button>
-        <span class="hud-medida__nota">autorrelato</span>
-      </li>
-
-      <li class="hud-medida">
-        <svg class="hud-medida__icone" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5 20V12M12 20V5M19 20v-5" />
-        </svg>
-        <span class="hud-medida__nome">Exposição concluída</span>
-        <span class="hud-medida__valor" id="hudConcluido">0%</span>
-      </li>
-
-      <!-- Só aparece quando o nível tem animais escondidos.
-           Quem preenche é experiencia.js. -->
-      <li class="hud-medida" id="hudEncontradosLinha" hidden>
-        <svg class="hud-medida__icone" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="11" cy="11" r="6" />
-          <path d="M15.5 15.5 20 20" />
-        </svg>
-        <span class="hud-medida__nome">Animais encontrados</span>
-        <span class="hud-medida__valor hud-medida__valor--vazio" id="hudEncontrados">0 de 0</span>
-        <span class="hud-medida__nota">explore o ambiente</span>
-      </li>
-
-    </ul>
-
-    <!-- Escala 0-10 preenchida por experiencia.js -->
-    <div class="hud-escala" id="hudEscala" hidden>
-      <p class="hud-escala__pergunta">Quanto desconforto você sente agora?</p>
-      <div class="hud-escala__botoes" id="hudEscalaBotoes"></div>
-      <p class="hud-escala__legenda"><span>0 · nenhum</span><span>10 · máximo</span></p>
-    </div>
-
-  </section>
 
   <!-- ---------- CONTROLE DE ANDAR (celular) ----------
        No computador há teclado; aqui não. Arrastar o dedo a
@@ -127,45 +42,6 @@
     <span class="controle-andar__manete"></span>
     <span class="controle-andar__rotulo">andar</span>
   </div>
-
-  <!-- ---------- AÇÕES ---------- -->
-  <div class="hud-acoes">
-
-    <button class="hud-acao" id="btnSom" aria-pressed="false">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 9v6h4l5 4V5L8 9H4z" />
-        <path class="onda-som" d="M16.5 8.5a5 5 0 0 1 0 7" />
-        <path class="risco-som" d="M17 9.5l5 5M22 9.5l-5 5" />
-      </svg>
-      <span id="btnSomTexto">Ativar som</span>
-    </button>
-
-    <button class="hud-acao" id="btnAjuda" aria-expanded="false" aria-controls="hudAjuda">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M9.5 9.5a2.5 2.5 0 1 1 3.2 2.4c-.6.2-1 .8-1 1.4v.4" />
-        <circle cx="12" cy="17" r="0.8" fill="currentColor" stroke="none" />
-      </svg>
-      <span>Ajuda</span>
-    </button>
-
-    <button class="hud-acao" id="btnReiniciar">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M20 12a8 8 0 1 1-2.4-5.7" />
-        <path d="M20 4v4h-4" />
-      </svg>
-      <span>Reiniciar nível</span>
-    </button>
-
-  </div>
-
-  <!-- ---------- PRÓXIMO NÍVEL ---------- -->
-  <a class="hud-proximo" id="btnProximo">
-    <span id="btnProximoTexto">Próximo nível</span>
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M5 12h14M13 6l6 6-6 6" />
-    </svg>
-  </a>
 
 </div>
 
@@ -289,12 +165,20 @@
                 position="0.145 -0.185 0"
                 painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Ativar som"></a-entity>
 
-      <a-entity id="btn3dReiniciar" class="botao3d clicavel"
+      <a-entity id="btn3dAjuda" class="botao3d clicavel"
                 position="-0.145 -0.272 0"
+                painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Ajuda"></a-entity>
+
+      <a-entity id="btn3dAnsiedade" class="botao3d clicavel"
+                position="0.145 -0.272 0"
+                painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Como me sinto"></a-entity>
+
+      <a-entity id="btn3dReiniciar" class="botao3d clicavel"
+                position="-0.145 -0.359 0"
                 painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Reiniciar nível"></a-entity>
 
       <a-entity id="btn3dSair" class="botao3d clicavel"
-                position="0.145 -0.272 0"
+                position="0.145 -0.359 0"
                 painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Sair"></a-entity>
 
     </a-entity>
@@ -315,6 +199,39 @@
               position="0 1.45 -1.15"
               aviso-abertura
               painel-texto="largura: 0.90; altura: 0.34"></a-entity>
+
+    <!-- ==========================================================
+         AJUDA
+
+         Aparece à frente quando pedida, e some ao ser tocada de
+         novo. Fica no centro, e não ao lado: é texto para ler,
+         não para consultar de canto de olho — e quem pediu ajuda
+         parou de explorar o cenário de qualquer forma.
+         ========================================================== -->
+    <a-entity id="painelAjuda" visible="false"
+              position="0 1.42 -1.10"
+              class="clicavel"
+              painel-texto="largura: 0.92; altura: 0.42"></a-entity>
+
+    <!-- ==========================================================
+         ESCALA DE DESCONFORTO (autorrelato de 0 a 10)
+
+         Nenhum sensor mede desconforto: quem informa é a própria
+         pessoa. Os onze botões são criados por experiencia.js, em
+         duas fileiras — onze numa fileira só dariam 1,05 m de
+         largura, o que não cabe na tela estreita de um celular.
+         ========================================================== -->
+    <a-entity id="escalaAnsiedade" visible="false"
+              position="0 1.34 -1.10">
+
+      <a-entity id="tituloEscala" class="clicavel"
+                position="0 0.14 0"
+                painel-texto="largura: 0.72; altura: 0.11; centralizar: true;
+                              texto: Quanto desconforto você sente agora?"></a-entity>
+
+      <a-entity id="botoesEscala"></a-entity>
+
+    </a-entity>
 
     <!-- ==========================================================
          CONTROLES DE MÃO

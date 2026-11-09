@@ -56,6 +56,7 @@ AFRAME.registerComponent('console-cena', {
     /* rodapé, atualizado durante a sessão */
     tempo: { type: 'string', default: '00:00' },
     encontrados: { type: 'string', default: '' },
+    desconforto: { type: 'string', default: '' },
 
     /* tamanho do plano, em metros */
     largura: { type: 'number', default: 0.74 },
@@ -262,34 +263,66 @@ AFRAME.registerComponent('console-cena', {
       });
     }
 
-    /* ---------- rodapé: tempo e animais encontrados ----------
-       Fica ancorado embaixo, não depois do texto: assim ele
-       não dança quando a instrução tem uma linha a mais. */
-    const tamRodape = L * 0.032;
+    /* ---------- rodapé ----------
+       Fica ancorado embaixo, e não depois do texto: assim ele
+       não dança quando a instrução tem uma linha a mais.
+
+       São até três medidas, distribuídas no vão. As que não se
+       aplicam ao nível simplesmente não aparecem — campo vazio
+       em painel pequeno só ocupa espaço. */
+    const tamRodape = L * 0.030;
+    const tamRotulo = L * 0.024;
     const yRodape = A - margem - tamRodape;
 
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
     ctx.lineWidth = L * 0.003;
     ctx.beginPath();
-    ctx.moveTo(margem, yRodape - L * 0.030);
-    ctx.lineTo(L - margem, yRodape - L * 0.030);
+    ctx.moveTo(margem, yRodape - L * 0.034);
+    ctx.lineTo(L - margem, yRodape - L * 0.034);
     ctx.stroke();
 
-    ctx.font = '400 ' + tamRodape + 'px ' + this.FONTE;
-    ctx.fillStyle = this.COR.suave;
-    ctx.fillText('Tempo', margem, yRodape);
-
-    ctx.font = '600 ' + tamRodape + 'px ' + this.FONTE;
-    ctx.fillStyle = this.COR.texto;
-    ctx.fillText(d.tempo, margem + ctx.measureText('Tempo ').width * 1.15, yRodape);
+    const medidas = [{ rotulo: 'TEMPO', valor: d.tempo, cor: this.COR.texto }];
 
     if (d.encontrados) {
-      ctx.textAlign = 'right';
-      ctx.font = '400 ' + tamRodape + 'px ' + this.FONTE;
-      ctx.fillStyle = this.COR.suave;
-      ctx.fillText('encontrados  ' + d.encontrados, L - margem, yRodape);
-      ctx.textAlign = 'left';
+      medidas.push({
+        rotulo: 'ENCONTRADOS', valor: d.encontrados, cor: this.COR.verde
+      });
     }
+
+    if (d.desconforto) {
+      medidas.push({
+        rotulo: 'DESCONFORTO', valor: d.desconforto, cor: this.COR.ciano
+      });
+    }
+
+    const vao = L - margem * 2;
+
+    medidas.forEach((medida, i) => {
+      /* a primeira alinha à esquerda, a última à direita, e a do
+         meio fica no centro: assim o rodapé ocupa a largura toda
+         com uma, duas ou três medidas, sem reposicionar nada */
+      let x;
+      if (i === 0) {
+        ctx.textAlign = 'left';
+        x = margem;
+      } else if (i === medidas.length - 1) {
+        ctx.textAlign = 'right';
+        x = L - margem;
+      } else {
+        ctx.textAlign = 'center';
+        x = margem + vao / 2;
+      }
+
+      ctx.font = '400 ' + tamRotulo + 'px ' + this.FONTE;
+      ctx.fillStyle = this.COR.suave;
+      ctx.fillText(medida.rotulo, x, yRodape - tamRotulo * 1.15);
+
+      ctx.font = '700 ' + tamRodape + 'px ' + this.FONTE;
+      ctx.fillStyle = medida.cor;
+      ctx.fillText(medida.valor, x, yRodape);
+    });
+
+    ctx.textAlign = 'left';
 
     /* avisa o Three.js que a imagem mudou e precisa ser
        reenviada para a placa de vídeo */
