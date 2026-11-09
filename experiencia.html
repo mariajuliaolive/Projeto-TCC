@@ -157,27 +157,27 @@
 
       <!-- botões: cada um precisa ser um objeto separado, porque
            cada um recebe o próprio clique -->
-      <a-entity id="btn3dProximo" class="botao3d clicavel"
+      <a-entity id="btn3dProximo" class="botao3d interface"
                 position="-0.145 -0.185 0"
                 painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Próximo nível"></a-entity>
 
-      <a-entity id="btn3dSom" class="botao3d clicavel"
+      <a-entity id="btn3dSom" class="botao3d interface"
                 position="0.145 -0.185 0"
                 painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Ativar som"></a-entity>
 
-      <a-entity id="btn3dAjuda" class="botao3d clicavel"
+      <a-entity id="btn3dAjuda" class="botao3d interface"
                 position="-0.145 -0.272 0"
                 painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Ajuda"></a-entity>
 
-      <a-entity id="btn3dAnsiedade" class="botao3d clicavel"
+      <a-entity id="btn3dAnsiedade" class="botao3d interface"
                 position="0.145 -0.272 0"
                 painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Como me sinto"></a-entity>
 
-      <a-entity id="btn3dReiniciar" class="botao3d clicavel"
+      <a-entity id="btn3dReiniciar" class="botao3d interface"
                 position="-0.145 -0.359 0"
-                painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Reiniciar nível"></a-entity>
+                painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Reiniciar"></a-entity>
 
-      <a-entity id="btn3dSair" class="botao3d clicavel"
+      <a-entity id="btn3dSair" class="botao3d interface"
                 position="0.145 -0.359 0"
                 painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Sair"></a-entity>
 
@@ -210,7 +210,7 @@
          ========================================================== -->
     <a-entity id="painelAjuda" visible="false"
               position="0 1.42 -1.10"
-              class="clicavel"
+              class="interface"
               painel-texto="largura: 0.92; altura: 0.42"></a-entity>
 
     <!-- ==========================================================
@@ -224,7 +224,7 @@
     <a-entity id="escalaAnsiedade" visible="false"
               position="0 1.34 -1.10">
 
-      <a-entity id="tituloEscala" class="clicavel"
+      <a-entity id="tituloEscala" class="interface"
                 position="0 0.14 0"
                 painel-texto="largura: 0.72; altura: 0.11; centralizar: true;
                               texto: Quanto desconforto você sente agora?"></a-entity>
@@ -242,11 +242,44 @@
          ========================================================== -->
     <a-entity id="maoEsquerda"
               laser-controls="hand: left"
-              raycaster="objects: .clicavel, .botaoVR; far: 10"></a-entity>
+              raycaster="objects: .clicavel, .alvo; far: 10"></a-entity>
 
     <a-entity id="maoDireita"
               laser-controls="hand: right"
-              raycaster="objects: .clicavel, .botaoVR; far: 10"></a-entity>
+              raycaster="objects: .clicavel, .alvo; far: 10"></a-entity>
+
+    <!-- ==========================================================
+         PONTEIRO DA INTERFACE
+
+         Dois apontadores, e não um, porque são duas coisas
+         diferentes de apontar.
+
+         A MIRA (dentro da câmera) enxerga apenas .clicavel: os
+         animais e as portas de armário. No celular ela seleciona
+         pelo olhar demorado, que é a única forma de interagir
+         quando não há onde clicar.
+
+         O PONTEIRO enxerga apenas .interface: o console, os
+         botões, a ajuda e a escala. Ele parte do dedo ou do
+         mouse, nunca do centro da tela, e só dispara com um
+         toque de verdade.
+
+         A classe .interface marca o que é interface e nunca muda.
+         Quem o apontador enxerga é .alvo, que entra e sai conforme
+         o painel esteja aberto ou fechado — porque o A-Frame NÃO
+         ignora objeto invisível no cálculo do raio, e um painel
+         escondido na frente dos botões engolia o clique deles.
+
+         A separação corrige um defeito grave. No celular o
+         console fica centralizado, e a mira repousava em cima
+         dele: depois de 1,2 segundo a seleção por olhar disparava
+         sozinha o botão que estivesse no centro. Se calhasse de
+         ser "Reiniciar", a página recarregava — e recarregava de
+         novo, em laço, porque a mira voltava para o mesmo lugar.
+         ========================================================== -->
+    <a-entity id="ponteiro"
+              cursor="rayOrigin: mouse; fuse: false"
+              raycaster="objects: .alvo; far: 10"></a-entity>
 
     <a-camera
       id="camera"

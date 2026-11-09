@@ -204,7 +204,7 @@ AFRAME.registerComponent('console-cena', {
 
     /* ---------- faixa de cima: qual animal, qual fobia ---------- */
     if (d.animal) {
-      const corpo = L * 0.030;
+      const corpo = L * 0.032;
       ctx.font = '600 ' + corpo + 'px ' + this.FONTE;
       ctx.fillStyle = this.COR.suave;
 
@@ -217,14 +217,14 @@ AFRAME.registerComponent('console-cena', {
     }
 
     /* ---------- nível ---------- */
-    const tamNivel = L * 0.058;
+    const tamNivel = L * 0.064;
     ctx.font = '700 ' + tamNivel + 'px ' + this.FONTE;
     ctx.fillStyle = this.COR.ciano;
     ctx.fillText(`NÍVEL ${d.nivel} DE ${d.total}`, margem, y);
     y += tamNivel * 1.25;
 
     if (d.nivelNome) {
-      const tamNome = L * 0.038;
+      const tamNome = L * 0.042;
       ctx.font = '400 ' + tamNome + 'px ' + this.FONTE;
       ctx.fillStyle = this.COR.texto;
       ctx.fillText(d.nivelNome, margem, y);
@@ -250,7 +250,7 @@ AFRAME.registerComponent('console-cena', {
 
     /* ---------- instrução do nível ---------- */
     if (d.instrucao) {
-      const tamTexto = L * 0.036;
+      const tamTexto = L * 0.040;
       ctx.font = '400 ' + tamTexto + 'px ' + this.FONTE;
       ctx.fillStyle = this.COR.texto;
 
@@ -270,8 +270,8 @@ AFRAME.registerComponent('console-cena', {
        São até três medidas, distribuídas no vão. As que não se
        aplicam ao nível simplesmente não aparecem — campo vazio
        em painel pequeno só ocupa espaço. */
-    const tamRodape = L * 0.030;
-    const tamRotulo = L * 0.024;
+    const tamRodape = L * 0.034;
+    const tamRotulo = L * 0.026;
     const yRodape = A - margem - tamRodape;
 
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
@@ -364,50 +364,58 @@ AFRAME.registerComponent('aviso-abertura', {
     sumir: { type: 'number', default: 900 }
   },
 
+  /* TUDO É CONTADO NO TICK, E NÃO NUM setTimeout
+
+     A primeira versão marcava o tempo com setTimeout, disparado
+     quando a cena avisasse que terminou de carregar. Funcionava
+     no computador e não funcionava no celular: ali o A-Frame
+     emite "loaded" mais de uma vez, por causa da caixa de
+     permissão dos sensores de movimento, e cada emissão criava
+     um relógio novo que reiniciava a contagem. O aviso ficava
+     na tela para sempre.
+
+     O tick é chamado pelo próprio laço de desenho do A-Frame,
+     uma vez por quadro, com o tempo decorrido desde o quadro
+     anterior. Ele só começa quando a cena está rodando — o que
+     também resolve o motivo de esperar pelo "loaded", que era
+     não gastar tempo de leitura enquanto os modelos carregam.
+     E não há o que reiniciar: a contagem vive numa variável. */
   init: function () {
+    this.decorrido = 0;
+    this.saindoDesde = 0;
     this.encerrado = false;
-    this.encerrar = this.encerrar.bind(this);
-
-    /* O relógio só começa quando a cena está pronta. Se
-       começasse antes, parte do tempo de leitura seria gasta
-       carregando os modelos 3D. */
-    const comecar = () => {
-      this.relogio = setTimeout(this.encerrar, this.data.duracao);
-    };
-
-    if (this.el.sceneEl.hasLoaded) {
-      comecar();
-    } else {
-      this.el.sceneEl.addEventListener('loaded', comecar);
-    }
+    this.sumiu = false;
   },
 
+  /* Permite encerrar antes da hora, se algum dia for útil. */
   encerrar: function () {
-    if (this.encerrado) {
-      return;
+    if (!this.encerrado) {
+      this.encerrado = true;
+      this.alturaInicial = this.el.object3D.position.y;
     }
-    this.encerrado = true;
-
-    /* O desaparecimento é feito à mão, quadro a quadro, e não
-       com o componente "animation" do A-Frame.
-
-       Motivo: "animation" mexe em propriedades de componentes,
-       e a transparência deste painel não é de um componente —
-       ele cria o próprio material (MeshBasicMaterial) e o
-       entrega pronto ao Three.js. Não existe
-       "components.material" aqui para animar.
-
-       Subir enquanto some lê-se como "saindo da frente"; só
-       sumir, parado, parece falha de carregamento. */
-    this.saindoDesde = 0;
-    this.alturaInicial = this.el.object3D.position.y;
   },
 
   tick: function (tempo, intervalo) {
-    if (!this.encerrado || this.sumiu) {
+    if (this.sumiu) {
       return;
     }
 
+    if (!this.encerrado) {
+      this.decorrido = this.decorrido + intervalo;
+      if (this.decorrido >= this.data.duracao) {
+        this.encerrar();
+      }
+      return;
+    }
+
+    /* O desaparecimento é feito à mão, e não com o componente
+       "animation" do A-Frame, porque "animation" mexe em
+       propriedades de componentes — e a transparência daqui não
+       é de um componente: o painel cria o próprio material e o
+       entrega pronto ao Three.js.
+
+       Subir enquanto some lê-se como "saindo da frente"; só
+       sumir, parado, parece falha de carregamento. */
     this.saindoDesde = this.saindoDesde + intervalo;
     const andamento = Math.min(this.saindoDesde / this.data.sumir, 1);
 
@@ -423,10 +431,6 @@ AFRAME.registerComponent('aviso-abertura', {
       this.el.setAttribute('visible', false);
       this.el.emit('aviso-encerrado', null, false);
     }
-  },
-
-  remove: function () {
-    clearTimeout(this.relogio);
   }
 
 });

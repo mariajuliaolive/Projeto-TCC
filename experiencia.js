@@ -39,6 +39,10 @@ const btn3dAnsiedade = document.querySelector('#btn3dAnsiedade');
 const btn3dReiniciar = document.querySelector('#btn3dReiniciar');
 const btn3dSair = document.querySelector('#btn3dSair');
 
+const ponteiro = document.querySelector('#ponteiro');
+const maoEsquerda = document.querySelector('#maoEsquerda');
+const maoDireita = document.querySelector('#maoDireita');
+
 /* =========================================================
    1. LER A ESCOLHA QUE VEIO NA URL
    Exemplo: experiencia.html?animal=aranha&nivel=2
@@ -689,40 +693,52 @@ function iniciarExperiencia() {
                     btn3dAnsiedade, btn3dReiniciar, btn3dSair];
 
   function layoutLateral() {
-    consoleCena.setAttribute('position', '-0.479 1.306 -0.766');
-    consoleCena.setAttribute('rotation', '-19 32 0');
-    painelConsole.setAttribute('console-cena', { largura: 0.56, altura: 0.35 });
+    consoleCena.setAttribute('position', '-0.404 1.370 -0.829');
+    consoleCena.setAttribute('rotation', '-14 26 0');
+    painelConsole.setAttribute('console-cena', { largura: 0.72, altura: 0.45 });
     painelConsole.setAttribute('position', '0 0.06 0');
 
     botoes3d.forEach(function (botao) { botao.setAttribute('visible', true); });
-    medirBotoes(0.265, 0.075, 0.145, 0.185, 0.087);
+    medirBotoes(0.235, 0.095, 0.245, 0.300, 0.110);
     painelAjuda.setAttribute('painel-texto', { largura: 0.92, altura: 0.42 });
+    avisoAbertura.setAttribute('painel-texto', { largura: 0.90, altura: 0.34 });
   }
 
   function layoutCelular() {
-    consoleCena.setAttribute('position', '0 1.392 -0.978');
-    consoleCena.setAttribute('rotation', '-12 0 0');
-    painelConsole.setAttribute('console-cena', { largura: 0.46, altura: 0.26 });
-    painelConsole.setAttribute('position', '0 0.02 0');
+    consoleCena.setAttribute('position', '0 1.426 -0.985');
+    consoleCena.setAttribute('rotation', '-10 0 0');
+    painelConsole.setAttribute('console-cena', { largura: 0.60, altura: 0.38 });
+    painelConsole.setAttribute('position', '0 0.03 0');
 
     botoes3d.forEach(function (botao) { botao.setAttribute('visible', true); });
-    medirBotoes(0.225, 0.058, 0.118, 0.165, 0.068);
+    medirBotoes(0.195, 0.082, 0.205, 0.270, 0.095);
 
     /* 0,92 m a 1,10 m de distância dão 45 graus de largura, e a
        tela de um celular em pé só tem 42: o painel de ajuda
        encolhe junto. */
     painelAjuda.setAttribute('painel-texto', { largura: 0.78, altura: 0.46 });
+
+    /* o aviso de abertura também: a 1,15 m, 0,90 m de largura
+       dão exatamente os 42 graus da tela, e o título cortava na
+       beirada */
+    avisoAbertura.setAttribute('painel-texto', { largura: 0.74, altura: 0.42 });
   }
 
   /* Os botões acompanham o painel: se ele muda de tamanho e
-     eles não, sobram para fora das bordas. */
-  function medirBotoes(largura, altura, meio, primeiraLinha, espacamento) {
-    [[btn3dProximo, -meio, -primeiraLinha],
-     [btn3dSom, meio, -primeiraLinha],
-     [btn3dAjuda, -meio, -primeiraLinha - espacamento],
-     [btn3dAnsiedade, meio, -primeiraLinha - espacamento],
-     [btn3dReiniciar, -meio, -primeiraLinha - espacamento * 2],
-     [btn3dSair, meio, -primeiraLinha - espacamento * 2]
+     eles não, sobram para fora das bordas.
+
+     São DUAS fileiras de TRÊS, e não três de dois. A troca foi
+     feita para o texto poder crescer: altura é o recurso escasso
+     aqui, porque o console já ocupa de 14 a 35 graus abaixo da
+     linha dos olhos e o campo vertical acaba nos 40. Largura,
+     ao lado, ainda sobrava. */
+  function medirBotoes(largura, altura, coluna, primeiraLinha, espacamento) {
+    [[btn3dProximo, -coluna, -primeiraLinha],
+     [btn3dSom, 0, -primeiraLinha],
+     [btn3dAjuda, coluna, -primeiraLinha],
+     [btn3dAnsiedade, -coluna, -primeiraLinha - espacamento],
+     [btn3dReiniciar, 0, -primeiraLinha - espacamento],
+     [btn3dSair, coluna, -primeiraLinha - espacamento]
     ].forEach(function (item) {
       item[0].setAttribute('position', `${item[1]} ${item[2]} 0`);
       item[0].setAttribute('painel-texto', { largura: largura, altura: altura });
@@ -835,7 +851,7 @@ function iniciarExperiencia() {
     const nota = document.createElement('a-entity');
     const onde = posicionarNota(valor);
 
-    nota.classList.add('notaEscala', 'clicavel');
+    nota.classList.add('notaEscala', 'interface');
     nota.setAttribute('position', `${onde.x} ${onde.y} 0`);
     nota.setAttribute('painel-texto', {
       largura: LARGURA_NOTA,
@@ -893,8 +909,45 @@ function iniciarExperiencia() {
      Além de resolver a sobreposição em qualquer campo de visão,
      tem sentido próprio: quem parou para ler a ajuda ou para
      dizer como se sente não está consultando o nível. */
+  /* ---------- quem o apontador enxerga, agora ----------
+
+     A classe .interface diz o que é interface, e nunca muda. A
+     classe .alvo diz o que pode ser clicado NESTE momento, e é
+     ela que o apontador procura.
+
+     As duas precisam ser separadas porque o A-Frame não ignora
+     objeto invisível ao calcular o raio. O painel de ajuda,
+     escondido mas ainda no mesmo lugar, ficava na frente dos
+     botões e engolia o clique deles: o raio parava nele, que é o
+     mais próximo, e o botão atrás nunca era avisado.
+
+     Trocar de classe não basta: o raycaster guarda a lista de
+     objetos e só a refaz quando mandam. Daí o refrescar logo
+     abaixo. */
+  function marcarAlvos(raiz, ativo) {
+    const alvos = raiz.classList.contains('interface')
+      ? [raiz]
+      : Array.prototype.slice.call(raiz.querySelectorAll('.interface'));
+
+    alvos.forEach(function (el) {
+      el.classList.toggle('alvo', ativo);
+    });
+
+    refrescarApontadores();
+  }
+
+  function refrescarApontadores() {
+    [ponteiro, maoEsquerda, maoDireita, mira].forEach(function (el) {
+      const raycaster = el && el.components && el.components.raycaster;
+      if (raycaster) {
+        raycaster.refreshObjects();
+      }
+    });
+  }
+
   function mostrarEscala(mostrar) {
     escalaAnsiedade.setAttribute('visible', mostrar);
+    marcarAlvos(escalaAnsiedade, mostrar);
     btn3dAnsiedade.setAttribute('painel-texto', 'texto',
       mostrar ? 'Fechar' : 'Como me sinto');
     ajustarConsoleAosPaineis();
@@ -902,6 +955,7 @@ function iniciarExperiencia() {
 
   function mostrarAjuda(mostrar) {
     painelAjuda.setAttribute('visible', mostrar);
+    marcarAlvos(painelAjuda, mostrar);
     btn3dAjuda.setAttribute('painel-texto', 'texto',
       mostrar ? 'Fechar ajuda' : 'Ajuda');
     ajustarConsoleAosPaineis();
@@ -912,6 +966,7 @@ function iniciarExperiencia() {
                      || escalaAnsiedade.getAttribute('visible') === true
                      || avisoAbertura.getAttribute('visible') === true;
     consoleCena.setAttribute('visible', !algumAberto);
+    marcarAlvos(consoleCena, !algumAberto);
   }
 
   /* O aviso de abertura segue a mesma regra, e por isso o console
@@ -934,6 +989,11 @@ function iniciarExperiencia() {
     mostrarEscala(false);
     mostrarAjuda(abrindo);
   });
+
+  /* As notas só existem agora, então é agora que dá para acertar
+     quem é alvo: console sim, painéis fechados não. */
+  mostrarEscala(false);
+  mostrarAjuda(false);
 
   /* Com o console escondido, o botão que abriu some junto — então
      cada painel precisa fechar por si. A ajuda fecha ao ser
@@ -1221,6 +1281,13 @@ function iniciarExperiencia() {
        únicos botões da experiência. */
     escolherLayout();
 
+    /* No óculos não há mouse nem toque de tela: o ponteiro da
+       interface fica sem serventia, e a mira precisa enxergar
+       também os botões. Fora do óculos ela volta a enxergar só
+       os animais — é o que impede a seleção por olhar de acionar
+       um botão sozinha. */
+    mira.setAttribute('raycaster', 'objects', '.clicavel, .alvo');
+
     /* Entrar em VR exigiu um clique, então o áudio pode voltar. */
     if (somLigado) {
       retomarAudio();
@@ -1236,6 +1303,7 @@ function iniciarExperiencia() {
 
   cena.addEventListener('exit-vr', function () {
     escolherLayout();
+    mira.setAttribute('raycaster', 'objects', '.clicavel');
     mira.setAttribute('fuse', ehMobile);
     console.log('Saiu do modo VR.');
   });

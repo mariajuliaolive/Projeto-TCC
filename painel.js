@@ -149,18 +149,33 @@ AFRAME.registerComponent('painel-texto', {
 
     let y = margem;
 
-    /* título */
+    /* título
+
+       Também quebrado em linhas. Antes era desenhado de uma vez
+       só, e um título mais longo que o painel — "Nível 3 de 5 —
+       Movimento do estímulo" na tela de um celular — saía pela
+       borda e era cortado no meio da palavra. */
     if (d.titulo) {
       const tamanhoTitulo = A * 0.13;
       ctx.font = '600 ' + tamanhoTitulo + 'px ' + fonte;
       ctx.fillStyle = '#3ED0C0';
-      ctx.fillText(d.titulo, x, y);
-      y += tamanhoTitulo * 1.5;
+
+      const linhasTitulo = this.quebrarEmLinhas(d.titulo, L - margem * 2);
+      linhasTitulo.forEach((linha) => {
+        ctx.fillText(linha, x, y);
+        y += tamanhoTitulo * 1.25;
+      });
+
+      y += tamanhoTitulo * 0.3;
     }
 
     /* corpo */
     if (d.texto) {
-      const tamanhoTexto = d.titulo ? A * 0.105 : A * 0.2;
+      /* Sem título, o painel é um botão: o texto é a única coisa
+         dentro dele e pode ocupar boa parte da altura. Com
+         título, é um painel de leitura e precisa caber em várias
+         linhas. Daí a diferença grande entre os dois valores. */
+      const tamanhoTexto = d.titulo ? A * 0.115 : A * 0.30;
       ctx.font = '400 ' + tamanhoTexto + 'px ' + fonte;
       ctx.fillStyle = '#ECF1F8';
 
