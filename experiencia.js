@@ -15,10 +15,13 @@ const somAnimal = document.querySelector('#somAnimal');
 const rig = document.querySelector('#rig');
 
 /* ---------- interface dentro do óculos ---------- */
-const uiVR = document.querySelector('#uiVR');
-const painelInfoVR = document.querySelector('#painelInfoVR');
-const btnVRProximo = document.querySelector('#btnVRProximo');
-const btnVRSair = document.querySelector('#btnVRSair');
+const consoleCena = document.querySelector('#consoleCena');
+const painelConsole = document.querySelector('#painelConsole');
+const avisoAbertura = document.querySelector('#avisoAbertura');
+const btn3dProximo = document.querySelector('#btn3dProximo');
+const btn3dSom = document.querySelector('#btn3dSom');
+const btn3dReiniciar = document.querySelector('#btn3dReiniciar');
+const btn3dSair = document.querySelector('#btn3dSair');
 
 /* ---------- elementos do HUD ---------- */
 const hudFobia = document.querySelector('#hudFobia');
@@ -392,6 +395,8 @@ function iniciarExperiencia() {
     hudEncontrados.textContent = encontrados + ' de ' + escondidosNoTotal;
     hudEncontrados.classList.toggle(
       'hud-medida__valor--vazio', encontrados === 0);
+
+    atualizarConsole();
   }
 
   /* Quantas cópias tocam a animação do arquivo.
@@ -653,29 +658,78 @@ function iniciarExperiencia() {
 
   const controleAndar = document.querySelector('#controleAndar');
 
-  /* O cenário só existe depois de montado, então é agora que
-     o controle fica sabendo até onde pode andar. Sem isso,
-     atravessaria a parede.
+  /* ---------- onde o console cabe neste aparelho ----------
 
-     Este arquivo roda antes de o A-Frame terminar de montar a
-     cena, então o componente pode ainda não existir. Quando for
-     o caso, esperamos o evento "loaded" da entidade. */
-  function avisarOsLimites() {
-    const componente = rig && rig.components['andar-toque'];
-    if (componente) {
-      componente.definirLimites(limites);
+     O console está montado para uma tela larga. Num celular em
+     pé a conta muda: o campo de visão horizontal cai para cerca
+     de 42 graus (contra 106 no computador), porque a câmera do
+     A-Frame mede os 80 graus na VERTICAL e o resto sai da
+     proporção da tela. Metade de 42 é 21 — e o console, a 32
+     graus à esquerda, ficaria inteiramente fora da tela.
+
+     Daí dois arranjos.
+
+     LATERAL (computador e óculos): painel à esquerda, com os
+     quatro botões embaixo dele. Sobra tela de lado.
+
+     CELULAR: o painel desce e centraliza, aproveitando a altura
+     que a tela em pé tem de sobra, e os botões 3D saem de cena.
+     Não por falta de espaço apenas, mas porque no celular já
+     existe coisa melhor: a barra de botões em HTML, que é um
+     alvo de toque de verdade, com o tamanho que um dedo pede.
+
+     A divisão que isso desenha vale para o projeto inteiro: a
+     INFORMAÇÃO vai para dentro da cena 3D, que era o pedido da
+     orientação; os CONTROLES ficam onde funcionam melhor em
+     cada aparelho — e num celular sem óculos, isso é a tela. */
+
+  const botoes3d = [btn3dProximo, btn3dSom, btn3dReiniciar, btn3dSair];
+
+  function layoutLateral() {
+    consoleCena.setAttribute('position', '-0.479 1.306 -0.766');
+    consoleCena.setAttribute('rotation', '-19 32 0');
+    painelConsole.setAttribute('console-cena', { largura: 0.56, altura: 0.35 });
+    painelConsole.setAttribute('position', '0 0.06 0');
+
+    botoes3d.forEach(function (botao) { botao.setAttribute('visible', true); });
+    medirBotoes(0.265, 0.075, 0.145, 0.185, 0.087);
+  }
+
+  function layoutCelular() {
+    consoleCena.setAttribute('position', '0 1.162 -0.899');
+    consoleCena.setAttribute('rotation', '-26 0 0');
+    painelConsole.setAttribute('console-cena', { largura: 0.46, altura: 0.29 });
+    painelConsole.setAttribute('position', '0 0 0');
+
+    botoes3d.forEach(function (botao) { botao.setAttribute('visible', false); });
+  }
+
+  /* Os botões acompanham o painel: se ele muda de tamanho e
+     eles não, sobram para fora das bordas. */
+  function medirBotoes(largura, altura, meio, primeiraLinha, espacamento) {
+    [[btn3dProximo, -meio, -primeiraLinha],
+     [btn3dSom, meio, -primeiraLinha],
+     [btn3dReiniciar, -meio, -primeiraLinha - espacamento],
+     [btn3dSair, meio, -primeiraLinha - espacamento]
+    ].forEach(function (item) {
+      item[0].setAttribute('position', `${item[1]} ${item[2]} 0`);
+      item[0].setAttribute('painel-texto', { largura: largura, altura: altura });
+    });
+  }
+
+  /* O arranjo de celular vale enquanto a pessoa está olhando
+     para a tela. Dentro do óculos ela deixa de ver o HTML, e aí
+     o arranjo lateral volta — com os botões 3D, que passam a
+     ser os únicos que existem. */
+  function escolherLayout() {
+    if (temToque && !cena.is('vr-mode')) {
+      layoutCelular();
+    } else {
+      layoutLateral();
     }
   }
 
-  if (rig && rig.hasLoaded) {
-    avisarOsLimites();
-  } else if (rig) {
-    rig.addEventListener('loaded', avisarOsLimites);
-  }
-
-  if (temToque && controleAndar) {
-    controleAndar.hidden = false;
-  }
+  escolherLayout();
 
   const comoAndar = temToque
     ? 'Arraste o dedo no círculo "andar", no canto da tela, para caminhar '
@@ -716,6 +770,7 @@ function iniciarExperiencia() {
     const min = Math.floor(segundos / 60);
     const seg = segundos % 60;
     hudTempo.textContent = doisDigitos(min) + ':' + doisDigitos(seg);
+    atualizarConsole();
   }, 1000);
 
   /* =========================================================
@@ -915,18 +970,44 @@ function iniciarExperiencia() {
         pelo olhar demorado quando não há controle.
      ========================================================= */
 
-  /* ---------- o que os painéis do óculos mostram ---------- */
-  painelInfoVR.setAttribute('painel-texto', {
-    titulo: `Nível ${nivel.numero} de ${NIVEIS.length}`,
-    texto: nivel.instrucao
+  /* ---------- o que o console mostra ----------
+
+     O console é a mesma informação do HUD, só que como objeto
+     da cena: aparece no computador, no celular e dentro do
+     óculos, sem tapar o cenário. */
+  function atualizarConsole() {
+    painelConsole.setAttribute('console-cena', {
+      animal: animal.nome,
+      fobia: animal.fobia,
+      nivel: nivel.numero,
+      total: NIVEIS.length,
+      nivelNome: nivel.nome,
+      instrucao: nivel.instrucao,
+      tempo: hudTempo.textContent,
+      encontrados: escondidosNoTotal > 0
+        ? encontrados + ' de ' + escondidosNoTotal
+        : ''
+    });
+  }
+
+  atualizarConsole();
+
+  /* o aviso central repete o nível e a instrução, e some só */
+  avisoAbertura.setAttribute('painel-texto', {
+    titulo: `Nível ${nivel.numero} de ${NIVEIS.length} — ${nivel.nome}`,
+    texto: nivel.instrucao,
+    destacado: true
   });
 
   if (!buscarNivel(nivel.numero + 1)) {
-    btnVRProximo.setAttribute('painel-texto', 'texto', 'Último nível');
+    btn3dProximo.setAttribute('painel-texto', 'texto', 'Último nível');
   }
 
-  /* ---------- destaque ao apontar ---------- */
-  [btnVRProximo, btnVRSair].forEach(function (botao) {
+  /* ---------- destaque ao apontar ----------
+     Sem isso, nada avisa que o retângulo é clicável. Vale para
+     o raio do controle de VR, para a mira do celular e para o
+     mouse: os três emitem os mesmos eventos. */
+  botoes3d.forEach(function (botao) {
     botao.addEventListener('mouseenter', function () {
       botao.setAttribute('painel-texto', 'destacado', true);
     });
@@ -935,13 +1016,25 @@ function iniciarExperiencia() {
     });
   });
 
-  btnVRProximo.addEventListener('click', function () {
+  /* ---------- o que cada botão faz ----------
+     Reaproveitamos os botões do HUD em HTML: um clique no
+     objeto 3D dispara o mesmo código que já existe, em vez de
+     duplicar a lógica em dois lugares. */
+  btn3dProximo.addEventListener('click', function () {
     if (btnProximo.href) {
       window.location.href = btnProximo.href;
     }
   });
 
-  btnVRSair.addEventListener('click', function () {
+  btn3dSom.addEventListener('click', function () {
+    btnSom.click();
+  });
+
+  btn3dReiniciar.addEventListener('click', function () {
+    btnReiniciar.click();
+  });
+
+  btn3dSair.addEventListener('click', function () {
     window.location.href = 'selecao.html';
   });
 
@@ -995,7 +1088,15 @@ function iniciarExperiencia() {
 
   /* ---------- entrar e sair do modo VR ---------- */
   cena.addEventListener('enter-vr', function () {
-    uiVR.setAttribute('visible', true);
+    /* O console não precisa ser ligado aqui: ele já é um objeto
+       da cena e está visível o tempo todo, no computador, no
+       celular e dentro do óculos. Antes, era só aqui que a
+       interface aparecia em 3D. */
+
+    /* Dentro do óculos o HTML deixa de existir, então o arranjo
+       lateral volta — com os botões 3D, que passam a ser os
+       únicos botões da experiência. */
+    escolherLayout();
 
     /* Entrar em VR exigiu um clique, então o áudio pode voltar. */
     if (somLigado) {
@@ -1011,7 +1112,7 @@ function iniciarExperiencia() {
   });
 
   cena.addEventListener('exit-vr', function () {
-    uiVR.setAttribute('visible', false);
+    escolherLayout();
     mira.setAttribute('fuse', ehMobile);
     console.log('Saiu do modo VR.');
   });

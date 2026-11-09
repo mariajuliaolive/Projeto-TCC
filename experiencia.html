@@ -245,32 +245,76 @@
                      volume: 0.35"></a-entity>
 
     <!-- ==========================================================
-         INTERFACE DENTRO DO ÓCULOS
+         CONSOLE DA EXPERIÊNCIA
 
-         O HUD em HTML some quando o navegador entra em modo VR:
-         lá dentro só existe o mundo 3D. Estes painéis são objetos
-         da cena, então aparecem no óculos.
+         A interface vive DENTRO da cena 3D, e não numa camada
+         de HTML por cima dela. Duas razões:
 
-         Ficam à esquerda de quem usa, e não à frente, para não
-         cobrir o animal. Como são filhos do rig, acompanham a
-         pessoa se ela andar, mas não giram junto com a cabeça —
-         interface presa ao rosto causa desconforto.
+         1. Dentro do óculos a camada de HTML simplesmente não
+            existe — o WebXR mostra apenas o mundo 3D. Quem
+            entrava no óculos ficava sem nível, sem instrução e
+            sem botão nenhum.
+
+         2. Mesmo no computador, os painéis tapavam o cenário.
+
+         O console é filho do rig, e não da câmera: ele acompanha
+         a pessoa quando ela anda, mas NÃO gira junto com a
+         cabeça. Interface colada no rosto causa enjoo em
+         Realidade Virtual, e é por isso que nenhum óculos faz
+         isso. Fica à esquerda, virado para quem usa, como um
+         painel de instrumentos ao lado do corpo.
          ========================================================== -->
-    <a-entity id="uiVR" visible="false" position="-0.82 1.05 -0.72" rotation="0 42 0">
+    <!-- A posição não foi escolhida no olho. Ela vem de três
+         números: 32 graus à esquerda, 18 graus abaixo da linha
+         dos olhos e 95 cm de distância — perto o bastante para
+         ler, longe o bastante para não precisar focar, e dentro
+         do giro de cabeça que uma pessoa faz sem incomodar.
 
-      <a-entity id="painelInfoVR"
-                position="0 0.20 0"
-                painel-texto="largura: 0.62; altura: 0.30"></a-entity>
+         A rotação é a conta inversa: o painel gira os mesmos 32
+         graus para encarar quem olha. Sem isso ele apareceria
+         de esguelha e o texto ficaria ilegível. -->
+    <a-entity id="consoleCena" position="-0.479 1.306 -0.766" rotation="-19 32 0">
 
-      <a-entity id="btnVRProximo" class="botaoVR"
-                position="-0.165 -0.11 0"
-                painel-texto="largura: 0.29; altura: 0.11; centralizar: true; texto: Próximo nível"></a-entity>
+      <a-entity id="painelConsole"
+                position="0 0.06 0"
+                console-cena="largura: 0.56; altura: 0.35"></a-entity>
 
-      <a-entity id="btnVRSair" class="botaoVR"
-                position="0.165 -0.11 0"
-                painel-texto="largura: 0.29; altura: 0.11; centralizar: true; texto: Sair"></a-entity>
+      <!-- botões: cada um precisa ser um objeto separado, porque
+           cada um recebe o próprio clique -->
+      <a-entity id="btn3dProximo" class="botao3d clicavel"
+                position="-0.145 -0.185 0"
+                painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Próximo nível"></a-entity>
+
+      <a-entity id="btn3dSom" class="botao3d clicavel"
+                position="0.145 -0.185 0"
+                painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Ativar som"></a-entity>
+
+      <a-entity id="btn3dReiniciar" class="botao3d clicavel"
+                position="-0.145 -0.272 0"
+                painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Reiniciar nível"></a-entity>
+
+      <a-entity id="btn3dSair" class="botao3d clicavel"
+                position="0.145 -0.272 0"
+                painel-texto="largura: 0.265; altura: 0.075; centralizar: true; texto: Sair"></a-entity>
 
     </a-entity>
+
+    <!-- ==========================================================
+         AVISO DE ABERTURA
+
+         O console fica ao lado, fora do caminho do cenário — o
+         que resolve a sobreposição, mas cria o risco de alguém
+         entrar, olhar só para a frente e nunca perceber que há
+         um painel à esquerda.
+
+         Este aviso cobre esse buraco: aparece no centro, garante
+         que a instrução seja lida, e some sozinho depois de
+         alguns segundos, devolvendo a cena inteira.
+         ========================================================== -->
+    <a-entity id="avisoAbertura"
+              position="0 1.45 -1.15"
+              aviso-abertura
+              painel-texto="largura: 0.90; altura: 0.34"></a-entity>
 
     <!-- ==========================================================
          CONTROLES DE MÃO
@@ -307,6 +351,7 @@
 <script src="dados.js"></script>
 <script src="animador.js"></script>
 <script src="painel.js"></script>
+<script src="console.js"></script>
 <script src="cenarios.js"></script>
 <script src="descoberta.js"></script>
 <script src="controles.js"></script>
