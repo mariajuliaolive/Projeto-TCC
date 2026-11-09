@@ -1,0 +1,95 @@
+%========================= METODOLOGIA =========================
+\section{Metodologia}
+
+% RASCUNHO gerado a partir do código e da documentação do protótipo.
+% Revisar, ajustar os números que ainda dependem da coleta e inserir
+% as citações dos artigos selecionados na revisão.
+
+Este trabalho caracteriza-se como uma pesquisa aplicada, de natureza
+exploratória e abordagem predominantemente quantitativa, organizada em quatro
+etapas: revisão da literatura, desenvolvimento do artefato, coleta de dados com
+participantes e análise dos resultados.
+
+\subsection{Revisão da literatura}
+
+A fundamentação teórica foi construída a partir de uma busca sistematizada nas
+bases Scopus e SpringerLink, restrita a publicações dos últimos cinco anos. A
+expressão de busca combinou quatro blocos de termos --- tecnologia, condição,
+estímulo e procedimento --- conforme apresentado a seguir:
+
+\begin{quote}\small\singlespacing
+\texttt{( "virtual reality" OR "immersive environment" OR WebXR )}\\
+\texttt{AND ( phobia OR "specific phobia" OR fear OR anxiety )}\\
+\texttt{AND ( spider OR snake OR cockroach OR insect OR animal}\\
+\texttt{\phantom{AND (} OR arachnophobia OR ophidiophobia OR entomophobia )}\\
+\texttt{AND ( exposure OR "exposure therapy" OR desensitization OR habituation )}
+\end{quote}
+
+% TODO: preencher depois de rodar a busca
+Os resultados foram filtrados por leitura de título e resumo, chegando-se a um
+conjunto final de \textbf{[N]} artigos, que fundamentam as decisões de projeto
+descritas na Seção~\ref{sec:desenvolvimento} e a interpretação dos resultados.
+
+\subsection{Participantes}
+
+% TODO: confirmar números após a coleta
+A validação foi conduzida com estudantes dos cursos de Ciência da Computação e
+de Psicologia da Faculdade Nova Roma. A participação foi voluntária e mediante
+assinatura do Termo de Consentimento Livre e Esclarecido (Apêndice~A).
+
+Cabe registrar que \textbf{o sistema não constitui tratamento psicológico ou
+médico e não realiza diagnóstico}. A avaliação conduzida restringe-se a
+usabilidade, imersão, interação e percepção do estímulo, não se propondo a medir
+desfecho clínico de qualquer natureza.
+
+\subsection{Procedimento}
+
+Cada sessão seguiu o mesmo roteiro:
+
+\begin{enumerate}
+  \item apresentação do estudo e leitura do termo de consentimento;
+  \item cadastro na plataforma, com registro de e-mail, sexo e data de
+  nascimento;
+  \item questionário inicial de perfil, no qual o participante declara, em
+  escala de 0 a 10, o grau de medo que atribui a cada um dos cinco animais
+  contemplados;
+  \item escolha do estímulo e execução da experiência, percorrendo os níveis de
+  exposição na ordem crescente, com liberdade para interromper a qualquer
+  momento;
+  \item questionário final de percepção.
+\end{enumerate}
+
+\subsection{Variáveis coletadas}
+
+Os dados foram registrados automaticamente pela aplicação durante a experiência
+e associados a um código de participante (P01, P02, \ldots), de modo que a
+análise é conduzida sobre dados anonimizados. O Quadro a seguir relaciona cada
+variável comportamental à sua forma de medida.
+
+\begin{table}[htbp]
+\centering
+\caption{Variáveis comportamentais registradas durante a experiência.}
+\label{tab:variaveis}
+\begin{tabular}{ll}
+\toprule
+\textbf{Variável} & \textbf{Como é medida} \\
+\midrule
+Aproximação          & menor distância alcançada até o estímulo, em metros \\
+Afastamento          & número de recuos e distância média mantida \\
+Agitação             & variação angular da câmera por segundo \\
+Atenção ao estímulo  & proporção do tempo com o estímulo no campo de visão \\
+Exploração           & deslocamento acumulado e animais encontrados \\
+Interação            & ocorrência de toque no estímulo (Nível 5) \\
+Progressão           & nível máximo alcançado e tempo por nível \\
+Desconforto          & autorrelato em escala de 0 a 10, por nível \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Tratamento dos dados}
+
+Os registros são gravados em banco de dados relacional e exportados para
+análise descritiva. As figuras e tabelas apresentadas na Seção de resultados são
+geradas por scripts versionados em \texttt{data/analytics}, a partir dos dados
+já anonimizados, o que torna a análise reprodutível sem expor informação
+identificável dos participantes.
