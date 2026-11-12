@@ -2,27 +2,67 @@
 \section{Desenvolvimento}
 \label{sec:desenvolvimento}
 
-% RASCUNHO gerado a partir do código e da documentação do protótipo
-% (README.md e docs/relatorio-testes.md). Os números aqui são reais e
-% foram medidos. Falta inserir as capturas de tela como figuras.
+% Escrita a partir do código. Todos os números desta seção são reais
+% e foram medidos. Faltam apenas as capturas de tela, marcadas com
+% [FIGURA].
 
-\subsection{Tecnologias empregadas}
+Esta seção descreve o artefato construído e, sobretudo, as decisões de
+projeto que o determinaram. A ênfase recai sobre as decisões porque é
+nelas que reside a contribuição de engenharia do trabalho: a maior parte
+delas não decorre de preferência, mas de restrições concretas ---
+perceptivas, de desempenho ou de plataforma --- que só se manifestaram
+durante a construção.
 
-O protótipo foi desenvolvido como aplicação web estática, executável
-diretamente no navegador, sem instalação. A escolha deliberada por HTML, CSS e
-JavaScript puros, sem arcabouços de interface, teve por objetivo reduzir a
-dependência de terceiros e manter o código legível como artefato acadêmico.
+\subsection{Tecnologias e organização}
 
-A camada tridimensional utiliza o A-Frame (versão 1.7.0), arcabouço declarativo
-construído sobre o Three.js, que implementa a especificação WebXR. Isso permite
-que a mesma página funcione em três modos de uso --- computador, celular e
-óculos de Realidade Virtual --- sem código separado para cada um.
+O protótipo é uma aplicação web estática, executável diretamente no
+navegador, sem instalação. A camada tridimensional utiliza o A-Frame
+(versão 1.7.0), arcabouço declarativo construído sobre o Three.js que
+implementa a especificação WebXR. Isso permite que a mesma página
+funcione em três modos de uso --- computador, celular e óculos de
+Realidade Virtual --- sem base de código separada para cada um.
+
+A opção por HTML, CSS e JavaScript sem arcabouços de interface foi
+deliberada, por três razões: reduz a dependência de terceiros, elimina
+etapa de compilação (a aplicação é publicada copiando arquivos), e
+mantém o código legível como artefato acadêmico --- um leitor que
+conheça JavaScript consegue acompanhá-lo sem conhecer um arcabouço
+específico.
+
+\begin{table}[htbp]
+\centering
+\caption{Organização do código-fonte da experiência.}
+\label{tab:arquivos}
+\begin{tabular}{llr}
+\toprule
+\textbf{Arquivo} & \textbf{Responsabilidade} & \textbf{Linhas} \\
+\midrule
+\texttt{dados.js}        & os cinco animais e os cinco níveis            & 321 \\
+\texttt{cenarios.js}     & monta os quatro ambientes e os esconderijos   & 597 \\
+\texttt{experiencia.js}  & lê a escolha, monta a cena e conduz a sessão  & 1329 \\
+\texttt{console.js}      & painel de informação dentro da cena           & 436 \\
+\texttt{painel.js}       & painéis de texto desenhados em canvas         & 208 \\
+\texttt{controles.js}    & controle de caminhada por toque               & 178 \\
+\texttt{animador.js}     & reprodução das animações dos modelos          & 173 \\
+\texttt{descoberta.js}   & portas de armário e revelação por aproximação & 136 \\
+\midrule
+\multicolumn{2}{l}{Total da experiência} & 3.378 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+O arquivo \texttt{dados.js} ocupa posição particular: ele é a fonte única
+de verdade do sistema. Os cinco animais, os cinco níveis, as distâncias,
+as quantidades e as escalas estão todos declarados ali, e nenhum outro
+arquivo repete esses valores. Alterar a progressão dos níveis é alterar
+uma linha --- o que importa num protótipo de pesquisa, em que os
+parâmetros do estímulo podem precisar de ajuste entre sessões.
 
 \subsection{Estímulos e ambientes}
 
 Foram contemplados cinco animais frequentemente associados a fobias
 específicas. Cada um é apresentado no ambiente em que seria encontrado,
-construído com primitivas geométricas do próprio arcabouço:
+construído com primitivas geométricas do próprio arcabouço.
 
 \begin{table}[htbp]
 \centering
@@ -41,20 +81,75 @@ Sapo   & Ranidafobia     & Quintal  & 0,10 m \\
 \end{tabular}
 \end{table}
 
-\subsubsection{Escala de apresentação}
+% [FIGURA] capturas dos quatro ambientes
+A escolha de construir os cenários com primitivas, em vez de importar
+ambientes prontos, decorre do peso: os quatro ambientes somados não
+acrescentam nenhum arquivo ao projeto, o que mantém o tempo de
+carregamento compatível com uma sessão de testes em que cada participante
+abre a página do zero.
 
-Tamanho real e estímulo perceptível são grandezas distintas. Uma barata de
-cinco centímetros, observada a três metros, ocupa menos de cinco pixels na
-tela: fisicamente correta e visualmente inútil. Por essa razão, cada animal
-declara separadamente o seu tamanho real e uma escala de apresentação, de modo
-que o trabalho possa informar os dois valores com transparência. As escalas
-aplicadas variam de 1,0 (cobra) a 4,5 (barata).
+\subsubsection{Tamanho real e escala de apresentação}
+
+Tamanho real e estímulo perceptível são grandezas distintas. Uma barata
+de cinco centímetros, observada a três metros, ocupa menos de cinco
+pixels na tela: fisicamente correta e visualmente inútil. A primeira
+versão do protótipo apresentava os animais em tamanho real e o efeito
+foi exatamente esse --- os estímulos pequenos eram imperceptíveis.
+
+A solução adotada foi declarar separadamente, para cada animal, o tamanho
+real e uma escala de apresentação. O sistema apresenta o produto dos
+dois, e o trabalho pode informar ambos com transparência.
+
+\begin{table}[htbp]
+\centering
+\caption{Tamanho real, escala de apresentação e tamanho apresentado.}
+\label{tab:escalas}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Estímulo} & \textbf{Real} & \textbf{Escala} & \textbf{Apresentado} \\
+\midrule
+Cobra  & 1,40 m & 1,0$\times$ & 1,40 m \\
+Rato   & 0,25 m & 1,8$\times$ & 0,45 m \\
+Barata & 0,05 m & 4,5$\times$ & 0,23 m \\
+Aranha & 0,08 m & 3,6$\times$ & 0,29 m \\
+Sapo   & 0,10 m & 3,0$\times$ & 0,30 m \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Note-se que a escala é inversamente proporcional ao tamanho do animal:
+quanto menor o estímulo real, maior o fator necessário para torná-lo
+perceptível. A cobra, única de porte comparável ao humano, é apresentada
+em tamanho real.
+
+\subsubsection{Ajuste automático dos modelos}
+
+Modelos tridimensionais obtidos de repositórios públicos chegam em
+unidades arbitrárias e com a origem em ponto imprevisível. Um mesmo
+arquivo pode medir duas ou cento e vinte unidades. O sistema resolve isso
+medindo a caixa envolvente do modelo depois do carregamento e calculando
+o fator que o leva ao tamanho declarado, além de deslocá-lo
+verticalmente para que a base encoste no piso.
+
+Um terceiro ajuste foi necessário e é menos evidente: \emph{a maior
+dimensão do modelo nem sempre é aquela a que o tamanho se refere}. O
+modelo de cobra empregado inicialmente vinha em pose empinada, de modo
+que a sua maior dimensão era a altura; escalar pela maior dimensão
+produzia uma cobra de 1,2~m de altura, semelhante a um pilar. Cada animal
+passou a declarar, portanto, a qual dimensão o seu tamanho se refere.
+
+Um defeito dessa mesma natureza foi registrado durante o
+desenvolvimento e serve de ilustração: a substituição do modelo de cobra
+por outro, já em pose estendida, fez a configuração anterior escalar a
+dimensão errada, e a verificação automatizada registrou estímulos de 13 a
+16 metros de comprimento. O erro foi detectado pela ferramenta, e não a
+olho nu.
 
 \subsection{Níveis de exposição}
 
-A progressão é organizada em cinco níveis, nos quais variam quatro dimensões:
-a distância até o estímulo, a quantidade de exemplares, a presença de movimento
-e a possibilidade de interação direta.
+A progressão é organizada em cinco níveis, nos quais variam quatro
+dimensões: a distância até o estímulo, a quantidade de exemplares, a
+presença de movimento e a possibilidade de interação direta.
 
 \begin{table}[htbp]
 \centering
@@ -64,66 +159,433 @@ e a possibilidade de interação direta.
 \toprule
 \textbf{Nível} & \textbf{Denominação} & \textbf{Distância} & \textbf{Movimento} & \textbf{Interação} \\
 \midrule
-1 & Primeiro contato        & máxima    & não & não \\
-2 & Aproximação             & média     & não & não \\
-3 & Movimento do estímulo   & média     & sim & não \\
-4 & Proximidade             & reduzida  & sim & não \\
-5 & Interação direta        & mínima    & sim & sim \\
+1 & Primeiro contato      & máxima    & não & não \\
+2 & Aproximação           & média     & não & não \\
+3 & Movimento do estímulo & média     & sim & não \\
+4 & Proximidade elevada   & reduzida  & sim & não \\
+5 & Interação direta      & mínima    & sim & sim \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+Os níveis 2 e 3 compartilham a mesma distância por definição: entre eles
+muda o movimento, não a proximidade. Isolar uma variável por vez é o que
+permite, na análise, atribuir eventual mudança de comportamento ao fator
+correto.
+
+\subsubsection{Distâncias}
+
 Cada animal possui a sua própria escala de distâncias, porque os tamanhos
-variam em uma ordem de grandeza. A cobra parte de 5,50 m e chega a 1,30 m; a
-barata parte de 1,90 m e chega a 0,75 m.
+variam em uma ordem de grandeza. Cada um declara a distância do Nível~1 e
+a do Nível~5; os intermediários são interpolados por uma proporção
+declarada no nível.
+
+\begin{table}[htbp]
+\centering
+\caption{Distância ao estímulo principal, em metros, por nível.}
+\label{tab:distancias}
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Estímulo} & \textbf{N1} & \textbf{N2} & \textbf{N3} & \textbf{N4} & \textbf{N5} \\
+\midrule
+Cobra  & 5,50 & 3,61 & 3,61 & 2,14 & 1,30 \\
+Rato   & 3,20 & 2,17 & 2,17 & 1,36 & 0,90 \\
+Aranha & 2,60 & 1,81 & 1,81 & 1,20 & 0,85 \\
+Sapo   & 2,60 & 1,81 & 1,81 & 1,20 & 0,85 \\
+Barata & 1,90 & 1,38 & 1,38 & 0,98 & 0,75 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Quantidade}
 
 A quantidade de exemplares cresce de um até quinze, ajustada por um fator
-próprio de cada espécie: uma cozinha com vinte e quatro baratas é uma cena
-reconhecível, ao passo que uma mata com quinze cobras de 1,40 m não o é. O
-Nível 1 é sempre composto por um único exemplar, para todos os participantes,
-de modo que o primeiro contato seja idêntico e previsível.
+próprio de cada espécie. A necessidade do fator veio da observação: uma
+cozinha com vinte e quatro baratas é uma cena reconhecível; uma mata com
+quinze cobras de 1,40~m não é --- lê-se como exagero, e não como
+intensificação do estímulo.
+
+\begin{table}[htbp]
+\centering
+\caption{Número de exemplares apresentados por nível.}
+\label{tab:quantidades}
+\begin{tabular}{lrrrrrr}
+\toprule
+\textbf{Estímulo} & \textbf{Fator} & \textbf{N1} & \textbf{N2} & \textbf{N3} & \textbf{N4} & \textbf{N5} \\
+\midrule
+Barata & 1,6 & 1 & 5 & 10 & 16 & 24 \\
+Rato   & 1,0 & 1 & 3 & 6  & 10 & 15 \\
+Aranha & 1,0 & 1 & 3 & 6  & 10 & 15 \\
+Sapo   & 1,0 & 1 & 3 & 6  & 10 & 15 \\
+Cobra  & 0,5 & 1 & 2 & 3  & 5  & 8  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+O Nível~1 ignora o fator: o primeiro contato é sempre com um único
+exemplar, para todos os participantes, de modo que seja idêntico e
+previsível.
+
+\subsubsection{Reprodutibilidade da disposição}
+
+As posições dos exemplares são sorteadas, mas o sorteio parte de uma
+semente derivada do animal e do nível. A consequência é que o mesmo nível
+monta sempre a mesma cena. Sem isso, dois participantes veriam
+disposições diferentes e a comparação entre eles perderia sentido --- um
+poderia ter encontrado três animais a um metro e o outro, nenhum.
 
 \subsubsection{Exclusão deliberada das animações de ataque}
 
-Os modelos tridimensionais utilizados trazem animações de ataque e de morte.
-Nenhuma delas é empregada. Um animal que ataca produz susto, e susto é o oposto
-de exposição gradual e controlada: retira do participante o domínio sobre o
-próprio ritmo, que é o princípio do procedimento.
+Os modelos empregados trazem animações de ataque e de morte, nomeadas
+\texttt{Attack} e \texttt{Death}. Nenhuma delas é utilizada. Um animal
+que ataca produz susto, e susto é o oposto de exposição gradual e
+controlada: retira do participante o domínio sobre o próprio ritmo, que é
+o princípio do procedimento.
+
+A exclusão é uma decisão de projeto fundamentada, e não uma limitação
+técnica --- as animações estão nos arquivos e poderiam ser reproduzidas
+com uma linha de configuração.
+
+\subsection{Comportamento dos estímulos}
+
+Um grupo em que todos os exemplares se movem de maneira idêntica não
+parece um grupo: parece um enfeite. Cada exemplar recebe, portanto, um
+comportamento próprio, sorteado com a mesma semente que determina as
+posições.
+
+\begin{table}[htbp]
+\centering
+\caption{Comportamentos atribuídos a cada exemplar.}
+\label{tab:comportamentos}
+\small
+\begin{tabular}{p{2.9cm}p{6.4cm}p{2.8cm}}
+\toprule
+\textbf{Comportamento} & \textbf{O que faz} & \textbf{Custo} \\
+\midrule
+Quieto    & apenas respira, com balanço vertical lento & baixo: dispensa o reprodutor de animação \\
+Inquieto  & reproduz a animação do arquivo e gira o corpo & médio \\
+Andarilho & o mesmo, e ainda caminha devagar entre dois pontos & maior \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Nos níveis 1 e 2, 65\% dos exemplares permanecem quietos; a partir do
+Nível~3, a proporção passa a 25\% quietos, 40\% inquietos e 35\%
+andarilhos. Três regras são mantidas em todos os casos:
+
+\begin{enumerate}
+  \item \textbf{nenhum exemplar fica completamente imóvel} --- quem não
+  reproduz animação recebe ao menos o balanço de respiração;
+  \item \textbf{sempre há algum exemplar parado} --- sem contraste, o
+  grupo inteiro se torna um borrão de movimento e nada chama atenção;
+  \item \textbf{o exemplar principal nunca se desloca} --- ele está na
+  distância exata que define o nível, e sair do lugar desfaria a
+  progressão que se pretende medir.
+\end{enumerate}
 
 \subsection{Exploração e descoberta}
 
-A partir do Nível 2, parte dos exemplares inicia a cena invisível, alojada em
-esconderijos distribuídos pelos ambientes --- sob móveis, atrás de obstáculos e
-no interior de armários. São vinte e um esconderijos no total, dos quais cinco
-exigem que o participante abra a porta de um armário para que o animal apareça;
-os demais revelam-se por aproximação.
+A partir do Nível~2, parte dos exemplares inicia a cena invisível,
+alojada em esconderijos distribuídos pelos ambientes. São vinte e um
+esconderijos no total --- cinco na sala, nove na cozinha, cinco na
+floresta e cinco no quintal --- e a fração de exemplares escondidos é de
+35\% nos níveis 2 e 3 e de 45\% nos níveis 4 e 5.
 
-O efeito pretendido é deslocar o controle da exposição: em lugar de encarar
-todos os estímulos de uma só vez, o participante avança no próprio ritmo e
-decide quando abrir a próxima porta.
+Dois modos de revelação foram implementados:
+
+\begin{table}[htbp]
+\centering
+\caption{Modos de revelação dos exemplares escondidos.}
+\label{tab:revelacao}
+\begin{tabular}{p{2.6cm}p{10.0cm}}
+\toprule
+\textbf{Esconderijo} & \textbf{Como o exemplar aparece} \\
+\midrule
+Com porta & somente quando o participante \textbf{abre a porta do armário}; a aproximação não basta \\
+Sem porta & quando o participante \textbf{chega a menos de 1,6~m} do esconderijo \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% [FIGURA] cozinha com as portas fechadas e abertas
+Dos nove esconderijos da cozinha, cinco são armários com porta articulada
+que gira ao ser tocada. Ao aparecer, o exemplar desloca-se para fora do
+esconderijo, em direção ao centro do ambiente.
+
+O efeito pretendido é deslocar o controle da exposição. Em lugar de
+encarar todos os estímulos de uma só vez, o participante avança no
+próprio ritmo e decide quando abrir a próxima porta. O painel de
+informação indica quantos exemplares já foram encontrados do total
+escondido --- sem esse indicador, quem explora tende a desistir supondo
+já ter visto tudo.
 
 \subsection{Interface}
+\label{sec:interface}
 
-A interface da aplicação é construída como objeto da cena tridimensional, e não
-como camada de HTML sobreposta. A decisão tem motivação técnica: ao entrar em
-modo de Realidade Virtual, o navegador exibe exclusivamente o conteúdo
-tridimensional, de modo que qualquer elemento em HTML desaparece. Um painel
-sobreposto deixaria o usuário de óculos sem nível, sem instrução e sem
+A interface da aplicação é construída como objeto da cena
+tridimensional, e não como camada de HTML sobreposta ao desenho. A
+decisão tem motivação técnica direta: ao entrar em modo de Realidade
+Virtual, o navegador exibe exclusivamente o conteúdo tridimensional, de
+modo que qualquer elemento em HTML desaparece. Um painel sobreposto
+deixaria o participante de óculos sem nível, sem instrução e sem
 controles.
 
-O painel acompanha o corpo do participante, e não a sua cabeça: desloca-se com
-ele quando caminha, mas não gira junto com o olhar. Interface fixada ao campo
-de visão é reconhecidamente causa de desconforto em Realidade Virtual.
+% [FIGURA] o console dentro da cena
+O painel acompanha o corpo do participante, e não a sua cabeça:
+desloca-se com ele quando caminha, mas não gira junto com o olhar.
+Interface fixada ao campo de visão é reconhecidamente causa de
+desconforto em Realidade Virtual.
+
+\subsubsection{Dois arranjos, determinados pelo campo de visão}
+
+O posicionamento da interface precisou ser calculado, e não estimado. A
+câmera do arcabouço mede os seus 80 graus de abertura na
+\emph{vertical}; a abertura horizontal resulta da proporção da tela.
+Daí decorre uma diferença considerável:
+
+\begin{table}[htbp]
+\centering
+\caption{Campo de visão horizontal conforme o formato da tela.}
+\label{tab:fov}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Tela} & \textbf{Proporção} & \textbf{Abertura horizontal} \\
+\midrule
+Computador (1280 $\times$ 800) & 1,60 & 106$^\circ$ \\
+Celular em pé (390 $\times$ 844) & 0,46 & 42$^\circ$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Com 42 graus de abertura, metade é 21 graus --- e um painel posicionado a
+32 graus à esquerda, adequado no computador, fica \emph{inteiramente fora
+da tela} em um celular. A aplicação adota, por isso, dois arranjos: no
+computador e no óculos o painel fica à esquerda, com os botões abaixo
+dele; no celular tudo se centraliza e encolhe, aproveitando a altura que
+a tela em pé tem de sobra.
+
+\subsubsection{Dois apontadores}
+
+A seleção de alvos revelou um conflito que merece registro, por ser
+próprio de interfaces tridimensionais e não ter equivalente em páginas
+convencionais.
+
+Em celulares sem controle de mão, a seleção se dá pelo olhar: a mira
+permanece no centro da tela e, após permanecer sobre um alvo por 1,2
+segundo, aciona-o. Como no celular o painel de interface é centralizado,
+a mira repousava sobre ele e acionava sozinha o botão que estivesse no
+centro --- se fosse o de reiniciar, a página recarregava, e recarregava
+novamente, em laço.
+
+A correção foi separar os apontadores conforme a sua natureza: a mira
+enxerga apenas os estímulos e as portas, enquanto um segundo apontador,
+que parte do dedo ou do cursor e nunca do centro da tela, enxerga apenas
+a interface. Dentro do óculos, onde não há dedo nem cursor, a mira volta
+a enxergar ambos.
+
+Um segundo defeito foi detectado na mesma ocasião: o arcabouço não ignora
+objetos invisíveis ao calcular o alcance do raio de seleção, de modo que
+um painel oculto permanecia interceptando cliques destinados aos botões
+atrás dele. A solução foi distinguir o que \emph{é} interface do que
+\emph{pode ser acionado no momento}, atualizando a lista de alvos a cada
+abertura ou fechamento de painel.
+
+Ambos os defeitos só se manifestaram quando os testes automatizados
+passaram a empregar cliques e toques reais. Até então disparavam o evento
+diretamente sobre o elemento, o que contorna o cálculo do raio --- e
+teria aprovado os dois casos sem apontar problema. O registro fica como
+observação de método: em interface tridimensional, teste por evento
+sintético produz falso positivo.
+
+\subsection{Deslocamento}
+
+\begin{table}[htbp]
+\centering
+\caption{Formas de interação conforme o dispositivo.}
+\label{tab:controles}
+\small
+\begin{tabular}{p{2.2cm}p{2.6cm}p{3.5cm}p{3.6cm}}
+\toprule
+\textbf{Dispositivo} & \textbf{Olhar} & \textbf{Caminhar} & \textbf{Selecionar} \\
+\midrule
+Computador & arrastar o cursor & teclas W A S D & clique \\
+Celular & girar o aparelho & controle circular na tela & toque \\
+Óculos & mover a cabeça & deslocamento físico & raio do controle ou olhar \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+No celular não há teclado, e girar o aparelho permite olhar em volta mas
+não mover-se --- o que inviabilizaria tanto a exploração quanto a
+descoberta dos exemplares escondidos. Foi implementado, para esse caso,
+um controle circular de toque, cujo deslocamento é \emph{relativo ao
+olhar} e limitado pelas paredes do cenário, com folga de 45~cm.
+
+A velocidade adotada é de 1,4~m/s, próxima da caminhada humana. Valores
+superiores produzem desconforto em Realidade Virtual.
 
 \subsection{Verificação técnica}
+\label{sec:verificacao}
 
-% TODO: inserir a captura de tela da ferramenta como figura
-O protótipo conta com uma ferramenta própria de verificação automatizada, que
-percorre as vinte e cinco combinações de animal e nível e confere, em cada uma,
-o carregamento do modelo, a escala aplicada, o apoio no piso, o enquadramento
-no campo de visão, o carregamento do áudio e a taxa de quadros sustentada.
+% [FIGURA] a ferramenta de verificação em execução
+O protótipo conta com ferramenta própria de verificação automatizada,
+que percorre as vinte e cinco combinações de animal e nível e confere, em
+cada uma: o carregamento do modelo, a escala aplicada, o apoio no piso, o
+enquadramento no campo de visão, o carregamento do áudio, a taxa de
+quadros sustentada e a ausência de erros de execução.
 
-Na última execução registrada, nenhuma das vinte e cinco combinações apresentou
-falha. A média de quadros por segundo, medida em renderização por software ---
-condição deliberadamente desfavorável, sem aceleração por placa de vídeo ---
-foi de 29 quadros por segundo.
+A ferramenta não é um acessório. Foi ela que detectou o erro de escala da
+cobra mencionado anteriormente, e é ela que permite afirmar, com número,
+que uma alteração não degradou o que já funcionava.
+
+\subsubsection{Desempenho}
+
+A medição é feita em renderização por software, sem aceleração por placa
+de vídeo --- condição deliberadamente desfavorável. Em qualquer aparelho
+com placa de vídeo o desempenho tende a atingir o limite da tela.
+
+A Tabela~\ref{tab:desempenho} compara o desempenho antes e depois do
+conjunto de otimizações descrito a seguir, na mesma máquina e com a mesma
+área renderizada.
+
+\begin{table}[htbp]
+\centering
+\caption{Quadros por segundo antes e depois das otimizações, com o
+número de exemplares entre parênteses.}
+\label{tab:desempenho}
+\begin{tabular}{llrrrrr}
+\toprule
+\textbf{Estímulo} & & \textbf{N1} & \textbf{N2} & \textbf{N3} & \textbf{N4} & \textbf{N5} \\
+\midrule
+Cobra  & antes  & 16 (1) & 11 (3) & 8 (6)  & 6 (10)  & 4 (15) \\
+       & depois & 21 (1) & 20 (2) & 19 (3) & 18 (5)  & 16 (8) \\
+\addlinespace
+Rato   & antes  & 43 (1) & 35 (3) & 26 (6) & 20 (10) & 15 (15) \\
+       & depois & 46 (1) & 40 (3) & 31 (6) & 30 (10) & 21 (15) \\
+\addlinespace
+Barata & antes  & 37 (1) & 35 (3) & 34 (6)  & 32 (10) & 29 (15) \\
+       & depois & 37 (1) & 36 (5) & 34 (10) & 32 (16) & 29 (24) \\
+\addlinespace
+Aranha & antes  & 44 (1) & 37 (3) & 29 (6) & 24 (10) & 19 (15) \\
+       & depois & 47 (1) & 41 (3) & 35 (6) & 32 (10) & 25 (15) \\
+\addlinespace
+Sapo   & antes  & 26 (1) & 22 (3) & 18 (6) & 14 (10) & 11 (15) \\
+       & depois & 26 (1) & 24 (3) & 21 (6) & 19 (10) & 14 (15) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A média das vinte e cinco combinações passou de 24 para 29 quadros por
+segundo, e o número de combinações sem aviso de desempenho subiu de oito
+para doze. Em nenhuma das duas medições houve falha.
+
+Três leituras merecem registro:
+
+\begin{itemize}
+  \item \textbf{a cozinha passou de 15 para 24 exemplares sem perder
+  desempenho} (29 quadros por segundo em ambas as medições, no Nível~5).
+  O que paga esse aumento é o comportamento \emph{quieto}, que dispensa
+  o reprodutor de animação, somado ao limite de oito exemplares animados
+  simultaneamente;
+
+  \item \textbf{a floresta passou de 4 para 16 quadros por segundo no
+  Nível~5}, por duas causas somadas: a redução das texturas do modelo de
+  cobra de 1024 para 512 pixels e a redução pela metade da quantidade de
+  exemplares;
+
+  \item \textbf{a mesma quantidade tornou-se mais barata}: com quinze
+  ratos, de 15 para 21 quadros por segundo; com quinze aranhas, de 19
+  para 25. Nada mudou no modelo nem no cenário --- a diferença está
+  inteiramente no comportamento dos exemplares.
+\end{itemize}
+
+\subsubsection{Otimizações aplicadas}
+
+\begin{table}[htbp]
+\centering
+\caption{Otimizações e respectivo efeito.}
+\label{tab:otimizacoes}
+\begin{tabular}{p{4.2cm}p{8.4cm}}
+\toprule
+\textbf{Otimização} & \textbf{Efeito} \\
+\midrule
+Piso pintado em canvas &
+o padrão do piso era composto por 90 peças separadas; passou a ser
+pintado uma vez numa textura e repetido: um desenho em lugar de noventa \\
+Céu como cor de fundo &
+substituição da esfera de céu por cor de fundo da cena \\
+Limite de exemplares animados &
+no máximo oito reproduzem a animação do arquivo; cada um recalcula a
+posição de cada osso a cada quadro \\
+Comportamento \emph{quieto} &
+exemplares parados não recebem reprodutor de animação \\
+Redução de texturas &
+cobra: cinco texturas de 1024 para 512 pixels, de 6,13~MB para 3,82~MB \\
+Painel em canvas único &
+a interface inteira é desenhada numa só textura: um objeto por quadro,
+em lugar de nove \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Modelos tridimensionais}
+
+\begin{table}[htbp]
+\centering
+\caption{Modelos empregados e animações utilizadas.}
+\label{tab:modelos}
+\begin{tabular}{lrrll}
+\toprule
+\textbf{Arquivo} & \textbf{Tamanho} & \textbf{Triângulos} & \textbf{Usadas} & \textbf{Descartadas} \\
+\midrule
+cobra.glb  & 3,82 MB & 4.380 & Animation   & --- \\
+aranha.glb & 0,43 MB & 2.712 & Idle, Walk, Jump & Attack, Death \\
+sapo.glb   & 0,56 MB & 4.920 & Idle, Jump  & Attack, Death \\
+rato.glb   & 0,53 MB & 4.004 & Idle, Walk, Jump & Run, Attack, Death \\
+barata.glb & 0,52 MB & 576   & idle, walking & Attack, death, flying \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A reprodução das animações exigiu um componente próprio: o arcabouço
+carrega o modelo e as suas animações, mas não as reproduz. O componente
+desenvolvido faz a ponte com o reprodutor do Three.js e localiza o clipe
+por correspondência parcial de nome --- um modelo pode nomear a sua
+animação de repouso como \texttt{SnakeArmature|Snake\_Idle}, e procurar
+por \texttt{Idle} já a encontra. Isso evita depender do nome exato, que
+varia de modelo para modelo.
+
+\subsection{Áudio}
+
+Cada animal possui um som próprio, posicionado na cena, de modo que o
+volume percebido varia com a distância --- a progressão dos níveis também
+se ouve. Há ainda um som de ambiente, não posicionado.
+
+O áudio começa desligado e depende de ativação explícita. Não se trata de
+opção de interface: navegadores proíbem a reprodução de áudio antes de
+uma interação do usuário com a página, e como o participante chega vindo
+de outra página, a interação anterior não conta. A preferência é
+preservada entre níveis durante a mesma sessão.
+
+\subsection{Limites conhecidos do artefato}
+
+Registram-se, por honestidade metodológica, as limitações do artefato que
+são de natureza técnica:
+
+\begin{itemize}
+  \item os estímulos pequenos são apresentados em escala maior que a
+  real, pelas razões expostas; o fator está documentado, mas a
+  apresentação não é fisicamente fiel;
+
+  \item os sons foram sintetizados e não são gravações dos animais;
+
+  \item não há medida fisiológica. A possibilidade de captar frequência
+  cardíaca foi investigada e descartada: exige sensor com perfil padrão
+  de transmissão, que os relógios de uso comum não expõem, e
+  acrescentaria ao estudo uma natureza clínica que o seu escopo não
+  comporta;
+
+  \item o desempenho medido refere-se à renderização por software;
+  números obtidos no aparelho efetivamente utilizado nas sessões devem
+  ser coletados com a mesma ferramenta.
+\end{itemize}

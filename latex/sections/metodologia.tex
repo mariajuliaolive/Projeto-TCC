@@ -1,46 +1,242 @@
 %========================= METODOLOGIA =========================
 \section{Metodologia}
+\label{sec:metodologia}
 
-% RASCUNHO gerado a partir do código e da documentação do protótipo.
-% Revisar, ajustar os números que ainda dependem da coleta e inserir
-% as citações dos artigos selecionados na revisão.
+% Escrita a partir do que a aplicação efetivamente faz. Os números
+% técnicos são reais e medidos. O que depende da coleta com
+% participantes está marcado com [COMPLETAR].
 
-Este trabalho caracteriza-se como uma pesquisa aplicada, de natureza
-exploratória e abordagem predominantemente quantitativa, organizada em quatro
-etapas: revisão da literatura, desenvolvimento do artefato, coleta de dados com
-participantes e análise dos resultados.
+Este trabalho caracteriza-se como pesquisa aplicada, de natureza
+exploratória e abordagem predominantemente quantitativa. O percurso
+metodológico foi organizado em quatro etapas encadeadas: revisão da
+literatura, desenvolvimento do artefato, verificação técnica e coleta de
+dados com participantes.
+
+A escolha por conduzir primeiro a revisão e só depois a coleta tem razão
+de método: são os trabalhos anteriores que indicam \emph{o que} medir.
+Sem essa etapa, as métricas registradas pela aplicação seriam escolhidas
+pela facilidade de implementação, e não pela relevância.
 
 \subsection{Revisão da literatura}
+\label{sec:revisao}
 
-A fundamentação teórica foi construída a partir de uma busca sistematizada nas
-bases Scopus e SpringerLink, restrita a publicações dos últimos cinco anos. A
-expressão de busca combinou quatro blocos de termos --- tecnologia, condição,
-estímulo e procedimento --- conforme apresentado a seguir:
+A fundamentação teórica foi construída por meio de busca sistematizada em
+bases científicas. O procedimento é descrito em detalhe porque dele
+depende a possibilidade de outra pessoa repetir a seleção e chegar ao
+mesmo conjunto de trabalhos.
 
-\begin{quote}\small\singlespacing
-\texttt{( "virtual reality" OR "immersive environment" OR WebXR )}\\
-\texttt{AND ( phobia OR "specific phobia" OR fear OR anxiety )}\\
-\texttt{AND ( spider OR snake OR cockroach OR insect OR animal}\\
-\texttt{\phantom{AND (} OR arachnophobia OR ophidiophobia OR entomophobia )}\\
-\texttt{AND ( exposure OR "exposure therapy" OR desensitization OR habituation )}
+\subsubsection{Questão que orienta a busca}
+
+A expressão de busca não é redigida diretamente. Ela deriva da questão de
+pesquisa, decomposta em blocos conceituais. A questão adotada foi:
+
+\begin{quote}
+Como as pessoas percebem e interagem com estímulos associados a fobias de
+animais em ambientes virtuais organizados em níveis progressivos de
+aproximação?
 \end{quote}
 
-% TODO: preencher depois de rodar a busca
-Os resultados foram filtrados por leitura de título e resumo, chegando-se a um
-conjunto final de \textbf{[N]} artigos, que fundamentam as decisões de projeto
-descritas na Seção~\ref{sec:desenvolvimento} e a interpretação dos resultados.
+Dessa formulação extraem-se quatro conceitos, que se tornam os quatro
+blocos da expressão:
+
+\begin{table}[htbp]
+\centering
+\caption{Decomposição da questão de pesquisa em blocos de busca.}
+\label{tab:blocos}
+\small
+\begin{tabular}{p{2.4cm}p{3.6cm}p{5.4cm}}
+\toprule
+\textbf{Bloco} & \textbf{Conceito} & \textbf{Por que entra na expressão} \\
+\midrule
+Tecnologia & ambiente virtual imersivo &
+delimita o meio estudado; sem ele a busca retorna exposição presencial \\
+Condição & fobia, medo, ansiedade &
+delimita a população e o fenômeno de interesse \\
+Estímulo & animais associados a fobias &
+separa fobia de animais de fobia social, de altura ou de voo \\
+Procedimento & exposição gradual &
+separa os trabalhos que graduam o estímulo daqueles que apenas o exibem \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Dentro de cada bloco os termos são unidos por \texttt{OR}, porque são
+alternativas que apontam para o mesmo conceito; entre blocos usa-se
+\texttt{AND}, porque o trabalho procurado precisa tratar dos quatro ao
+mesmo tempo. É essa estrutura --- \texttt{OR} dentro, \texttt{AND} entre
+--- que faz uma expressão de busca render resultado aproveitável.
+
+\subsubsection{Escolha dos sinônimos}
+
+Cada bloco foi preenchido tanto com o termo corrente quanto com os nomes
+técnicos, porque artigos da área clínica e artigos da área de computação
+nomeiam a mesma coisa de maneiras diferentes. Um trabalho de Psicologia
+dificilmente escreve \textit{spider}: escreve
+\textit{arachnophobia}. Um trabalho de Computação faz o contrário.
+Incluir os dois é o que impede a busca de enxergar só metade da
+literatura.
+
+\begin{table}[htbp]
+\centering
+\caption{Termos adotados em cada bloco.}
+\label{tab:termos}
+\small
+\begin{tabular}{p{2.2cm}>{\raggedright\arraybackslash}p{9.6cm}}
+\toprule
+\textbf{Bloco} & \textbf{Termos} \\
+\midrule
+Tecnologia &
+\texttt{"virtual reality"}, \texttt{"immersive environment"},
+\texttt{WebXR} \\
+Condição &
+\texttt{phobia}, \texttt{"specific phobia"}, \texttt{fear},
+\texttt{anxiety} \\
+Estímulo &
+\texttt{spider}, \texttt{snake}, \texttt{cockroach}, \texttt{insect},
+\texttt{animal}, \texttt{arachnophobia}, \texttt{ophidiophobia},
+\texttt{entomophobia} \\
+Procedimento &
+\texttt{exposure}, \texttt{"exposure therapy"},
+\texttt{desensitization}, \texttt{habituation} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+As expressões de mais de uma palavra aparecem entre aspas para serem
+buscadas como expressão, e não como palavras soltas: sem as aspas,
+\texttt{virtual reality} recuperaria qualquer texto que contivesse as
+duas palavras em qualquer lugar.
+
+\subsubsection{Expressões aplicadas em cada base}
+
+A sintaxe difere entre bases, de modo que a mesma expressão lógica
+precisa ser reescrita. No Scopus, o campo \texttt{TITLE-ABS-KEY}
+restringe a busca a título, resumo e palavras-chave --- sem essa
+restrição, a busca varre o texto completo e recupera trabalhos que apenas
+mencionam os termos de passagem.
+
+\begin{quote}\small\singlespacing\ttfamily
+TITLE-ABS-KEY (\\
+\phantom{xx}( "virtual reality" OR "immersive environment" OR WebXR )\\
+\phantom{xx}AND ( phobia OR "specific phobia" OR fear OR anxiety )\\
+\phantom{xx}AND ( spider OR snake OR cockroach OR insect OR animal\\
+\phantom{xxxxxxxx}OR arachnophobia OR ophidiophobia OR entomophobia )\\
+\phantom{xx}AND ( exposure OR "exposure therapy" OR desensitization\\
+\phantom{xxxxxxxx}OR habituation )\\
+)\\
+AND PUBYEAR > 2020
+\end{quote}
+
+No SpringerLink e no IEEE~Xplore, cuja busca avançada não oferece o mesmo
+campo composto, adotou-se a forma reduzida:
+
+\begin{quote}\footnotesize\singlespacing\ttfamily
+("virtual reality" OR "immersive")\\
+AND (phobia OR "fear of animals")\\
+AND (exposure OR desensitization)\\
+AND (usability OR presence OR immersion)
+\end{quote}
+
+O quarto bloco muda nesta segunda forma. Em bases de Computação, acoplar
+\texttt{usability}, \texttt{presence} e \texttt{immersion} aproxima o
+resultado dos trabalhos que avaliaram a experiência --- que é justamente
+o recorte deste trabalho --- em lugar dos que relatam desfecho clínico.
+
+\subsubsection{Critérios de inclusão e exclusão}
+
+\begin{table}[htbp]
+\centering
+\caption{Critérios aplicados na triagem.}
+\label{tab:criterios}
+\begin{tabular}{p{1.0cm}p{12.0cm}}
+\toprule
+\multicolumn{2}{l}{\textbf{Inclusão}} \\
+\midrule
+I1 & publicado nos últimos cinco anos \\
+I2 & emprega ambiente virtual imersivo como meio de apresentação do estímulo \\
+I3 & trata de fobia ou medo de animais \\
+I4 & relata avaliação com participantes humanos \\
+\midrule
+\multicolumn{2}{l}{\textbf{Exclusão}} \\
+\midrule
+E1 & trata de fobia não relacionada a animais (social, altura, voo) \\
+E2 & apresenta apenas proposta, sem avaliação \\
+E3 & texto completo indisponível \\
+E4 & duplicata recuperada em mais de uma base \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Etapas da seleção}
+
+% TODO: preencher a coluna de quantidades depois de rodar a busca
+A triagem foi conduzida em três passagens sucessivas, com o número de
+trabalhos reduzindo a cada uma:
+
+\begin{table}[htbp]
+\centering
+\caption{Funil de seleção dos trabalhos.}
+\label{tab:funil}
+\begin{tabular}{llc}
+\toprule
+\textbf{Etapa} & \textbf{O que foi examinado} & \textbf{Trabalhos} \\
+\midrule
+1. Recuperação  & resultado bruto das bases          & [COMPLETAR] \\
+2. Título       & aderência ao tema                  & [COMPLETAR] \\
+3. Resumo       & critérios de inclusão e exclusão   & [COMPLETAR] \\
+4. Texto completo & leitura e extração               & [COMPLETAR] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A quarta etapa foi limitada a dez trabalhos. O limite é deliberado: o
+objetivo da revisão, neste trabalho, não é mapear exaustivamente a
+produção da área, mas constituir uma base de argumentação que possa ser
+sustentada em profundidade perante a banca examinadora.
+
+\subsubsection{Extração}
+
+De cada trabalho selecionado foram registrados: o estímulo utilizado, o
+equipamento empregado, o número de participantes, as variáveis medidas, o
+instrumento de medida e o resultado principal. O quadro comparativo
+resultante é apresentado no referencial teórico e é o que fundamenta as
+decisões de projeto descritas na Seção~\ref{sec:desenvolvimento}.
+
+\subsection{Desenvolvimento do artefato}
+
+O protótipo foi construído de forma incremental, em etapas verificáveis.
+Cada etapa acrescentou uma capacidade e foi submetida à ferramenta de
+verificação automatizada descrita na Seção~\ref{sec:verificacao}, de modo
+que uma regressão fosse detectada na etapa em que foi introduzida.
+
+O código-fonte está versionado em repositório público, com histórico
+preservado. Cada alteração registra o que foi mudado e por quê --- o que
+torna o próprio histórico um registro do processo de desenvolvimento,
+passível de consulta.
 
 \subsection{Participantes}
 
 % TODO: confirmar números após a coleta
-A validação foi conduzida com estudantes dos cursos de Ciência da Computação e
-de Psicologia da Faculdade Nova Roma. A participação foi voluntária e mediante
-assinatura do Termo de Consentimento Livre e Esclarecido (Apêndice~A).
+A validação foi conduzida com estudantes dos cursos de Ciência da
+Computação e de Psicologia da Faculdade Nova Roma. A participação foi
+voluntária e mediante assinatura do Termo de Consentimento Livre e
+Esclarecido (Apêndice~A). Participaram [COMPLETAR] pessoas.
 
-Cabe registrar que \textbf{o sistema não constitui tratamento psicológico ou
-médico e não realiza diagnóstico}. A avaliação conduzida restringe-se a
-usabilidade, imersão, interação e percepção do estímulo, não se propondo a medir
-desfecho clínico de qualquer natureza.
+A escolha de dois cursos é intencional. Estudantes de Computação tendem a
+avaliar a aplicação pelo funcionamento; estudantes de Psicologia, pela
+adequação do procedimento. As duas leituras interessam.
+
+\subsubsection{Delimitação ética e de escopo}
+
+O sistema \textbf{não constitui tratamento psicológico ou médico e não
+realiza diagnóstico}. A avaliação restringe-se a usabilidade, imersão,
+interação e percepção do estímulo, não se propondo a medir desfecho
+clínico de qualquer natureza.
+
+Essa delimitação tem consequência prática sobre o método: não há critério
+de inclusão baseado em diagnóstico de fobia, não se aplica instrumento
+clínico de rastreio, e o grau de medo registrado é \emph{autorrelato},
+tratado como dado de percepção e não como medida clínica.
 
 \subsection{Procedimento}
 
@@ -50,46 +246,64 @@ Cada sessão seguiu o mesmo roteiro:
   \item apresentação do estudo e leitura do termo de consentimento;
   \item cadastro na plataforma, com registro de e-mail, sexo e data de
   nascimento;
-  \item questionário inicial de perfil, no qual o participante declara, em
-  escala de 0 a 10, o grau de medo que atribui a cada um dos cinco animais
-  contemplados;
-  \item escolha do estímulo e execução da experiência, percorrendo os níveis de
-  exposição na ordem crescente, com liberdade para interromper a qualquer
-  momento;
-  \item questionário final de percepção.
+  \item questionário inicial de perfil, no qual o participante declara,
+  em escala de 0 a 10, o grau de medo que atribui a cada um dos cinco
+  animais contemplados (Apêndice~B);
+  \item escolha do estímulo e execução da experiência, percorrendo os
+  níveis de exposição em ordem crescente, com liberdade para interromper
+  a qualquer momento;
+  \item questionário final de percepção (Apêndice~C).
 \end{enumerate}
 
-\subsection{Variáveis coletadas}
+A ordem entre os itens 3 e 4 importa. O grau de medo é declarado
+\emph{antes} de qualquer contato com o ambiente virtual, de modo que a
+declaração não seja contaminada pela experiência --- e de modo que seja
+possível, depois, confrontar o que a pessoa disse com o que ela fez.
 
-Os dados foram registrados automaticamente pela aplicação durante a experiência
-e associados a um código de participante (P01, P02, \ldots), de modo que a
-análise é conduzida sobre dados anonimizados. O Quadro a seguir relaciona cada
-variável comportamental à sua forma de medida.
+\subsection{Variáveis coletadas}
+\label{sec:variaveis}
+
+Os dados são registrados automaticamente pela aplicação durante a
+experiência e associados a um código de participante (P01, P02, \ldots),
+de modo que a análise é conduzida sobre dados anonimizados.
+
+O Quadro~\ref{tab:variaveis} relaciona cada variável comportamental à sua
+forma de medida. A coluna da direita importa tanto quanto a da esquerda:
+é ela que transforma uma impressão em número.
 
 \begin{table}[htbp]
 \centering
 \caption{Variáveis comportamentais registradas durante a experiência.}
 \label{tab:variaveis}
-\begin{tabular}{ll}
+\begin{tabular}{p{3.4cm}p{9.4cm}}
 \toprule
 \textbf{Variável} & \textbf{Como é medida} \\
 \midrule
-Aproximação          & menor distância alcançada até o estímulo, em metros \\
-Afastamento          & número de recuos e distância média mantida \\
-Agitação             & variação angular da câmera por segundo \\
-Atenção ao estímulo  & proporção do tempo com o estímulo no campo de visão \\
-Exploração           & deslocamento acumulado e animais encontrados \\
-Interação            & ocorrência de toque no estímulo (Nível 5) \\
-Progressão           & nível máximo alcançado e tempo por nível \\
-Desconforto          & autorrelato em escala de 0 a 10, por nível \\
+Aproximação     & menor distância alcançada até o estímulo, em metros \\
+Afastamento     & número de recuos e distância média mantida \\
+Agitação        & variação angular da câmera por segundo \\
+Atenção ao estímulo & proporção do tempo com o estímulo no campo de visão \\
+Exploração      & deslocamento acumulado e número de animais encontrados \\
+Interação       & ocorrência de toque no estímulo, possível apenas no Nível 5 \\
+Progressão      & nível máximo alcançado e tempo despendido em cada nível \\
+Desconforto     & autorrelato em escala de 0 a 10, registrável a qualquer momento \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+Todas as medidas derivam de grandezas que a cena tridimensional já
+possui: a posição da câmera, a sua rotação e a posição dos estímulos. Não
+há instrumentação externa, nem sensor acoplado ao participante.
+
 \subsection{Tratamento dos dados}
 
 Os registros são gravados em banco de dados relacional e exportados para
-análise descritiva. As figuras e tabelas apresentadas na Seção de resultados são
-geradas por scripts versionados em \texttt{data/analytics}, a partir dos dados
-já anonimizados, o que torna a análise reprodutível sem expor informação
-identificável dos participantes.
+análise descritiva. As figuras e tabelas apresentadas na seção de
+resultados são geradas por rotinas versionadas em
+\texttt{data/analytics}, a partir dos dados já anonimizados.
+
+A separação entre o dado identificável e o dado de análise é deliberada e
+tem três efeitos: cumpre o que o termo de consentimento promete aos
+participantes, permite que o documento seja recompilado por terceiros sem
+acesso a informação pessoal, e torna a análise reprodutível --- nenhum
+número apresentado no trabalho é digitado à mão.

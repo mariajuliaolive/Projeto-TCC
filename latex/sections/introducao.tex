@@ -1,34 +1,91 @@
 %========================= INTRODUÇÃO =========================
 \section{Introdução}
 
-% ESTRUTURA SUGERIDA — quatro blocos, nesta ordem:
-%
-% 1. O PROBLEMA (1 ou 2 parágrafos)
-%    Fobias específicas a animais: o que são, quão comuns, que limitações
-%    impõem no dia a dia. CITAR aqui os artigos da revisão.
-%
-% 2. O PARADOXO QUE JUSTIFICA O TRABALHO (1 parágrafo)
-%    A superação passa pelo contato gradual com o estímulo -- e é
-%    exatamente o contato que a pessoa evita. Daí o interesse por
-%    ambientes virtuais, que permitem graduar a exposição com segurança
-%    e com o controle nas mãos de quem usa.
-%
-% 3. A LACUNA (1 parágrafo)
-%    O que a literatura já cobriu e o que ainda não. Sai da revisão.
-%    Ex.: a maioria dos estudos usa equipamento dedicado e laboratório;
-%    pouco se discute execução em navegador, sem instalação.
-%
-% 4. A PERGUNTA DE PESQUISA E A ESTRUTURA DO TEXTO (1 parágrafo)
+% RASCUNHO. A estrutura e o fio do argumento estão prontos; falta
+% inserir as citações, que só podem entrar depois da revisão.
+% Onde está [CITAR], entra a referência do artigo correspondente.
 
-[ESCREVER]
+Fobias específicas estão entre as condições de maior prevalência
+relacionadas à ansiedade, e as associadas a animais figuram entre as mais
+comuns delas [CITAR]. Cobras, ratos, baratas, aranhas e sapos aparecem de
+forma recorrente nessa categoria --- animais que, no contexto urbano,
+raramente oferecem risco objetivo, mas cuja simples possibilidade de
+encontro basta para alterar a rotina de quem os teme.
 
-% Pergunta de pesquisa (ajustar a redação):
-% Como as pessoas percebem e interagem com estímulos fóbicos em ambientes
-% virtuais organizados em níveis progressivos de aproximação?
+A limitação que daí decorre é menos visível que a reação em si. Ela se
+manifesta em evitação: deixar de entrar num cômodo, de visitar um lugar,
+de exercer uma atividade. [CITAR]
 
-\vspace{0.3cm}
-\noindent\textbf{Delimitação do escopo.} Cabe esclarecer, desde a introdução,
-que o sistema desenvolvido é um protótipo acadêmico. Ele não constitui
-tratamento psicológico ou médico, não realiza diagnóstico e não se propõe
-substituto de acompanhamento profissional. A avaliação conduzida restringe-se a
-usabilidade, imersão, interação e percepção.
+\subsection*{O impasse}
+
+O procedimento reconhecido para a superação desse tipo de medo envolve o
+contato progressivo e controlado com o estímulo temido [CITAR]. E é
+justamente aí que se instala um impasse: \emph{o contato é precisamente
+aquilo que a pessoa evita}. O procedimento depende daquilo que a
+condição impede.
+
+Ambientes virtuais oferecem uma via para contornar esse impasse. Neles, o
+estímulo pode ser graduado com precisão --- aproximado, multiplicado,
+posto em movimento --- enquanto o participante mantém a certeza de que
+nada ali é real e de que pode interromper a qualquer instante. O controle
+permanece com quem é exposto, o que é condição do procedimento e não um
+detalhe de conforto.
+
+\subsection*{A lacuna}
+
+% COMPLETAR com o que a revisão efetivamente mostrar. A redação abaixo
+% é a hipótese de partida e precisa ser confirmada ou corrigida.
+A literatura que investiga exposição a estímulos fóbicos em Realidade
+Virtual concentra-se, em larga medida, em estudos conduzidos em
+laboratório, com equipamento dedicado e acompanhamento presencial
+[CITAR]. São condições que asseguram controle experimental, mas que
+restringem o alcance: dependem de um local específico, de um aparelho
+específico e de uma pessoa presente para operá-lo.
+
+A consolidação do WebXR --- especificação que permite executar conteúdo
+tridimensional imersivo diretamente no navegador --- altera esse quadro,
+ao viabilizar que a mesma aplicação funcione em computador, celular e
+óculos sem instalação. Discute-se menos, contudo, o que essa mudança
+acarreta: como as pessoas percebem e interagem com estímulos fóbicos
+quando o ambiente virtual é alcançado por um endereço, e não por um
+laboratório.
+
+\subsection*{Questão de pesquisa e objetivo}
+
+Deste trabalho, portanto, a questão:
+
+\begin{quote}
+Como as pessoas percebem e interagem com estímulos associados a fobias de
+animais em ambientes virtuais organizados em níveis progressivos de
+aproximação?
+\end{quote}
+
+Para investigá-la, foi desenvolvido um protótipo que simula cinco animais
+associados a fobias, cada um no ambiente em que seria encontrado, com a
+exposição organizada em cinco níveis nos quais variam a distância, a
+quantidade de exemplares, o movimento e a possibilidade de interação. A
+aplicação registra, durante o uso, medidas de comportamento que são
+confrontadas com o grau de medo que o participante declara previamente.
+
+\subsection*{Delimitação de escopo}
+
+Cabe esclarecer, desde a introdução, que o sistema desenvolvido é um
+\textbf{protótipo acadêmico}. Ele não constitui tratamento psicológico ou
+médico, não realiza diagnóstico e não se propõe substituto de
+acompanhamento profissional. A avaliação conduzida restringe-se a
+usabilidade, imersão, interação e percepção do estímulo.
+
+Essa delimitação não é ressalva protocolar: ela determina o método. É por
+ela que não se aplica instrumento clínico de rastreio, que não há
+critério de inclusão por diagnóstico e que o grau de medo é tratado como
+autorrelato de percepção, e não como medida clínica.
+
+\subsection*{Organização do texto}
+
+A Seção~2 apresenta os objetivos. A Seção~3 reúne o referencial teórico
+construído a partir da revisão da literatura. A Seção~4 descreve a
+metodologia, incluindo o protocolo de busca, o perfil dos participantes e
+as variáveis coletadas. A Seção~5 descreve o artefato desenvolvido e as
+decisões de projeto que o determinaram. A Seção~6 apresenta e discute os
+resultados. A Seção~7 conclui, separando o que os dados sustentam do que
+permanece como conjectura.
