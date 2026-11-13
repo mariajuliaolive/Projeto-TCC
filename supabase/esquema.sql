@@ -42,15 +42,27 @@ create table if not exists participantes (
 -- único lugar que enxerga os dois.
 create sequence if not exists seq_codigo_participante start 1;
 
+-- SECURITY DEFINER: a funcao roda com os poderes de quem a criou
+-- (voce), e nao de quem disparou a insercao (o visitante anonimo).
+-- Sem isso, gerar o codigo exigiria dar ao anonimo acesso direto a
+-- sequence -- permissao a mais, pelo motivo errado.
+--
+-- O search_path fixo acompanha o SECURITY DEFINER por seguranca: sem
+-- ele, alguem poderia criar um objeto de mesmo nome noutro esquema e
+-- fazer a funcao chamar o objeto errado.
 create or replace function define_codigo_participante()
-returns trigger as $$
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
 begin
   if new.codigo is null then
     new.codigo := 'P' || lpad(nextval('seq_codigo_participante')::text, 2, '0');
   end if;
   return new;
 end;
-$$ language plpgsql;
+$$;
 
 drop trigger if exists trg_codigo_participante on participantes;
 create trigger trg_codigo_participante
@@ -156,6 +168,30 @@ create table if not exists respostas_finais (
 -- Quem lê é a pesquisadora, pelo painel do Supabase, com a
 -- própria senha — que não passa por este código.
 -- =========================================================
+
+-- ---------------------------------------------------------
+-- PRIMEIRO A PERMISSAO, DEPOIS A POLITICA
+--
+-- Sao duas camadas, e as duas precisam estar abertas:
+--
+--   GRANT   diz que o papel PODE mexer na tabela
+--   POLICY  diz em QUAIS LINHAS ele pode mexer
+--
+-- Sem o GRANT, a politica nem chega a ser consultada: o banco
+-- responde "permission denied" antes disso. O Supabase costuma
+-- conceder esse GRANT sozinho para tabelas novas no esquema public,
+-- mas depender disso e fragil -- se nao acontecer, o sintoma e um
+-- erro que parece de politica e nao e. Declarar aqui custa tres
+-- linhas e tira a duvida.
+--
+-- Damos INSERT e so. Nao damos select, update nem delete.
+-- ---------------------------------------------------------
+grant usage on schema public to anon, authenticated;
+
+grant insert on
+  participantes, respostas_perfil, sessoes,
+  eventos, metricas, respostas_finais
+  to anon, authenticated;
 
 alter table participantes    enable row level security;
 alter table respostas_perfil enable row level security;
