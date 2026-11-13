@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Teste do banco de dados | Diagnóstico</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%234ADE80' d='M5 12l5 5L20 7' stroke='%234ADE80' stroke-width='2' fill='none'/></svg>" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0B1120; color: #E8EDF7; line-height: 1.55;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    padding: 20px 16px 60px;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 1.45rem; margin-bottom: 4px; }
+  .sub { color: #9AA9C4; font-size: 0.88rem; margin-bottom: 22px; }
+  .caixa {
+    background: #121C2E; border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 12px; padding: 16px 18px; margin-bottom: 14px;
+  }
+  h2 { font-size: 0.95rem; margin-bottom: 12px; }
+
+  button {
+    font: inherit; font-weight: 600; padding: 12px 20px; border: 0;
+    border-radius: 9px; cursor: pointer;
+    background-image: linear-gradient(135deg, #5B8DEF, #3ED0C0); color: #06121F;
+  }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.secundario {
+    background: transparent; border: 1px solid rgba(255,255,255,0.18);
+    color: #E8EDF7;
+  }
+  .botoes { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* ---------- lista de conferência ---------- */
+  .item {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 11px 0; border-top: 1px solid rgba(255,255,255,0.07);
+  }
+  .item:first-of-type { border-top: 0; }
+  .marca {
+    flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 13px; font-weight: 700;
+  }
+  .ok     { background: rgba(74,222,128,0.16); color: #4ADE80; }
+  .falta  { background: rgba(239,91,91,0.16);  color: #FF8B8B; }
+  .talvez { background: rgba(91,141,239,0.16); color: #8FB4FF; }
+  .item__texto { font-size: 0.9rem; }
+  .item__nome { font-weight: 600; }
+  .item__detalhe { color: #9AA9C4; font-size: 0.84rem; margin-top: 2px; }
+
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    background: rgba(255,255,255,0.07); padding: 1px 6px; border-radius: 5px;
+    font-size: 0.85em; word-break: break-all;
+  }
+  pre {
+    background: #0B1120; border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 8px; padding: 12px; overflow-x: auto;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.8rem; color: #9AA9C4; margin-top: 10px;
+  }
+
+  .resposta { margin-top: 14px; padding: 14px 16px; border-radius: 10px; font-size: 0.92rem; }
+  .resposta--ok   { background: rgba(74,222,128,0.1);  border: 1px solid rgba(74,222,128,0.4);  color: #B6F2CE; }
+  .resposta--erro { background: rgba(239,91,91,0.1);   border: 1px solid rgba(239,91,91,0.4);   color: #FFB4B4; }
+  .resposta--aviso{ background: rgba(91,141,239,0.1);  border: 1px solid rgba(91,141,239,0.4);  color: #C2D5FA; }
+  .resposta strong { display: block; margin-bottom: 4px; }
+  .resposta p + p { margin-top: 8px; }
+
+  a { color: #3ED0C0; }
+  .rodape { margin-top: 24px; font-size: 0.82rem; color: #9AA9C4; }
+</style>
+</head>
+<body>
+<main>
+
+  <h1>Teste do banco de dados</h1>
+  <p class="sub">
+    Confere se a aplicação consegue gravar no Supabase. Rode isto antes do
+    dia da coleta, e não na hora.
+  </p>
+
+  <!-- ===== 1. CONFERÊNCIA DA CONFIGURAÇÃO ===== -->
+  <section class="caixa">
+    <h2>1. Configuração</h2>
+    <div id="conferencia"></div>
+  </section>
+
+  <!-- ===== 2. TESTE DE GRAVAÇÃO ===== -->
+  <section class="caixa">
+    <h2>2. Gravar uma linha de teste</h2>
+    <p class="item__detalhe" style="margin-bottom:12px">
+      Cria um participante falso, com o e-mail
+      <code>teste-de-ligacao@exemplo.invalido</code>, só para ver se a
+      gravação funciona. Apague depois, pelo painel.
+    </p>
+    <div class="botoes">
+      <button id="testar">Testar ligação</button>
+    </div>
+    <div id="resultado"></div>
+  </section>
+
+  <!-- ===== 3. O QUE ESTÁ GUARDADO NESTE NAVEGADOR ===== -->
+  <section class="caixa">
+    <h2>3. Dados guardados neste navegador</h2>
+    <div id="local"></div>
+    <div class="botoes" style="margin-top:14px">
+      <button class="secundario" id="sincronizar">Enviar o que está na fila</button>
+      <button class="secundario" id="baixar">Baixar cópia em arquivo</button>
+    </div>
+    <div id="resultadoLocal"></div>
+  </section>
+
+  <p class="rodape">
+    Esta página faz parte das ferramentas de desenvolvimento e não é usada
+    pelos participantes. &middot; <a href="../index.html">Voltar ao site</a>
+  </p>
+
+</main>
+
+<script src="../dados.js"></script>
+<script src="../configuracao.js"></script>
+<script src="../armazenamento.js"></script>
+<script>
+/* =========================================================
+   Esta página existe para tirar o diagnóstico do console do
+   navegador. Colar comando no console é desconfortável — o
+   próprio Chrome avisa, e com razão: é assim que roubam
+   conta de gente desavisada.
+
+   Aqui é um botão, a resposta vem em português, e dá para
+   mostrar a tela para o orientador.
+   ========================================================= */
+
+/* ---------- 1. CONFERÊNCIA ---------- */
+function linha(estado, nome, detalhe) {
+  const marcas = { ok: '✓', falta: '!', talvez: '?' };
+  return `
+    <div class="item">
+      <span class="marca ${estado}">${marcas[estado]}</span>
+      <span class="item__texto">
+        <span class="item__nome">${nome}</span>
+        <span class="item__detalhe">${detalhe}</span>
+      </span>
+    </div>`;
+}
+
+function conferir() {
+  const temUrl = Boolean(SUPABASE.url);
+  const temChave = Boolean(SUPABASE.chave);
+  const ehPublicavel = SUPABASE.chave.startsWith('sb_publishable_');
+  const ehAntiga = SUPABASE.chave.startsWith('eyJ');
+  const ehSecreta = SUPABASE.chave.startsWith('sb_secret_');
+
+  let itens = '';
+
+  itens += temUrl
+    ? linha('ok', 'Endereço do projeto', SUPABASE.url)
+    : linha('falta', 'Endereço do projeto',
+        'Falta preencher. No Supabase: Settings → API → Project URL. ' +
+        'Cole em <code>configuracao.js</code>, na linha <code>url</code>.');
+
+  if (!temChave) {
+    itens += linha('falta', 'Chave', 'Falta preencher.');
+  } else if (ehSecreta) {
+    itens += linha('falta', 'Chave — ESTA É A SECRET',
+      'Troque agora pela <code>publishable</code>. A secret ignora todas as ' +
+      'regras de acesso e não pode ficar em código que o navegador baixa.');
+  } else if (ehPublicavel) {
+    itens += linha('ok', 'Chave publishable',
+      'Formato novo. Vai só no cabeçalho <code>apikey</code>.');
+  } else if (ehAntiga) {
+    itens += linha('ok', 'Chave anon (formato antigo)',
+      'Vai em <code>apikey</code> e em <code>Authorization</code>.');
+  } else {
+    itens += linha('talvez', 'Chave em formato desconhecido',
+      'Não começa com <code>sb_publishable_</code> nem com <code>eyJ</code>. ' +
+      'Confira se copiou inteira.');
+  }
+
+  itens += linha('talvez', 'Tabelas criadas',
+    'Só o teste abaixo responde. Se ainda não rodou, cole ' +
+    '<code>supabase/esquema.sql</code> no SQL Editor do Supabase.');
+
+  document.querySelector('#conferencia').innerHTML = itens;
+
+  /* sem configuração completa, não adianta deixar testar */
+  document.querySelector('#testar').disabled = !temUrl || !temChave || ehSecreta;
+}
+
+/* ---------- 2. TESTE DE GRAVAÇÃO ---------- */
+function responder(onde, tipo, titulo, corpo) {
+  document.querySelector(onde).innerHTML =
+    `<div class="resposta resposta--${tipo}"><strong>${titulo}</strong>${corpo}</div>`;
+}
+
+document.querySelector('#testar').addEventListener('click', async function () {
+  const botao = this;
+  botao.disabled = true;
+  botao.textContent = 'Testando…';
+
+  const r = await Armazenamento.testar();
+
+  botao.disabled = false;
+  botao.textContent = 'Testar ligação';
+
+  if (r.ok) {
+    responder('#resultado', 'ok', 'Funcionou.',
+      '<p>A aplicação consegue gravar no banco. A coleta vai funcionar.</p>' +
+      '<p>Foi criada uma linha de teste. Apague antes da coleta, rodando ' +
+      'isto no SQL Editor:</p>' +
+      '<pre>delete from participantes\n where email = \'teste-de-ligacao@exemplo.invalido\';</pre>');
+    return;
+  }
+
+  /* Cada causa se conserta num lugar diferente, então a
+     página diz QUAL é, e não as três possibilidades. */
+  const conserto = {
+    chave:
+      '<p>A chave não foi aceita. Copie de novo, inteira, em ' +
+      'Settings → API. Tem de ser a <code>publishable</code>.</p>',
+    endereco:
+      '<p>O endereço respondeu, mas a tabela não existe lá. Quase ' +
+      'sempre é o <code>supabase/esquema.sql</code> que ainda não foi ' +
+      'executado no SQL Editor. Se já foi, confira a ' +
+      '<code>url</code> em <code>configuracao.js</code>.</p>',
+    politica:
+      '<p>As tabelas existem, mas as políticas de acesso não foram ' +
+      'criadas. Rode o <code>esquema.sql</code> inteiro, até o fim — ' +
+      'as políticas estão na última parte do arquivo.</p>',
+    rede:
+      '<p>Não houve resposta nenhuma. Confira a conexão e se o ' +
+      'endereço do projeto está escrito certo.</p>',
+    configuracao:
+      '<p>Preencha <code>url</code> e <code>chave</code> em ' +
+      '<code>configuracao.js</code>.</p>',
+    desconhecida:
+      '<p>O erro não se encaixa nos casos conhecidos. A mensagem ' +
+      'exata está abaixo.</p>'
+  };
+
+  responder('#resultado', 'erro', 'Não funcionou.',
+    (conserto[r.causa] || conserto.desconhecida) +
+    '<pre>' + r.mensagem.replace(/</g, '&lt;') + '</pre>');
+});
+
+/* ---------- 3. O QUE ESTÁ GUARDADO AQUI ---------- */
+function mostrarLocal() {
+  const quem = Armazenamento.participante();
+  const naFila = Armazenamento.pendentes();
+
+  let itens = '';
+
+  itens += quem
+    ? linha('ok', 'Participante cadastrado neste navegador',
+        (quem.email || 'sem e-mail') + ' &middot; cadastrado em ' +
+        new Date(quem.criado_em).toLocaleString('pt-BR'))
+    : linha('talvez', 'Nenhum participante cadastrado neste navegador',
+        'Normal, se você ainda não preencheu o cadastro aqui.');
+
+  itens += naFila === 0
+    ? linha('ok', 'Nada pendente de envio', 'A fila está vazia.')
+    : linha('talvez', naFila + ' linha(s) esperando envio',
+        'Ficam guardadas até conseguirem ser enviadas. Nada se perde.');
+
+  document.querySelector('#local').innerHTML = itens;
+}
+
+document.querySelector('#sincronizar').addEventListener('click', async function () {
+  if (!Armazenamento.configurado()) {
+    responder('#resultadoLocal', 'aviso', 'Sem configuração.',
+      '<p>Preencha o endereço e a chave em <code>configuracao.js</code> primeiro.</p>');
+    return;
+  }
+
+  this.disabled = true;
+  const r = await Armazenamento.sincronizar();
+  this.disabled = false;
+  mostrarLocal();
+
+  if (r.pendentes === 0) {
+    responder('#resultadoLocal', 'ok', 'Fila enviada.',
+      `<p>${r.enviadas} linha(s) enviada(s). Não sobrou nada pendente.</p>`);
+  } else {
+    responder('#resultadoLocal', 'aviso', 'Envio incompleto.',
+      `<p>${r.enviadas} enviada(s), ${r.pendentes} ainda na fila. ` +
+      'O que ficou continua guardado e pode ser enviado depois.</p>');
+  }
+});
+
+document.querySelector('#baixar').addEventListener('click', function () {
+  const nome = Armazenamento.baixar();
+  responder('#resultadoLocal', 'ok', 'Arquivo baixado.',
+    `<p>${nome}</p><p>Guarde uma cópia ao fim de cada sessão de testes, ` +
+    'mesmo com o banco funcionando. É a sua segurança.</p>');
+});
+
+conferir();
+mostrarLocal();
+</script>
+</body>
+</html>

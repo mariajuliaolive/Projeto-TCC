@@ -373,12 +373,20 @@ const Armazenamento = (function () {
      da coleta, em vez de descobrir na hora que algo está
      errado.
 
-     Rode no console do navegador:   Armazenamento.testar()
+     Quem usa normalmente é a página
+     ferramentas/teste-banco.html, que mostra o resultado com
+     botão e em português. Também funciona no console.
+
+     Devolve { ok, mensagem, causa } para quem chamou poder
+     mostrar o erro na tela, sem obrigar a abrir o console.
      --------------------------------------------------------- */
   async function testar() {
     if (!configurado()) {
-      console.log('Falta preencher url e chave em configuracao.js.');
-      return false;
+      return {
+        ok: false,
+        mensagem: 'Falta preencher url e chave em configuracao.js.',
+        causa: 'configuracao'
+      };
     }
 
     const linha = {
@@ -390,28 +398,31 @@ const Armazenamento = (function () {
 
     try {
       await enviarLinha('participantes', linha);
-      console.log(
-        'Ligação com o banco funcionando.\n' +
-        'Foi criado um participante de teste com o e-mail\n' +
-        '  teste-de-ligacao@exemplo.invalido\n' +
-        'Apague essa linha pelo painel do Supabase antes da coleta.');
-      return true;
+      console.log('Ligação com o banco funcionando.');
+      return { ok: true, mensagem: 'Ligação com o banco funcionando.' };
     } catch (erro) {
       const texto = erro.message;
       console.log('A ligação falhou:', texto);
 
-      if (texto.includes('401') || texto.includes('JWS')) {
-        console.log('Parece a chave: confira se copiou a publishable, ' +
-                    'inteira, e não a secret.');
+      /* Cada código de erro aponta para um conserto diferente, e
+         num lugar diferente. Separá-los aqui poupa quem está
+         configurando de procurar no lugar errado. */
+      let causa = 'desconhecida';
+
+      if (texto.includes('401') || texto.includes('403')
+          || texto.includes('JWS') || texto.includes('API key')) {
+        causa = 'chave';
       } else if (texto.includes('404')) {
-        console.log('Parece o endereço ou a tabela: confira a url e se ' +
-                    'o esquema.sql já foi executado no SQL Editor.');
-      } else if (texto.includes('42501') || texto.includes('policy')) {
-        console.log('Parece a política de acesso: rode o esquema.sql ' +
-                    'inteiro, inclusive a parte das políticas.');
+        causa = 'endereco';
+      } else if (texto.includes('42501') || texto.includes('policy')
+                 || texto.includes('row-level')) {
+        causa = 'politica';
+      } else if (texto.includes('Failed to fetch')
+                 || texto.includes('NetworkError')) {
+        causa = 'rede';
       }
 
-      return false;
+      return { ok: false, mensagem: texto, causa: causa };
     }
   }
 
