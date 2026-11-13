@@ -347,7 +347,7 @@ const Armazenamento = (function () {
     }
 
     const itens = fila();
-    let enviadas = 0;
+    const entregues = [];
 
     /* As tabelas têm dependência entre si: uma sessão aponta
        para um participante. Enviar na ordem em que foram
@@ -360,18 +360,35 @@ const Armazenamento = (function () {
 
       try {
         await enviarLinha(item.tabela, item.linha);
-        item.enviado = true;
-        enviadas = enviadas + 1;
+        entregues.push(item.linha.id);
       } catch (erro) {
         console.warn('Armazenamento: envio falhou, fica na fila.', erro.message);
         break;   // rede caiu: não adianta insistir nas seguintes
       }
     }
 
-    /* o que foi enviado sai da fila; o resto continua */
-    escrever(CHAVE_FILA, itens.filter(function (i) { return !i.enviado; }));
+    /* ---------- devolver a fila sem perder o que chegou agora ----------
 
-    return { enviadas: enviadas, pendentes: pendentes() };
+       A fila é LIDA DE NOVO aqui, em vez de reaproveitar a cópia
+       de cima. Entre o começo do envio e este ponto houve espera
+       de rede, e durante essa espera a experiência continua
+       gravando: um animal encontrado, um desconforto relatado,
+       o fim de um nível.
+
+       Reescrever a cópia antiga apagaria tudo isso — em
+       silêncio, sem erro nenhum. Foi o que aconteceu num teste:
+       o evento de início do nível sumia toda vez que o envio
+       falhava, porque a rede demorava a desistir e a gravação
+       acontecia no meio.
+
+       Por isso tiramos da fila ATUAL apenas as linhas cujos
+       identificadores foram confirmados. */
+    const agora = fila();
+    escrever(CHAVE_FILA, agora.filter(function (i) {
+      return entregues.indexOf(i.linha.id) === -1;
+    }));
+
+    return { enviadas: entregues.length, pendentes: pendentes() };
   }
 
   function pendentes() {

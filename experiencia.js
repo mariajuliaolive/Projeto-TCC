@@ -81,6 +81,40 @@ function iniciarExperiencia() {
   let desconfortoTexto = '';
 
   /* =========================================================
+     A SESSÃO DE PESQUISA
+
+     Uma passagem por um nível é uma sessão. Quem percorre os
+     cinco níveis gera cinco sessões, porque cada troca de
+     nível é uma página nova.
+
+     A sessão é aberta mesmo sem cadastro. Sem participante ela
+     não vai para o banco — o campo fica vazio e a linha seria
+     recusada — mas continua no navegador, e é o que permite
+     você testar ajustes e ver as medidas sem precisar se
+     cadastrar antes. */
+  const comoEstouUsando = AFRAME.utils.device.checkHeadsetConnected()
+    ? 'oculos'
+    : (AFRAME.utils.device.isMobile() ? 'celular' : 'computador');
+
+  const sessao = Armazenamento.abrirSessao(
+    animal.id, nivel.numero, comoEstouUsando);
+
+  /* O instante de cada evento é medido a partir daqui, e não
+     pelo relógio da tela: o contador de segundos só é criado
+     mais adiante no arquivo, e um evento disparado antes disso
+     quebraria a página. Este também é mais preciso. */
+  const inicioSessao = performance.now();
+
+  function marcar(tipo, dado) {
+    Armazenamento.gravarEvento(sessao, tipo, dado,
+      performance.now() - inicioSessao);
+  }
+
+  let tocouNoAnimal = false;
+  let ultimoDesconforto = null;
+  let sessaoFechada = false;
+
+  /* =========================================================
      3. MONTAR O CENÁRIO
 
      Cada animal tem o ambiente onde ele seria encontrado de
@@ -529,6 +563,7 @@ function iniciarExperiencia() {
       if (esconderijo.porta) {
         esconderijo.porta.addEventListener('porta-aberta', function () {
           raiz.emit('revelar', null, false);
+          marcar('porta-aberta', { indice: indice });
         });
       }
 
@@ -537,6 +572,12 @@ function iniciarExperiencia() {
       raiz.addEventListener('animal-descoberto', function () {
         encontrados = encontrados + 1;
         mostrarEncontrados();
+
+        marcar('animal-encontrado', {
+          indice: indice,
+          comPorta: Boolean(esconderijo.porta),
+          deQuantos: escondidosNoTotal
+        });
 
         if (comportamento === 'andarilho') {
           /* espera a saída terminar antes de começar a passear,
@@ -554,6 +595,12 @@ function iniciarExperiencia() {
         console.log('Este nível não permite interação.');
         return;
       }
+
+      /* Tocar no animal é a interação mais direta que o sistema
+         permite, e só existe no Nível 5. É o indicador mais forte
+         que a aplicação tem sobre superação. */
+      tocouNoAnimal = true;
+      marcar('tocou-no-animal', { indice: indice });
 
       const animador = modelo.components.animador;
       const temReacaoPropria = animal.animacoes && animal.animacoes.reagindo;
@@ -892,8 +939,13 @@ function iniciarExperiencia() {
     atualizarConsole();
     mostrarEscala(false);
 
-    /* Por enquanto o valor fica só no registro do navegador. Ele
-       passa a ser gravado quando a camada de persistência entrar. */
+    /* Guarda cada relato, e não apenas o último: a pessoa pode
+       relatar mais de uma vez no mesmo nível, e a sequência diz
+       mais do que o valor final — um 8 que vira 4 ao longo do
+       nível é um dado, e a média dos dois esconderia. */
+    marcar('desconforto-relatado', { valor: valor });
+    ultimoDesconforto = valor;
+
     console.log(
       `Autorrelato — nível ${nivel.numero}, ${animal.nome}, ` +
       `${segundos}s: ${valor}/10`
@@ -1316,8 +1368,99 @@ function iniciarExperiencia() {
   /* =========================================================
      14. REGISTROS DE CARREGAMENTO
      ========================================================= */
+  /* =========================================================
+     15. MEDIR E FECHAR
+
+     O medidor compara a câmera com o estímulo PRINCIPAL — a
+     primeira cópia, a que está na distância que define o nível.
+     As outras se espalham e se movem; medir distância até "o
+     grupo" não teria significado.
+     ========================================================= */
+  /* O componente só existe depois de o A-Frame montar a cena, e
+     este arquivo roda antes disso. Guardar a referência agora
+     guardaria "undefined" para sempre — foi o que aconteceu na
+     primeira tentativa, e o medidor nunca ligou. Por isso a
+     busca acontece na hora de usar. */
+  function oMedidor() {
+    return rig && rig.components && rig.components.medidor;
+  }
+
+  function ligarMedidor() {
+    const medidor = oMedidor();
+
+    if (medidor && copias.length) {
+      medidor.comecar(camera, copias[0].raiz);
+      marcar('nivel-iniciado', {
+        distancia: +distancia.toFixed(2),
+        quantidade: copias.length,
+        escondidos: escondidosNoTotal
+      });
+    }
+  }
+
+  /* ---------------------------------------------------------
+     FECHAR A SESSÃO
+
+     Grava o resumo das medidas. Acontece uma vez só, aconteça
+     o que acontecer antes — trocar de nível, sair, fechar a
+     aba ou trocar de aplicativo no celular.
+
+     O "visibilitychange" é o gatilho principal, e não o
+     "beforeunload": no celular, fechar a aba muitas vezes não
+     dispara beforeunload nenhum. Como a gravação é local e
+     síncrona, ela termina antes de a página sumir — que é a
+     vantagem de não depender de rede neste momento.
+     --------------------------------------------------------- */
+  function fecharSessao(motivo) {
+    const medidor = oMedidor();
+
+    if (sessaoFechada || !medidor) {
+      return;
+    }
+    sessaoFechada = true;
+    medidor.parar();
+
+    const resumo = medidor.resumo();
+    resumo.encontrados = encontrados;
+    resumo.tocou = tocouNoAnimal;
+    resumo.desconforto = ultimoDesconforto;
+
+    Armazenamento.fecharSessao(sessao, resumo, motivo === 'proximo');
+
+    console.log('Sessão encerrada (' + motivo + '):', resumo);
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') {
+      fecharSessao('saiu');
+    }
+  });
+
+  window.addEventListener('pagehide', function () {
+    fecharSessao('saiu');
+  });
+
+  /* Sair e avançar fecham com motivo próprio: "concluiu o
+     nível" e "desistiu" são coisas diferentes na análise. */
+  btn3dProximo.addEventListener('click', function () {
+    if (proximoEndereco) {
+      fecharSessao('proximo');
+    }
+  });
+
+  btn3dSair.addEventListener('click', function () {
+    fecharSessao('sair');
+  });
+
+  /* Tenta enviar assim que a cena está de pé. Falha em
+     silêncio: o que não for fica na fila para a próxima. */
+  if (Armazenamento.configurado() && Armazenamento.pendentes() > 0) {
+    Armazenamento.sincronizar();
+  }
+
   cena.addEventListener('loaded', function () {
     inclinarCamera(INCLINACAO_GRAUS);
+    ligarMedidor();
 
     console.log('Cena 3D carregada com sucesso.');
     console.log('Versão do A-Frame:', AFRAME.version);
