@@ -1,44 +1,65 @@
 /* =========================================================
    CONFIGURAÇÃO DO BANCO DE DADOS
    ---------------------------------------------------------
-   Preencha os dois campos abaixo com os dados do SEU projeto
-   no Supabase. Enquanto estiverem vazios, o sistema funciona
+   Enquanto a "url" estiver vazia, o sistema funciona
    normalmente e guarda tudo no navegador — nada quebra, só
    não sincroniza.
 
-   ONDE ENCONTRAR ESSES VALORES
+   FALTA PREENCHER A URL
 
-   1. Crie uma conta em https://supabase.com (o plano
-      gratuito basta para este trabalho)
-   2. Crie um projeto novo
-   3. No painel do projeto, abra  Settings → API
-   4. Copie "Project URL" para  url
-   5. Copie a chave "anon public" para  chave
+   No painel do Supabase:  Settings → API → Project URL
+   É um endereço como  https://abcdefgh.supabase.co
 
    DEPOIS, CRIE AS TABELAS
 
-   No painel do Supabase, abra o SQL Editor, cole o conteúdo
-   de  supabase/esquema.sql  e execute. Ele cria as tabelas e
-   as regras de acesso.
+   SQL Editor → cole o conteúdo de supabase/esquema.sql →
+   Run. Ele cria as tabelas e, principalmente, as regras de
+   acesso.
 
-   SOBRE A CHAVE SER PÚBLICA
+   E CONFIRA, ANTES DO DIA DA COLETA
 
-   A chave "anon" é pública por natureza: ela vai dentro do
-   código que o navegador baixa, e não existe forma de
-   escondê-la numa aplicação estática. Isso não é descuido do
-   Supabase nem deste projeto — é como a arquitetura funciona.
+   Abra qualquer página do site, aperte F12, vá em "Console"
+   e digite:
 
-   Quem protege os dados é a política declarada no banco:
-   permitir INSERIR e proibir LER. Qualquer pessoa com a
-   chave pode enviar uma resposta; ninguém consegue recuperar
-   as respostas já gravadas. Quem lê é você, pelo painel do
-   Supabase, com a sua senha.
+       Armazenamento.testar()
 
-   A chave que NÃO pode aparecer aqui é a "service_role", que
-   ignora todas as políticas. Ela fica só no painel.
+   Ele grava uma linha de teste e diz, em português, se deu
+   certo — e, se não deu, qual das três coisas está errada.
    ========================================================= */
 
 const SUPABASE = {
+
+  /* Settings → API → Project URL */
   url: '',
-  chave: ''
+
+  /* A chave PUBLISHABLE (sb_publishable_…).
+     Nunca a secret (sb_secret_…): ela ignora todas as regras
+     de acesso e daria a qualquer pessoa poder de ler, alterar
+     e apagar os dados dos participantes. A secret fica só no
+     painel do Supabase, e não entra em arquivo nenhum deste
+     projeto. */
+  chave: 'sb_publishable_cPWKvauKiMqSN972Kl4FBQ_HTnpHitl'
 };
+
+/* ---------------------------------------------------------
+   POR QUE ESTA CHAVE PODE FICAR NUM REPOSITÓRIO PÚBLICO
+
+   O site é estático: o navegador precisa receber a chave para
+   conseguir falar com o banco. Não existe onde escondê-la —
+   quem abrir as ferramentas do navegador vai vê-la de
+   qualquer jeito. O Supabase sabe disso, e é por isso que
+   chama esta chave de "publishable".
+
+   Quem protege os dados é a política declarada no banco:
+   PODE INSERIR, NÃO PODE LER. Qualquer pessoa com a chave
+   consegue enviar uma resposta — o que é inevitável num
+   formulário público de pesquisa. Ninguém consegue recuperar
+   as respostas de outra pessoa, listar participantes, alterar
+   ou apagar o que já foi gravado.
+
+   Isso vale APENAS depois que o esquema.sql tiver sido
+   executado, porque é ele que liga a proteção. Enquanto não
+   for, não há política nenhuma — e aí a chave não é segura.
+
+   Ou seja: rode o SQL primeiro, publique depois.
+   --------------------------------------------------------- */

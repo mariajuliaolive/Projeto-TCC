@@ -270,18 +270,52 @@ const Armazenamento = (function () {
         && Boolean(SUPABASE.chave);
   }
 
+  /* O painel do Supabase mostra o endereço sem barra no fim,
+     mas é fácil copiar uma junto. Duas barras seguidas no meio
+     do caminho dão 404, e o erro não diz o motivo. */
+  function endereco(tabela) {
+    return SUPABASE.url.replace(/\/+$/, '') + '/rest/v1/' + tabela;
+  }
+
+  /* ---------------------------------------------------------
+     OS CABEÇALHOS
+
+     O Supabase mudou o formato das chaves, e os dois formatos
+     convivem. Isso muda o que pode ser enviado:
+
+       antigo  a chave é um JWT e começa com "eyJ". Vai no
+               cabeçalho apikey E também em Authorization.
+
+       novo    a chave começa com "sb_publishable_" e NÃO é um
+               JWT. Vai só no apikey. Mandar em Authorization
+               faz o servidor tentar lê-la como JWT e devolver
+               erro.
+
+     Como o apikey serve aos dois, ele vai sempre; o
+     Authorization só entra quando a chave tem cara de JWT.
+     Assim o sistema funciona com a chave que você tiver hoje
+     e continua funcionando se você trocar depois. */
+  function cabecalhos() {
+    const cabecalho = {
+      'apikey': SUPABASE.chave,
+      'Content-Type': 'application/json',
+      /* pede ao servidor que não devolva a linha criada: não
+         precisamos dela, e pedir de volta exigiria permissão de
+         leitura, que de propósito não damos */
+      'Prefer': 'return=minimal'
+    };
+
+    if (SUPABASE.chave.startsWith('eyJ')) {
+      cabecalho['Authorization'] = 'Bearer ' + SUPABASE.chave;
+    }
+
+    return cabecalho;
+  }
+
   async function enviarLinha(tabela, linha) {
-    const resposta = await fetch(`${SUPABASE.url}/rest/v1/${tabela}`, {
+    const resposta = await fetch(endereco(tabela), {
       method: 'POST',
-      headers: {
-        'apikey': SUPABASE.chave,
-        'Authorization': 'Bearer ' + SUPABASE.chave,
-        'Content-Type': 'application/json',
-        /* pede ao servidor que não devolva a linha criada:
-           não precisamos dela, e pedir de volta exigiria
-           permissão de leitura, que de propósito não damos */
-        'Prefer': 'return=minimal'
-      },
+      headers: cabecalhos(),
       body: JSON.stringify(linha)
     });
 
@@ -329,6 +363,56 @@ const Armazenamento = (function () {
 
   function pendentes() {
     return fila().filter(function (i) { return !i.enviado; }).length;
+  }
+
+  /* ---------------------------------------------------------
+     TESTE DE LIGAÇÃO
+
+     Grava uma linha de teste e diz o que aconteceu, em
+     português. Serve para conferir a configuração ANTES do dia
+     da coleta, em vez de descobrir na hora que algo está
+     errado.
+
+     Rode no console do navegador:   Armazenamento.testar()
+     --------------------------------------------------------- */
+  async function testar() {
+    if (!configurado()) {
+      console.log('Falta preencher url e chave em configuracao.js.');
+      return false;
+    }
+
+    const linha = {
+      id: novoId(),
+      email: 'teste-de-ligacao@exemplo.invalido',
+      sexo: 'nao_informado',
+      consentimento_em: new Date().toISOString()
+    };
+
+    try {
+      await enviarLinha('participantes', linha);
+      console.log(
+        'Ligação com o banco funcionando.\n' +
+        'Foi criado um participante de teste com o e-mail\n' +
+        '  teste-de-ligacao@exemplo.invalido\n' +
+        'Apague essa linha pelo painel do Supabase antes da coleta.');
+      return true;
+    } catch (erro) {
+      const texto = erro.message;
+      console.log('A ligação falhou:', texto);
+
+      if (texto.includes('401') || texto.includes('JWS')) {
+        console.log('Parece a chave: confira se copiou a publishable, ' +
+                    'inteira, e não a secret.');
+      } else if (texto.includes('404')) {
+        console.log('Parece o endereço ou a tabela: confira a url e se ' +
+                    'o esquema.sql já foi executado no SQL Editor.');
+      } else if (texto.includes('42501') || texto.includes('policy')) {
+        console.log('Parece a política de acesso: rode o esquema.sql ' +
+                    'inteiro, inclusive a parte das políticas.');
+      }
+
+      return false;
+    }
   }
 
   /* ---------------------------------------------------------
@@ -386,6 +470,7 @@ const Armazenamento = (function () {
     sincronizar: sincronizar,
     pendentes: pendentes,
     configurado: configurado,
+    testar: testar,
 
     tudo: tudo,
     baixar: baixar
