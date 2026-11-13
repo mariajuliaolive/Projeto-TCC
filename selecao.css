@@ -198,3 +198,33 @@
     text-align: center;
   }
 }
+
+/* =========================================================
+   QUEM ESTÁ PARTICIPANDO
+   ========================================================= */
+.aviso--cadastro {
+  margin-bottom: 28px;
+}
+
+.aviso--cadastro a {
+  color: var(--verde);
+  white-space: nowrap;
+}
+
+.quem-participa {
+  flex: 1;
+  font-size: 12.5px;
+  color: var(--texto-suave);
+}
+
+.quem-participa a {
+  color: var(--texto-suave);
+  text-decoration: underline;
+}
+
+@media (max-width: 720px) {
+  .quem-participa {
+    width: 100%;
+    margin-bottom: 6px;
+  }
+}

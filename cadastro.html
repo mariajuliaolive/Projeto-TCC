@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Cadastro e consentimento para participar da pesquisa sobre exposição gradual em Realidade Virtual." />
+  <title>Participar da pesquisa | VR Exposição Gradual</title>
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%233ED0C0' d='M3.5 7h17a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-5.2q-3.3-3.2-6.6 0H3.5A1.5 1.5 0 0 1 2 15.5v-7A1.5 1.5 0 0 1 3.5 7z'/></svg>" />
+
+  <script>document.documentElement.classList.add('js');</script>
+
+  <link rel="stylesheet" href="base.css" />
+  <link rel="stylesheet" href="cadastro.css" />
+</head>
+<body>
+
+  <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+  <header class="cabecalho">
+    <div class="container cabecalho__interno">
+
+      <a class="logo" href="index.html">
+        <svg class="logo__icone" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3.5 7h17a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-5.2q-3.3-3.2-6.6 0H3.5A1.5 1.5 0 0 1 2 15.5v-7A1.5 1.5 0 0 1 3.5 7z" />
+        </svg>
+        <span class="logo__texto">VR<strong>Exposição</strong></span>
+      </a>
+
+      <button class="menu-botao" id="menuBotao" aria-expanded="false" aria-controls="menu">
+        <span class="menu-botao__barra"></span>
+        <span class="menu-botao__barra"></span>
+        <span class="menu-botao__barra"></span>
+        <span class="sr-apenas">Abrir menu</span>
+      </button>
+
+      <nav class="menu" id="menu" aria-label="Navegação principal">
+        <a href="index.html">Início</a>
+        <a href="index.html#sobre">Sobre o projeto</a>
+        <a href="cadastro.html" class="menu__destaque" aria-current="page">Participar</a>
+      </nav>
+
+    </div>
+  </header>
+
+  <main id="conteudo" class="pagina-cadastro">
+    <div class="container container--estreito">
+
+      <!-- Trilha dos três passos. Quem está preenchendo um
+           formulário precisa saber quanto falta. -->
+      <ol class="trilha" id="trilha" aria-label="Etapas do cadastro">
+        <li class="trilha__passo trilha__passo--atual" data-passo="1">
+          <span class="trilha__numero">1</span>
+          <span class="trilha__nome">Sobre a pesquisa</span>
+        </li>
+        <li class="trilha__passo" data-passo="2">
+          <span class="trilha__numero">2</span>
+          <span class="trilha__nome">Seus dados</span>
+        </li>
+        <li class="trilha__passo" data-passo="3">
+          <span class="trilha__numero">3</span>
+          <span class="trilha__nome">Medo declarado</span>
+        </li>
+      </ol>
+
+      <noscript>
+        <p class="aviso">
+          <strong>JavaScript desativado.</strong> Esta página monta o
+          cadastro com JavaScript. Ative-o no navegador para participar.
+        </p>
+      </noscript>
+
+      <!-- ===== PASSO 1: CONSENTIMENTO =====
+           O conteúdo vem de pesquisa.js, que é o mesmo texto
+           que vai no Apêndice A do TCC. -->
+      <section class="passo passo--atual" id="passo1" aria-labelledby="tituloPasso1">
+        <h1 class="titulo-pagina" id="tituloPasso1"></h1>
+        <p class="secao__texto" id="resumoPesquisa"></p>
+
+        <div class="blocos" id="blocosConsentimento"></div>
+
+        <label class="concordo" for="concordo">
+          <input type="checkbox" id="concordo" />
+          <span class="concordo__texto" id="textoConcordo"></span>
+        </label>
+
+        <div class="acoes">
+          <a class="botao botao--neutro" href="index.html">Voltar ao início</a>
+          <button class="botao botao--principal botao--desativado"
+                  id="irPasso2" type="button" disabled>
+            Continuar
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== PASSO 2: CADASTRO ===== -->
+      <section class="passo" id="passo2" hidden aria-labelledby="tituloPasso2">
+        <h2 class="titulo-pagina" id="tituloPasso2">Seus dados</h2>
+        <p class="secao__texto">
+          Cinco campos. O e-mail serve só para identificar seu cadastro e
+          não acompanha os dados de análise.
+        </p>
+
+        <form id="formularioCadastro" novalidate>
+          <div class="campos" id="campos"></div>
+        </form>
+
+        <p class="erro" id="erroCadastro" role="alert" hidden></p>
+
+        <div class="acoes">
+          <button class="botao botao--neutro" id="voltarPasso1" type="button">
+            Voltar
+          </button>
+          <button class="botao botao--principal" id="irPasso3" type="button">
+            Continuar
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== PASSO 3: MEDO DECLARADO ===== -->
+      <section class="passo" id="passo3" hidden aria-labelledby="tituloPasso3">
+        <h2 class="titulo-pagina" id="tituloPasso3"></h2>
+        <p class="secao__texto">
+          Não existe resposta certa. Responda pelo que você sente hoje,
+          pensando em encontrar o animal de verdade.
+        </p>
+
+        <div class="escalas" id="escalas"></div>
+
+        <p class="erro" id="erroEscala" role="alert" hidden></p>
+
+        <div class="acoes">
+          <button class="botao botao--neutro" id="voltarPasso2" type="button">
+            Voltar
+          </button>
+          <button class="botao botao--principal" id="concluir" type="button">
+            Concluir cadastro
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== PRONTO ===== -->
+      <section class="passo passo--fim" id="passoFim" hidden aria-labelledby="tituloFim">
+        <h2 class="titulo-pagina" id="tituloFim">Cadastro concluído</h2>
+        <p class="secao__texto" id="mensagemFim"></p>
+
+        <p class="situacao" id="situacaoEnvio"></p>
+
+        <div class="acoes">
+          <a class="botao botao--principal" href="selecao.html">
+            Ir para a experiência
+          </a>
+        </div>
+      </section>
+
+      <p class="aviso">
+        <strong>Aviso:</strong> o sistema é um protótipo acadêmico
+        desenvolvido para avaliação de interação, usabilidade e experiência
+        em Realidade Virtual. Não possui finalidade de diagnóstico ou
+        tratamento.
+      </p>
+
+    </div>
+  </main>
+
+  <footer class="rodape">
+    <div class="container rodape__interno">
+      <p>Trabalho de Conclusão de Curso &middot; Ciência da Computação</p>
+      <p>Desenvolvido com HTML, CSS, JavaScript, A-Frame, Three.js e WebXR</p>
+    </div>
+  </footer>
+
+  <script src="base.js"></script>
+  <script src="dados.js"></script>
+  <script src="pesquisa.js"></script>
+  <script src="configuracao.js"></script>
+  <script src="armazenamento.js"></script>
+  <script src="cadastro.js"></script>
+</body>
+</html>

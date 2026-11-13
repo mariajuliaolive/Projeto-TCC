@@ -94,3 +94,48 @@ function atualizarResumo() {
   botaoEntrar.setAttribute('aria-disabled', 'false');
   botaoEntrar.href = `experiencia.html?animal=${animal.id}&nivel=${nivel.numero}`;
 }
+
+/* =========================================================
+   5. QUEM ESTÁ PARTICIPANDO
+
+   A experiência só faz sentido, como pesquisa, se houver um
+   cadastro a que associar os dados. Sem isso, as métricas
+   coletadas não teriam dono e não entrariam na análise.
+
+   Mas a página NÃO bloqueia o acesso. Bloquear atrapalharia
+   justamente quem mais precisa entrar sem cadastro: você,
+   testando ajustes, e o orientador, conferindo. O que ela faz
+   é avisar, com o caminho a um clique.
+   ========================================================= */
+const participante = Armazenamento.participante();
+const barraResumo = document.querySelector('.barra-resumo__interno');
+
+if (!participante) {
+  const aviso = document.createElement('div');
+  aviso.className = 'aviso aviso--cadastro';
+  aviso.innerHTML = `
+    <strong>Você ainda não se cadastrou.</strong>
+    Dá para entrar assim mesmo e conhecer o ambiente, mas o que você fizer
+    não será registrado na pesquisa.
+    <a href="cadastro.html">Fazer o cadastro</a>
+  `;
+  document.querySelector('.pagina-selecao .container').prepend(aviso);
+} else {
+  /* Quem está cadastrado vê de quem é a sessão. No dia da
+     coleta, o mesmo computador atende vários participantes em
+     sequência, e conferir isso antes de começar evita atribuir
+     os dados de alguém à pessoa anterior. */
+  const marca = document.createElement('p');
+  marca.className = 'quem-participa';
+  marca.innerHTML = `
+    Participando como <strong>${participante.email || 'cadastro sem e-mail'}</strong>
+    &middot; <a href="cadastro.html">não sou eu</a>
+  `;
+  barraResumo.prepend(marca);
+
+  /* Tenta enviar o que ficou pendente de outra sessão. Falha
+     em silêncio: a fila continua e tenta de novo depois. */
+  if (Armazenamento.configurado() && Armazenamento.pendentes() > 0) {
+    Armazenamento.sincronizar();
+  }
+}

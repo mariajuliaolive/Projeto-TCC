@@ -1,0 +1,450 @@
+/* =========================================================
+   CADASTRO — consentimento, dados e medo declarado
+   Carregado depois de base.css, que traz as variáveis.
+   ========================================================= */
+
+.pagina-cadastro {
+  padding: 120px 0 80px;
+}
+
+.container--estreito {
+  max-width: 760px;
+}
+
+/* =========================================================
+   TRILHA DOS PASSOS
+   Quem preenche formulário precisa saber quanto falta.
+   ========================================================= */
+.trilha {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  margin-bottom: 36px;
+}
+
+.trilha__passo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  color: var(--texto-suave);
+  font-size: 13.5px;
+  transition: var(--transicao);
+}
+
+.trilha__numero {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--superficie-2);
+  border: 1px solid var(--borda);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.trilha__passo--atual {
+  border-color: rgba(62, 208, 192, 0.45);
+  color: var(--texto);
+}
+
+.trilha__passo--atual .trilha__numero {
+  background: var(--verde);
+  border-color: var(--verde);
+  color: #06281F;
+}
+
+.trilha__passo--feito .trilha__numero {
+  background: rgba(62, 208, 192, 0.18);
+  border-color: rgba(62, 208, 192, 0.45);
+  color: var(--verde);
+}
+
+/* =========================================================
+   PASSOS
+   ========================================================= */
+.passo {
+  animation: aparecer 0.3s ease;
+}
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Quem prefere menos movimento não recebe a animação. */
+@media (prefers-reduced-motion: reduce) {
+  .passo { animation: none; }
+}
+
+.titulo-pagina {
+  margin-bottom: 12px;
+}
+
+/* =========================================================
+   BLOCOS DO CONSENTIMENTO
+   ========================================================= */
+.blocos {
+  display: grid;
+  gap: 14px;
+  margin: 28px 0;
+}
+
+.bloco {
+  padding: 18px 20px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+}
+
+/* O que a pessoa precisa ler com atenção -- o que o sistema
+   não é, e os riscos -- ganha destaque visual. */
+.bloco--destaque {
+  border-color: rgba(91, 141, 239, 0.4);
+  background: linear-gradient(
+    180deg,
+    rgba(91, 141, 239, 0.08),
+    var(--superficie)
+  );
+}
+
+.bloco__titulo {
+  font-size: 15px;
+  margin-bottom: 6px;
+  color: var(--verde);
+}
+
+.bloco--destaque .bloco__titulo {
+  color: var(--azul);
+}
+
+.bloco__texto {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--texto-suave);
+}
+
+/* =========================================================
+   A CAIXA DE CONCORDÂNCIA
+   É o registro do consentimento, então não é um detalhe de
+   rodapé: tem o peso visual de uma decisão.
+   ========================================================= */
+.concordo {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px;
+  background: var(--superficie-2);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  cursor: pointer;
+  transition: var(--transicao);
+}
+
+.concordo:hover {
+  border-color: rgba(62, 208, 192, 0.4);
+}
+
+.concordo input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  accent-color: var(--verde);
+  cursor: pointer;
+}
+
+.concordo__texto {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   CAMPOS
+   ========================================================= */
+.campos {
+  display: grid;
+  gap: 22px;
+  margin: 28px 0;
+}
+
+.campo__grupo {
+  border: 0;
+}
+
+.campo__rotulo {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.campo__obrigatorio {
+  color: var(--azul);
+}
+
+.campo__opcional {
+  font-weight: 400;
+  font-size: 12.5px;
+  color: var(--texto-suave);
+}
+
+.campo__entrada {
+  width: 100%;
+  padding: 13px 15px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  color: var(--texto);
+  font-family: inherit;
+  font-size: 15px;
+  transition: var(--transicao);
+}
+
+.campo__entrada:focus {
+  outline: none;
+  border-color: var(--verde);
+}
+
+/* O seletor de data nasce com o ícone escuro sobre fundo
+   escuro em alguns navegadores. */
+.campo__entrada[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+.campo__ajuda {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--texto-suave);
+}
+
+/* ---------- escolhas em botão ---------- */
+.escolhas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.escolha {
+  position: relative;
+  cursor: pointer;
+}
+
+.escolha input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.escolha span {
+  display: block;
+  padding: 10px 16px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  font-size: 14px;
+  transition: var(--transicao);
+}
+
+.escolha input:checked + span {
+  background: rgba(62, 208, 192, 0.14);
+  border-color: var(--verde);
+  color: var(--verde);
+}
+
+/* O foco precisa aparecer para quem navega por teclado. */
+.escolha input:focus-visible + span {
+  outline: 2px solid var(--azul);
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   ESCALAS DE MEDO
+   ========================================================= */
+.escalas {
+  display: grid;
+  gap: 18px;
+  margin: 28px 0;
+}
+
+.escala {
+  padding: 18px 20px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+}
+
+.escala__animal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.escala__icone {
+  font-size: 22px;
+}
+
+.escala__nome {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.notas {
+  display: flex;
+  gap: 6px;
+}
+
+.nota {
+  flex: 1;
+  cursor: pointer;
+}
+
+.nota input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.nota span {
+  display: grid;
+  place-items: center;
+  /* alvo de toque confortável num celular */
+  min-height: 44px;
+  background: var(--superficie-2);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  transition: var(--transicao);
+}
+
+.nota input:checked + span {
+  background: var(--verde);
+  border-color: var(--verde);
+  color: #06281F;
+  font-weight: 700;
+}
+
+.nota input:focus-visible + span {
+  outline: 2px solid var(--azul);
+  outline-offset: 2px;
+}
+
+.escala__legenda {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+/* =========================================================
+   AÇÕES, ERROS E SITUAÇÃO
+   ========================================================= */
+.acoes {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.acoes--linha {
+  margin-top: 16px;
+}
+
+.botao--neutro {
+  background: var(--superficie-2);
+  border: 1px solid var(--borda);
+  color: var(--texto);
+}
+
+.botao--desativado {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.erro {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(239, 91, 91, 0.1);
+  border: 1px solid rgba(239, 91, 91, 0.35);
+  border-radius: 10px;
+  font-size: 14px;
+  color: #FFB4B4;
+}
+
+.situacao {
+  margin-top: 18px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  border: 1px solid var(--borda);
+  background: var(--superficie);
+  color: var(--texto-suave);
+}
+
+.situacao--ok {
+  border-color: rgba(62, 208, 192, 0.4);
+  color: var(--verde);
+}
+
+.situacao--local {
+  border-color: rgba(91, 141, 239, 0.35);
+  color: #AFC6F5;
+}
+
+.ja-cadastrado {
+  padding: 18px 20px;
+  margin-bottom: 28px;
+  background: rgba(91, 141, 239, 0.08);
+  border: 1px solid rgba(91, 141, 239, 0.4);
+  border-radius: var(--raio);
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+/* =========================================================
+   CELULAR
+   ========================================================= */
+@media (max-width: 720px) {
+  .pagina-cadastro {
+    padding: 100px 0 60px;
+  }
+
+  /* No celular só o passo atual cabe na trilha; os outros
+     viram bolinhas, para a barra não quebrar em três linhas. */
+  .trilha__passo:not(.trilha__passo--atual) .trilha__nome {
+    display: none;
+  }
+
+  .trilha__passo:not(.trilha__passo--atual) {
+    flex: 0 0 auto;
+  }
+
+  .notas {
+    gap: 4px;
+  }
+
+  .nota span {
+    min-height: 40px;
+    font-size: 13px;
+  }
+
+  .acoes {
+    flex-direction: column-reverse;
+  }
+
+  .acoes .botao {
+    width: 100%;
+    text-align: center;
+  }
+}
