@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Questionário de percepção depois da experiência em Realidade Virtual." />
+  <title>Como foi para você | VR Exposição Gradual</title>
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%233ED0C0' d='M3.5 7h17a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-5.2q-3.3-3.2-6.6 0H3.5A1.5 1.5 0 0 1 2 15.5v-7A1.5 1.5 0 0 1 3.5 7z'/></svg>" />
+
+  <script>document.documentElement.classList.add('js');</script>
+
+  <link rel="stylesheet" href="base.css" />
+  <link rel="stylesheet" href="cadastro.css" />
+</head>
+<body>
+
+  <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+  <header class="cabecalho">
+    <div class="container cabecalho__interno">
+
+      <a class="logo" href="index.html">
+        <svg class="logo__icone" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3.5 7h17a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-5.2q-3.3-3.2-6.6 0H3.5A1.5 1.5 0 0 1 2 15.5v-7A1.5 1.5 0 0 1 3.5 7z" />
+        </svg>
+        <span class="logo__texto">VR<strong>Exposição</strong></span>
+      </a>
+
+      <button class="menu-botao" id="menuBotao" aria-expanded="false" aria-controls="menu">
+        <span class="menu-botao__barra"></span>
+        <span class="menu-botao__barra"></span>
+        <span class="menu-botao__barra"></span>
+        <span class="sr-apenas">Abrir menu</span>
+      </button>
+
+      <nav class="menu" id="menu" aria-label="Navegação principal">
+        <a href="index.html">Início</a>
+        <a href="index.html#sobre">Sobre o projeto</a>
+      </nav>
+
+    </div>
+  </header>
+
+  <main id="conteudo" class="pagina-cadastro">
+    <div class="container container--estreito">
+
+      <noscript>
+        <p class="aviso">
+          <strong>JavaScript desativado.</strong> Esta página monta o
+          questionário com JavaScript. Ative-o no navegador para responder.
+        </p>
+      </noscript>
+
+      <!-- ===== QUESTIONÁRIO ===== -->
+      <section class="passo passo--atual" id="perguntas" aria-labelledby="tituloFinal">
+
+        <h1 class="titulo-pagina" id="tituloFinal">Como foi para você</h1>
+        <p class="secao__texto">
+          Última etapa. São nove perguntas, e nenhuma tem resposta certa —
+          queremos saber como foi, não se deu certo.
+        </p>
+
+        <!-- O que a pessoa acabou de fazer. Preenchido por final.js a
+             partir do que ficou guardado da sessão. -->
+        <p class="resumo-percurso" id="resumoPercurso"></p>
+
+        <div class="escalas" id="escalasPercepcao"></div>
+
+        <div class="abertas" id="abertas"></div>
+
+        <p class="erro" id="erroFinal" role="alert" hidden></p>
+
+        <div class="acoes">
+          <a class="botao botao--neutro" href="selecao.html">
+            Voltar à experiência
+          </a>
+          <button class="botao botao--principal" id="enviar" type="button">
+            Enviar respostas
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== FIM ===== -->
+      <section class="passo passo--fim" id="agradecimento" hidden aria-labelledby="tituloFim">
+        <h2 class="titulo-pagina" id="tituloFim">Obrigada!</h2>
+        <p class="secao__texto" id="mensagemFim"></p>
+
+        <p class="situacao" id="situacaoEnvio"></p>
+
+        <div class="acoes">
+          <a class="botao botao--principal" href="index.html">
+            Voltar ao início
+          </a>
+        </div>
+      </section>
+
+      <p class="aviso">
+        <strong>Aviso:</strong> o sistema é um protótipo acadêmico
+        desenvolvido para avaliação de interação, usabilidade e experiência
+        em Realidade Virtual. Não possui finalidade de diagnóstico ou
+        tratamento.
+      </p>
+
+    </div>
+  </main>
+
+  <footer class="rodape">
+    <div class="container rodape__interno">
+      <p>Trabalho de Conclusão de Curso &middot; Ciência da Computação</p>
+      <p>Desenvolvido com HTML, CSS, JavaScript, A-Frame, Three.js e WebXR</p>
+    </div>
+  </footer>
+
+  <script src="base.js"></script>
+  <script src="dados.js"></script>
+  <script src="pesquisa.js"></script>
+  <script src="configuracao.js"></script>
+  <script src="armazenamento.js"></script>
+  <script src="final.js"></script>
+</body>
+</html>

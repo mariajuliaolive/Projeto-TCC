@@ -1188,14 +1188,52 @@ function iniciarExperiencia() {
     ? `experiencia.html?animal=${animal.id}&nivel=${proximoNumero}`
     : null;
 
+  /* Um ouvinte só, que fecha a sessão E navega.
+
+     Antes eram dois, em partes diferentes do arquivo: um
+     navegava e o outro fechava. O resultado foi que, no último
+     nível, o que fechava nem rodava — ele só agia quando havia
+     próximo nível — e concluir o percurso ficava gravado como
+     desistência. Responsabilidade partida em dois lugares
+     esquece metade. */
   btn3dProximo.addEventListener('click', function () {
+    /* avançar e concluir são as duas formas de TERMINAR o nível;
+       nas duas, concluida = verdadeiro */
+    fecharSessao('proximo');
+
     if (proximoEndereco) {
       window.location.href = proximoEndereco;
+      return;
     }
+
+    /* Último nível: não há próximo, então o botão encerra o
+       percurso e leva ao questionário. Sem isso, quem chegasse
+       até o fim ficaria sem saída a não ser o botão "Sair" — que
+       registra desistência, e terminar não é desistir. */
+    window.location.href = enderecoDeSaida('concluiu');
   });
 
+  /* Para onde "Sair" leva depende de haver participante.
+
+     Com cadastro, leva ao questionário final — e leva de
+     QUALQUER nível, não só do último. Quem tem medo alto talvez
+     pare no nível 3, e essa é justamente a pessoa mais
+     informativa da amostra; se só respondesse quem termina, a
+     amostra se inclinaria para quem tem menos medo.
+
+     Sem cadastro, volta para a seleção. É o caso de quem está
+     testando ajustes, que não deve ser obrigado a responder um
+     questionário a cada saída. */
+  function enderecoDeSaida(motivo) {
+    if (!Armazenamento.participante()) {
+      return 'selecao.html';
+    }
+    return `final.html?animal=${animal.id}&nivel=${nivel.numero}&motivo=${motivo}`;
+  }
+
   btn3dSair.addEventListener('click', function () {
-    window.location.href = 'selecao.html';
+    fecharSessao('sair');
+    window.location.href = enderecoDeSaida('saiu');
   });
 
   /* =========================================================
@@ -1245,7 +1283,8 @@ function iniciarExperiencia() {
   });
 
   if (!proximoEndereco) {
-    btn3dProximo.setAttribute('painel-texto', 'texto', 'Último nível');
+    btn3dProximo.setAttribute('painel-texto', 'texto',
+      Armazenamento.participante() ? 'Concluir' : 'Último nível');
   }
 
   /* ---------- destaque ao apontar ----------
@@ -1438,18 +1477,6 @@ function iniciarExperiencia() {
 
   window.addEventListener('pagehide', function () {
     fecharSessao('saiu');
-  });
-
-  /* Sair e avançar fecham com motivo próprio: "concluiu o
-     nível" e "desistiu" são coisas diferentes na análise. */
-  btn3dProximo.addEventListener('click', function () {
-    if (proximoEndereco) {
-      fecharSessao('proximo');
-    }
-  });
-
-  btn3dSair.addEventListener('click', function () {
-    fecharSessao('sair');
   });
 
   /* Tenta enviar assim que a cena está de pé. Falha em

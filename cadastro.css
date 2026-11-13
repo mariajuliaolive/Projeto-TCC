@@ -448,3 +448,43 @@
     text-align: center;
   }
 }
+
+/* =========================================================
+   QUESTIONÁRIO FINAL
+   Reaproveita .escala, .nota e .campo do cadastro; só o que
+   é próprio desta tela fica aqui.
+   ========================================================= */
+.resumo-percurso {
+  margin: 18px 0 4px;
+  padding: 14px 18px;
+  background: rgba(62, 208, 192, 0.08);
+  border: 1px solid rgba(62, 208, 192, 0.35);
+  border-radius: var(--raio);
+  font-size: 14.5px;
+}
+
+/* As perguntas são frases, e não nomes curtos como no cadastro:
+   precisam quebrar em linhas e respirar. */
+.pagina-cadastro .escala__nome {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.escala__ajuda {
+  margin: -4px 0 12px;
+  font-size: 12.5px;
+  color: #FFC9A8;
+}
+
+.abertas {
+  display: grid;
+  gap: 22px;
+  margin: 28px 0;
+}
+
+.campo__texto {
+  resize: vertical;
+  min-height: 86px;
+  line-height: 1.55;
+}

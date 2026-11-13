@@ -195,22 +195,78 @@ const ESCALA_MEDO = {
    controle enquanto fazia isso. Uma sem a outra conta meia
    história.
    --------------------------------------------------------- */
+/* A escala é a mesma do medo declarado e do desconforto: 0 a 10.
+   Não é a convenção de 1 a 5 que muitos questionários usam, e a
+   escolha é deliberada — trocar de escala no meio do estudo faz
+   a pessoa parar para reaprender o que o número significa, e o
+   erro disso custa mais do que seguir a convenção.
+
+   ATENÇÃO AO CAMPO "inverso"
+
+   Em seis das sete perguntas, nota alta é coisa boa. Numa delas
+   — desconforto físico — nota alta é coisa ruim. Tirar a média
+   das sete sem levar isso em conta produz um número errado que
+   parece certo, que é o pior tipo de erro de análise.
+
+   Marcar aqui faz a informação viajar junto com a resposta até o
+   banco, em vez de depender de alguém lembrar na hora de
+   analisar.
+
+   AVISO PARA O TCC
+
+   Estas perguntas foram redigidas para este trabalho e NÃO
+   constituem instrumento validado. Se a revisão da literatura
+   apontar um questionário de presença ou de usabilidade já
+   validado, trocar por ele fortalece o trabalho — e é por isso
+   que as perguntas vivem aqui, como dado, e não espalhadas pela
+   tela. Até lá, isso é uma limitação a declarar. */
+const ESCALA_PERCEPCAO = {
+  minimo: 0,
+  maximo: 10,
+  rotuloMinimo: 'nada',
+  rotuloMaximo: 'totalmente'
+};
+
 const QUESTIONARIO_FINAL = [
-  { id: 'presenca',    texto: 'O quanto você se sentiu presente dentro do ambiente virtual?' },
-  { id: 'realismo',    texto: 'O quanto o animal pareceu real para você?' },
-  { id: 'facilidade',  texto: 'O quanto foi fácil aprender a usar o sistema?' },
-  { id: 'deslocar',    texto: 'O quanto foi fácil se deslocar pelo ambiente?' },
-  { id: 'instrucoes',  texto: 'As instruções estavam claras?' },
-  { id: 'desconforto', texto: 'Você sentiu desconforto físico (tontura, enjoo)?' },
-  { id: 'controle',    texto: 'O quanto você se sentiu no controle do próprio ritmo?' }
+  { id: 'presenca',
+    texto: 'O quanto você se sentiu presente dentro do ambiente virtual?',
+    dimensao: 'imersão' },
+
+  { id: 'realismo',
+    texto: 'O quanto o animal pareceu real para você?',
+    dimensao: 'imersão' },
+
+  { id: 'facilidade',
+    texto: 'O quanto foi fácil aprender a usar o sistema?',
+    dimensao: 'usabilidade' },
+
+  { id: 'deslocar',
+    texto: 'O quanto foi fácil se deslocar pelo ambiente?',
+    dimensao: 'usabilidade' },
+
+  { id: 'instrucoes',
+    texto: 'As instruções estavam claras?',
+    dimensao: 'usabilidade' },
+
+  { id: 'desconforto',
+    texto: 'Você sentiu desconforto físico (tontura, enjoo)?',
+    dimensao: 'conforto',
+    inverso: true,
+    ajuda: 'Aqui, nota alta quer dizer MAIS desconforto.' },
+
+  { id: 'controle',
+    texto: 'O quanto você se sentiu no controle do próprio ritmo?',
+    dimensao: 'controle' }
 ];
 
 /* As perguntas abertas vêm depois das de escala: quem
    desistir de escrever já terá deixado as respostas
    numéricas, que são as que entram na análise. */
 const PERGUNTAS_ABERTAS = [
-  { id: 'interromperia', texto: 'Você interromperia a experiência em algum momento? Por quê?' },
-  { id: 'mudaria',       texto: 'O que você mudaria no sistema?' }
+  { id: 'interromperia',
+    texto: 'Você interromperia a experiência em algum momento? Por quê?' },
+  { id: 'mudaria',
+    texto: 'O que você mudaria no sistema?' }
 ];
 
 /* ---------------------------------------------------------
