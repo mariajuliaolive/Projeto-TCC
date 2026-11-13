@@ -5,12 +5,13 @@
    normalmente e guarda tudo no navegador — nada quebra, só
    não sincroniza.
 
-   FALTA PREENCHER A URL
+   JÁ ESTÁ PREENCHIDO
 
-   No painel do Supabase:  Settings → API → Project URL
-   É um endereço como  https://abcdefgh.supabase.co
+   O endereço e a chave do projeto já estão abaixo. Se um dia
+   precisar trocá-los, os dois ficam no painel do Supabase, em
+   Settings → API.
 
-   DEPOIS, CRIE AS TABELAS
+   FALTA CRIAR AS TABELAS
 
    SQL Editor → cole o conteúdo de supabase/esquema.sql →
    Run. Ele cria as tabelas e, principalmente, as regras de
@@ -30,7 +31,7 @@
 const SUPABASE = {
 
   /* Settings → API → Project URL */
-  url: '',
+  url: 'https://jyyvtqzotkufylsfpelp.supabase.co',
 
   /* A chave PUBLISHABLE (sb_publishable_…).
      Nunca a secret (sb_secret_…): ela ignora todas as regras

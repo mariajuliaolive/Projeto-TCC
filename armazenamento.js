@@ -270,11 +270,24 @@ const Armazenamento = (function () {
         && Boolean(SUPABASE.chave);
   }
 
-  /* O painel do Supabase mostra o endereço sem barra no fim,
-     mas é fácil copiar uma junto. Duas barras seguidas no meio
-     do caminho dão 404, e o erro não diz o motivo. */
+  /* O endereço é limpo antes de ser usado, porque o painel do
+     Supabase mostra mais de uma forma dele e as duas são fáceis
+     de copiar:
+
+       https://abc.supabase.co            ← a que queremos
+       https://abc.supabase.co/rest/v1/   ← também aparece lá
+
+     Com a segunda, o caminho final ficaria
+     /rest/v1//rest/v1/participantes e devolveria 404 — um erro
+     que não diz o motivo. Tirar o /rest/v1 e as barras do fim
+     custa uma linha e evita essa armadilha. */
   function endereco(tabela) {
-    return SUPABASE.url.replace(/\/+$/, '') + '/rest/v1/' + tabela;
+    const base = SUPABASE.url
+      .trim()
+      .replace(/\/+$/, '')           // barras no fim
+      .replace(/\/rest\/v1$/, '');    // o caminho da API, se veio junto
+
+    return base + '/rest/v1/' + tabela;
   }
 
   /* ---------------------------------------------------------
