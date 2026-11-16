@@ -81,7 +81,7 @@ literatura.
 \caption{Termos adotados em cada bloco.}
 \label{tab:termos}
 \small
-\begin{tabular}{p{2.2cm}>{\raggedright\arraybackslash}p{9.6cm}}
+\begin{tabular}{p{2.5cm}>{\raggedright\arraybackslash}p{9.3cm}}
 \toprule
 \textbf{Bloco} & \textbf{Termos} \\
 \midrule
@@ -89,12 +89,12 @@ Tecnologia &
 \texttt{"virtual reality"}, \texttt{"immersive environment"},
 \texttt{WebXR} \\
 Condição &
-\texttt{phobia}, \texttt{"specific phobia"}, \texttt{fear},
+\texttt{phobia*}, \texttt{"specific phobia"}, \texttt{fear},
 \texttt{anxiety} \\
 Estímulo &
-\texttt{spider}, \texttt{snake}, \texttt{cockroach}, \texttt{insect},
-\texttt{animal}, \texttt{arachnophobia}, \texttt{ophidiophobia},
-\texttt{entomophobia} \\
+\texttt{spider*}, \texttt{snake*}, \texttt{cockroach*},
+\texttt{insect*}, \texttt{animal*}, \texttt{arachnophobia},
+\texttt{ophidiophobia}, \texttt{entomophobia} \\
 Procedimento &
 \texttt{exposure}, \texttt{"exposure therapy"},
 \texttt{desensitization}, \texttt{habituation} \\
@@ -105,42 +105,59 @@ Procedimento &
 As expressões de mais de uma palavra aparecem entre aspas para serem
 buscadas como expressão, e não como palavras soltas: sem as aspas,
 \texttt{virtual reality} recuperaria qualquer texto que contivesse as
-duas palavras em qualquer lugar.
+duas palavras em qualquer lugar. O asterisco é truncamento:
+\texttt{spider*} recupera tanto \textit{spider} quanto \textit{spiders},
+e sem ele os plurais ficariam de fora.
 
-\subsubsection{Expressões aplicadas em cada base}
+\subsubsection{Bases consultadas e expressões aplicadas}
 
-A sintaxe difere entre bases, de modo que a mesma expressão lógica
-precisa ser reescrita. No Scopus, o campo \texttt{TITLE-ABS-KEY}
-restringe a busca a título, resumo e palavras-chave --- sem essa
-restrição, a busca varre o texto completo e recupera trabalhos que apenas
-mencionam os termos de passagem.
+A busca foi executada em duas bases: a PubMed, de cobertura biomédica e
+forte em Psicologia clínica, e a OpenAlex, índice multidisciplinar aberto
+que cobre periódicos e anais de eventos de Computação. A escolha das duas
+responde ao mesmo problema dos sinônimos: o tema está na fronteira entre
+duas áreas, e uma base só enxergaria um dos lados.
 
-\begin{quote}\small\singlespacing\ttfamily
-TITLE-ABS-KEY (\\
-\phantom{xx}( "virtual reality" OR "immersive environment" OR WebXR )\\
-\phantom{xx}AND ( phobia OR "specific phobia" OR fear OR anxiety )\\
-\phantom{xx}AND ( spider OR snake OR cockroach OR insect OR animal\\
-\phantom{xxxxxxxx}OR arachnophobia OR ophidiophobia OR entomophobia )\\
-\phantom{xx}AND ( exposure OR "exposure therapy" OR desensitization\\
-\phantom{xxxxxxxx}OR habituation )\\
-)\\
-AND PUBYEAR > 2020
-\end{quote}
+Pesou também um critério de método. As duas bases oferecem interface de
+consulta pública, o que permitiu executar a busca por um programa, em
+lugar da tela de pesquisa. O programa está no repositório do projeto, no
+arquivo \texttt{buscar.py} da pasta \texttt{data/revisao}. Busca feita na tela não deixa rastro; o programa
+registra a expressão exata enviada a cada base, a data e a hora da
+execução e a quantidade de trabalhos devolvida. Os números apresentados
+nesta seção foram lidos desse registro, e não digitados.
 
-No SpringerLink e no IEEE~Xplore, cuja busca avançada não oferece o mesmo
-campo composto, adotou-se a forma reduzida:
+A sintaxe difere entre as bases, de modo que a mesma expressão lógica foi
+escrita de duas formas. Na PubMed, o marcador \texttt{[tiab]} restringe
+cada termo a título e resumo --- sem essa restrição, a busca alcança
+outros campos e recupera trabalhos que apenas mencionam os termos de
+passagem.
 
 \begin{quote}\footnotesize\singlespacing\ttfamily
-("virtual reality" OR "immersive")\\
-AND (phobia OR "fear of animals")\\
-AND (exposure OR desensitization)\\
-AND (usability OR presence OR immersion)
+("virtual reality"[tiab] OR "immersive environment"[tiab]\\
+\phantom{xxxxx}OR WebXR[tiab])\\
+AND (phobia*[tiab] OR "specific phobia"[tiab] OR fear[tiab]\\
+\phantom{xxxxx}OR anxiety[tiab])\\
+AND (spider*[tiab] OR snake*[tiab] OR cockroach*[tiab]\\
+\phantom{xxxxx}OR insect*[tiab] OR animal*[tiab] OR arachnophobia[tiab]\\
+\phantom{xxxxx}OR ophidiophobia[tiab] OR entomophobia[tiab])\\
+AND (exposure[tiab] OR "exposure therapy"[tiab]\\
+\phantom{xxxxx}OR desensitization[tiab] OR habituation[tiab])
 \end{quote}
 
-O quarto bloco muda nesta segunda forma. Em bases de Computação, acoplar
-\texttt{usability}, \texttt{presence} e \texttt{immersion} aproxima o
-resultado dos trabalhos que avaliaram a experiência --- que é justamente
-o recorte deste trabalho --- em lugar dos que relatam desfecho clínico.
+Na OpenAlex, a mesma restrição é obtida aplicando a expressão ao campo
+\texttt{title\_and\_abstract.search}. Essa base reduz as palavras ao
+radical por conta própria, de modo que o asterisco é dispensado:
+
+\begin{quote}\footnotesize\singlespacing\ttfamily
+("virtual reality" OR "immersive environment" OR WebXR)\\
+AND (phobia OR "specific phobia" OR fear OR anxiety)\\
+AND (spider OR snake OR cockroach OR insect OR animal\\
+\phantom{xxxxx}OR arachnophobia OR ophidiophobia OR entomophobia)\\
+AND (exposure OR "exposure therapy" OR desensitization\\
+\phantom{xxxxx}OR habituation)
+\end{quote}
+
+Nas duas bases o período foi limitado a publicações de 2021 a 2026. A
+busca foi executada em 16 de novembro de 2026.
 
 \subsubsection{Critérios de inclusão e exclusão}
 
@@ -162,37 +179,94 @@ I4 & relata avaliação com participantes humanos \\
 E1 & trata de fobia não relacionada a animais (social, altura, voo) \\
 E2 & apresenta apenas proposta, sem avaliação \\
 E3 & texto completo indisponível \\
-E4 & duplicata recuperada em mais de uma base \\
+E4 & duplicata recuperada em mais de uma base, ou segundo relato do
+mesmo estudo \\
+E5 & não é estudo primário: revisão, editorial, capítulo de livro,
+protocolo, conjunto de dados ou software \\
+E6 & o objeto do estudo é predizer ou explicar o desfecho de um
+tratamento (preditores genéticos, neurais, farmacológicos ou clínicos),
+e não a interação com o ambiente virtual \\
+E7 & resumo indisponível na base, o que impede a triagem \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+Os critérios E1 a E4 foram definidos antes da busca. Os critérios E5 a E7
+foram acrescentados durante a triagem, quando o resultado bruto mostrou
+tipos de registro que os quatro primeiros não previam: a OpenAlex indexa
+também conjuntos de dados, programas e editoriais, e boa parte dos
+trabalhos clínicos recuperados usa o ambiente virtual apenas como veículo
+de um tratamento cujo desfecho se quer prever. Registra-se o acréscimo
+porque critério criado depois de ver o resultado é uma decisão que o
+leitor tem o direito de conhecer.
+
 \subsubsection{Etapas da seleção}
 
-% TODO: preencher a coluna de quantidades depois de rodar a busca
-A triagem foi conduzida em três passagens sucessivas, com o número de
-trabalhos reduzindo a cada uma:
+A seleção foi conduzida em passagens sucessivas, com o número de
+trabalhos reduzindo a cada uma (Tabela~\ref{tab:funil}).
 
 \begin{table}[htbp]
 \centering
 \caption{Funil de seleção dos trabalhos.}
 \label{tab:funil}
-\begin{tabular}{llc}
+\begin{tabular}{p{3.6cm}p{6.6cm}c}
 \toprule
-\textbf{Etapa} & \textbf{O que foi examinado} & \textbf{Trabalhos} \\
+\textbf{Etapa} & \textbf{O que foi feito} & \textbf{Trabalhos} \\
 \midrule
-1. Recuperação  & resultado bruto das bases          & [COMPLETAR] \\
-2. Título       & aderência ao tema                  & [COMPLETAR] \\
-3. Resumo       & critérios de inclusão e exclusão   & [COMPLETAR] \\
-4. Texto completo & leitura e extração               & [COMPLETAR] \\
+1. Recuperação & PubMed (42) e OpenAlex (95) & 137 \\
+2. Duplicatas & remoção por DOI e por título & 97 \\
+3. Título & aderência ao tema & 63 \\
+4. Resumo & critérios de inclusão e exclusão & 24 \\
+5. Priorização & escolha dos que seguem para leitura completa & 10 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-A quarta etapa foi limitada a dez trabalhos. O limite é deliberado: o
-objetivo da revisão, neste trabalho, não é mapear exaustivamente a
-produção da área, mas constituir uma base de argumentação que possa ser
-sustentada em profundidade perante a banca examinadora.
+Das 137 entradas recuperadas, 40 eram duplicatas entre as bases. Dos 97
+trabalhos distintos, 34 foram excluídos pelo título e 39 pelo resumo. Os
+motivos mais frequentes foram não se tratar de estudo primário (E5, 16
+trabalhos), ter por objeto a predição de desfecho clínico (E6, 16),
+não tratar de medo de animais (I3, 14) e apresentar apenas a proposta de um
+sistema, sem avaliação (E2, 11). A decisão tomada sobre cada um dos 97
+trabalhos, com a etapa e o motivo, está registrada no repositório do
+projeto, no arquivo \texttt{triagem.csv} da pasta
+\texttt{data/revisao/resultados}.
+
+\subsubsection{Priorização para a leitura completa}
+
+Atenderam aos critérios 24 trabalhos, e a leitura completa foi limitada a
+dez. O limite é deliberado: o objetivo da revisão, neste trabalho, não é
+mapear exaustivamente a produção da área, mas constituir uma base de
+argumentação que possa ser sustentada em profundidade perante a banca
+examinadora.
+
+Para que a escolha dos dez não fosse de preferência, cada trabalho
+elegível recebeu um ponto por pergunta respondida afirmativamente no
+resumo. Cada pergunta corresponde a uma parte do protótipo desenvolvido:
+
+\begin{enumerate}
+  \item o estímulo é apresentado em níveis ou etapas progressivas?
+  \item há medida de comportamento --- aproximação, esquiva, movimento ou
+  direção do olhar?
+  \item há medida de experiência --- presença, imersão, usabilidade,
+  conforto ou aceitação?
+  \item o medo declarado pelo participante é relacionado ao que se
+  observou no ambiente?
+\end{enumerate}
+
+Seguiram para leitura os nove trabalhos com dois ou três pontos. A décima
+posição foi disputada pelos que somaram um ponto; adotou-se como
+desempate tratar de animal presente no protótipo e ainda não coberto
+pelos demais, o que selecionou o único trabalho elegível que inclui
+cobras entre os estímulos.
+
+Duas limitações desse procedimento precisam ser declaradas. A pontuação
+foi atribuída a partir do resumo, e um resumo pode omitir o que o texto
+relata. E a triagem não contou com um segundo avaliador independente,
+como recomendam os protocolos de revisão sistemática.
+% CONVERSAR COM O ORIENTADOR: a busca e a triagem foram feitas com
+% apoio de ferramenta de inteligência artificial e conferidas pela
+% autora. Combinar com ele como declarar isso no texto.
 
 \subsubsection{Extração}
 
