@@ -1,0 +1,50 @@
+{
+  "executado_em": "2026-11-16T01:43:39+00:00",
+  "periodo": "2021-2026",
+  "blocos": {
+    "tecnologia": [
+      "\"virtual reality\"",
+      "\"immersive environment\"",
+      "WebXR"
+    ],
+    "condicao": [
+      "phobia*",
+      "\"specific phobia\"",
+      "fear",
+      "anxiety"
+    ],
+    "estimulo": [
+      "spider*",
+      "snake*",
+      "cockroach*",
+      "insect*",
+      "animal*",
+      "arachnophobia",
+      "ophidiophobia",
+      "entomophobia"
+    ],
+    "procedimento": [
+      "exposure",
+      "\"exposure therapy\"",
+      "desensitization",
+      "habituation"
+    ]
+  },
+  "bases": {
+    "PubMed": {
+      "expressao": "(\"virtual reality\"[tiab] OR \"immersive environment\"[tiab] OR WebXR[tiab]) AND (phobia*[tiab] OR \"specific phobia\"[tiab] OR fear[tiab] OR anxiety[tiab]) AND (spider*[tiab] OR snake*[tiab] OR cockroach*[tiab] OR insect*[tiab] OR animal*[tiab] OR arachnophobia[tiab] OR ophidiophobia[tiab] OR entomophobia[tiab]) AND (exposure[tiab] OR \"exposure therapy\"[tiab] OR desensitization[tiab] OR habituation[tiab])",
+      "campo": "titulo e resumo [tiab]",
+      "encontrados": 42,
+      "baixados": 42
+    },
+    "OpenAlex": {
+      "expressao": "(\"virtual reality\" OR \"immersive environment\" OR WebXR) AND (phobia OR \"specific phobia\" OR fear OR anxiety) AND (spider OR snake OR cockroach OR insect OR animal OR arachnophobia OR ophidiophobia OR entomophobia) AND (exposure OR \"exposure therapy\" OR desensitization OR habituation)",
+      "campo": "titulo e resumo (title_and_abstract.search)",
+      "encontrados": 95,
+      "baixados": 95
+    }
+  },
+  "soma_das_bases": 137,
+  "duplicatas_removidas": 40,
+  "candidatos_para_triagem": 97
+}
