@@ -5,6 +5,13 @@
 -- fazem parte da aplicação: são para você conferir a coleta e
 -- preparar a análise.
 --
+-- PARA LER OS DADOS NO DIA A DIA, prefira as visões de
+-- supabase/visoes.sql: depois de instaladas, elas aparecem no
+-- Table Editor (schema "analise") como planilhas prontas, com
+-- os códigos P01 e P01-S02 no lugar dos ids longos. As
+-- consultas 1 a 6 abaixo continuam valendo, mas as visões
+-- fazem o mesmo sem precisar colar nada.
+--
 -- As que APAGAM coisa estão no fim, separadas, e cada uma tem
 -- antes a versão que só MOSTRA o que seria apagado. Rode
 -- sempre a de mostrar primeiro.
