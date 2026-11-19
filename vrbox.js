@@ -139,6 +139,7 @@ AFRAME.registerComponent('modo-vrbox', {
     this.botoes = {};              // estado de cada botão, por índice
     this.botaoDoAperto = null;     // qual botão começou o aperto atual
     this.eixoUtil = {};            // eixos que já passaram pelo centro
+    this.eixoDirecional = {};      // eixos que são direcional de 8 posições
     this.ultimoSinal = null;       // o que chegou do controle por último
     this.teclasAndar = { cima: false, baixo: false, esquerda: false, direita: false };
     this.estereo = new AFRAME.THREE.StereoCamera();
@@ -583,9 +584,28 @@ AFRAME.registerComponent('modo-vrbox', {
       estado.apertado = agora;
     }
 
-    /* ---------- direção ---------- */
+    /* ---------- direção ----------
+
+       O joystick pode chegar de dois jeitos, conforme o controle.
+
+       PAR DE EIXOS. Um eixo para o lado, outro para frente e
+       trás. Pode ser qualquer par — 0 e 1, 2 e 3, 6 e 7... — e
+       a primeira versão só olhava os dois primeiros. Agora vale
+       o par que estiver mais empurrado.
+
+       DIRECIONAL NUM EIXO SÓ. Alguns controles mandam as oito
+       direções num único número: parado ele fica acima de 1
+       (cerca de 1,29), e cada direção é um valor entre -1 e 1.
+       -1 é para cima, e a cada 2/7 gira-se 45 graus no sentido
+       do relógio. É assim que o Chrome entrega o "hat" de muitos
+       controles genéricos no Android. */
     for (let i = 0; i < eixos.length; i++) {
-      if (Math.abs(eixos[i]) < 0.5) {
+      const v = eixos[i];
+      if (this.eixoDirecional[i] === undefined) {
+        /* o primeiro valor visto diz que tipo de eixo é */
+        this.eixoDirecional[i] = Math.abs(v) > 1.05;
+      }
+      if (!this.eixoDirecional[i] && Math.abs(v) < 0.5) {
         this.eixoUtil[i] = true;
       }
     }
@@ -593,13 +613,23 @@ AFRAME.registerComponent('modo-vrbox', {
       return componente.eixoUtil[i] ? eixos[i] || 0 : 0;
     };
 
-    /* o joystick pode vir nos eixos 0 e 1 ou nos 2 e 3: vale o
-       par que estiver mais empurrado */
-    let x = valor(0);
-    let y = valor(1);
-    if (Math.hypot(valor(2), valor(3)) > Math.hypot(x, y)) {
-      x = valor(2);
-      y = valor(3);
+    let x = 0;
+    let y = 0;
+    for (let i = 0; i + 1 < eixos.length; i += 2) {
+      if (Math.hypot(valor(i), valor(i + 1)) > Math.hypot(x, y)) {
+        x = valor(i);
+        y = valor(i + 1);
+      }
+    }
+
+    for (let i = 0; i < eixos.length; i++) {
+      const v = eixos[i];
+      if (this.eixoDirecional[i] && Math.abs(v) <= 1.0001) {
+        const passo = Math.round((v + 1) * 3.5) % 8;     // 0 = cima, 2 = direita...
+        const angulo = passo * Math.PI / 4;
+        x = Math.sin(angulo);
+        y = -Math.cos(angulo);
+      }
     }
 
     if (Math.hypot(x, y) < this.data.zonaMorta) {
