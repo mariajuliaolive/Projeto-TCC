@@ -32,6 +32,12 @@
   color: var(--texto);
 }
 
+.preparo__versao {
+  margin: -20px 0 24px;
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
 /* ---------- etapas ---------- */
 .etapa {
   padding: 20px 22px;
@@ -131,6 +137,17 @@
 }
 
 .controle__detalhe:empty {
+  display: none;
+}
+
+.controle__registro {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  font: 12px/1.6 ui-monospace, monospace;
+  color: var(--texto-suave);
+}
+
+.controle__registro:empty {
   display: none;
 }
 

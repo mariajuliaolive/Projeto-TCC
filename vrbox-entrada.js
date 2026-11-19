@@ -130,6 +130,71 @@ window.addEventListener('keydown', function (evento) {
 
 mostrarControle();
 
+/* ---------------------------------------------------------
+   REGISTRO DO QUE O CONTROLE MANDA
+
+   Cada modo do controle manda uma coisa diferente: o modo jogo
+   manda botões e eixos; o modo teclado, teclas; o modo mouse,
+   cliques e movimento de ponteiro. Listar tudo o que chega, na
+   ordem, mostra em qual modo ele está — e se o que chega é algo
+   que a experiência entende.
+   --------------------------------------------------------- */
+const registro = document.querySelector('#controleRegistro');
+const anteriores = { botoes: [], eixos: [] };
+
+function registrar(texto) {
+  if (!palco.hidden) {
+    return;
+  }
+  const item = document.createElement('li');
+  item.textContent = texto;
+  registro.prepend(item);
+  while (registro.children.length > 8) {
+    registro.removeChild(registro.lastChild);
+  }
+}
+
+function vigiarGamepad() {
+  const gamepad = primeiroGamepad();
+  if (gamepad) {
+    gamepad.buttons.forEach(function (botao, i) {
+      const apertado = botao.pressed || botao.value > 0.5;
+      if (apertado !== Boolean(anteriores.botoes[i])) {
+        registrar(`jogo · botão ${i} ${apertado ? 'apertado' : 'solto'}`);
+      }
+      anteriores.botoes[i] = apertado;
+    });
+    gamepad.axes.forEach(function (v, i) {
+      const antes = anteriores.eixos[i];
+      if (antes === undefined || Math.abs(v - antes) > 0.4) {
+        registrar(`jogo · eixo ${i} = ${v.toFixed(2)}`);
+        anteriores.eixos[i] = v;
+      }
+    });
+  }
+  if (palco.hidden) {
+    requestAnimationFrame(vigiarGamepad);
+  }
+}
+vigiarGamepad();
+
+window.addEventListener('gamepadconnected', function (evento) {
+  registrar(`jogo · conectado: ${evento.gamepad.id}`);
+});
+window.addEventListener('keydown', function (evento) {
+  registrar(`teclado · ${evento.key} (${evento.code || 'sem código'})`);
+});
+['pointerdown', 'wheel'].forEach(function (tipo) {
+  window.addEventListener(tipo, function (evento) {
+    if (evento.target.closest && evento.target.closest('button, a, input')) {
+      return;
+    }
+    registrar(tipo === 'wheel'
+      ? 'mouse · rodinha'
+      : `${evento.pointerType || 'toque'} · clique na tela`);
+  });
+});
+
 /* =========================================================
    2. AJUSTE DAS IMAGENS
 
