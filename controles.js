@@ -140,8 +140,20 @@ AFRAME.registerComponent('andar-toque', {
     const passo = this.data.velocidade * segundos;
 
     /* só o giro horizontal do olhar interessa: olhar para baixo
-       não deve fazer a pessoa afundar no chão */
-    const giro = camera.object3D.rotation.y;
+       não deve fazer a pessoa afundar no chão.
+
+       O giro vem da câmera que de fato desenha a cena. Ler a
+       rotação da entidade funcionava no celular e no computador,
+       mas nos óculos com WebXR quem move a câmera é o próprio
+       óculos, e a rotação da entidade fica parada. */
+    let giro = camera.object3D.rotation.y;
+    const cameraReal = this.el.sceneEl.camera;
+    if (cameraReal) {
+      cameraReal.getWorldDirection(this.auxiliar);
+      if (Math.hypot(this.auxiliar.x, this.auxiliar.z) > 0.2) {
+        giro = Math.atan2(-this.auxiliar.x, -this.auxiliar.z);
+      }
+    }
 
     const frente = -this.direcao.y;   // dedo para cima = andar para frente
     const lado = this.direcao.x;

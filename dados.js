@@ -105,7 +105,11 @@ const ANIMAIS = [
     tamanhoReal: 1.4,
     escalaVisual: 1.0,
     medida: 'maior',
-    rotacao: '0 0 0',
+    /* o modelo vem de lado (cabeça para +X): o giro o deixa de
+       frente para quem observa, como os outros */
+    rotacao: '0 -90 0',
+    /* o arquivo traz duas cobras; só a primeira aparece */
+    umaArmacao: true,
     fatorQuantidade: 0.5
   },
   {
@@ -142,7 +146,8 @@ const ANIMAIS = [
     tamanhoReal: 0.05,
     escalaVisual: 4.5,
     medida: 'maior',
-    rotacao: '0 0 0',
+    /* o modelo vem de costas para quem observa */
+    rotacao: '0 180 0',
     fatorQuantidade: 1.6
   },
   {

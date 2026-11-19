@@ -37,16 +37,19 @@ específico.
 \toprule
 \textbf{Arquivo} & \textbf{Responsabilidade} & \textbf{Linhas} \\
 \midrule
-\texttt{dados.js}        & os cinco animais e os cinco níveis            & 321 \\
-\texttt{cenarios.js}     & monta os quatro ambientes e os esconderijos   & 938 \\
-\texttt{experiencia.js}  & lê a escolha, monta a cena e conduz a sessão  & 1329 \\
-\texttt{console.js}      & painel de informação dentro da cena           & 436 \\
-\texttt{painel.js}       & painéis de texto desenhados em canvas         & 208 \\
-\texttt{controles.js}    & controle de caminhada por toque               & 178 \\
-\texttt{animador.js}     & reprodução das animações dos modelos          & 173 \\
-\texttt{descoberta.js}   & portas de armário e revelação por aproximação & 136 \\
+\texttt{dados.js}         & os cinco animais e os cinco níveis             & 326 \\
+\texttt{cenarios.js}      & os quatro ambientes. superfícies e esconderijos& 1.070 \\
+\texttt{experiencia.js}   & lê a escolha. monta a cena e conduz a sessão   & 1.993 \\
+\texttt{comportamentos.js} & o deslocamento de cada espécie e o carinho     & 973 \\
+\texttt{console.js}       & painel de informação dentro da cena            & 436 \\
+\texttt{painel.js}        & painéis de texto desenhados em canvas          & 229 \\
+\texttt{vrbox.js}         & modo para óculos de encaixe (VR Box)           & 895 \\
+\texttt{joystick.js}      & leitura e calibração do controle               & 161 \\
+\texttt{controles.js}     & controle de caminhada por toque                & 190 \\
+\texttt{animador.js}      & reprodução das animações dos modelos           & 173 \\
+\texttt{descoberta.js}    & portas de armário e revelação por aproximação  & 136 \\
 \midrule
-\multicolumn{2}{l}{Total da experiência} & 3.378 \\
+\multicolumn{2}{l}{Total da experiência} & 6.582 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -264,13 +267,14 @@ posições.
 \midrule
 Quieto    & apenas respira, com balanço vertical lento & baixo: dispensa o reprodutor de animação \\
 Inquieto  & reproduz a animação do arquivo e gira o corpo & médio \\
-Andarilho & o mesmo, e ainda caminha devagar entre dois pontos & maior \\
+Andarilho & o mesmo, e ainda se desloca pelo ambiente segundo o comportamento da espécie (Tabela~\ref{tab:especies}) & maior \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Nos níveis 1 e 2, 65\% dos exemplares permanecem quietos; a partir do
-Nível~3, a proporção passa a 25\% quietos, 40\% inquietos e 35\%
+Nos níveis 1 e 2, 65\% dos exemplares permanecem quietos e nenhum se
+desloca; a partir do Nível~3, que é o nível em que o estímulo passa a se
+mover, a proporção passa a 20\% quietos, 20\% inquietos e 60\%
 andarilhos. Três regras são mantidas em todos os casos:
 
 \begin{enumerate}
@@ -278,18 +282,62 @@ andarilhos. Três regras são mantidas em todos os casos:
   reproduz animação recebe ao menos o balanço de respiração;
   \item \textbf{sempre há algum exemplar parado} --- sem contraste, o
   grupo inteiro se torna um borrão de movimento e nada chama atenção;
-  \item \textbf{o exemplar principal nunca se desloca} --- ele está na
-  distância exata que define o nível, e sair do lugar desfaria a
-  progressão que se pretende medir.
+  \item \textbf{o exemplar principal nunca muda de distância} --- ele
+  está na distância exata que define o nível. Nos níveis 1 e 2 permanece
+  no lugar; a partir do Nível~3 desloca-se sobre um arco centrado no
+  ponto de entrada, de modo a mudar de posição sem mudar de distância.
 \end{enumerate}
+
+\subsubsection{Comportamento por espécie}
+
+Na primeira versão, o andarilho ia e voltava em linha reta entre dois
+pontos, o que produzia um movimento reconhecivelmente mecânico. Cada
+espécie passou a ter um comportamento próprio, baseado no modo como o
+animal real se desloca (Tabela~\ref{tab:especies}).
+
+\begin{table}[htbp]
+\centering
+\caption{Comportamento de deslocamento de cada espécie, a partir do Nível~3.}
+\label{tab:especies}
+\small
+\begin{tabular}{p{1.6cm}p{11.0cm}}
+\toprule
+\textbf{Espécie} & \textbf{Comportamento} \\
+\midrule
+Barata & arrancadas curtas e rápidas, pausas breves, mudanças bruscas de
+rumo; sobe pelas paredes, pela frente dos armários e pela bancada \\
+Aranha & deslocamento lento pelo chão, pelas paredes e pelo teto; desce
+do teto por um fio, permanece suspensa e volta a subir \\
+Rato & caminha, para como quem fareja, muda de direção e às vezes corre;
+entra sob um móvel e reaparece por outro \\
+Sapo & ajusta o corpo, agacha, salta e pousa, em intervalos irregulares;
+às vezes emenda dois saltos \\
+Cobra & rasteja devagar, serpenteando, com pausas longas \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Para que a barata e a aranha percorram as paredes de fato, e não apenas
+apareçam posicionadas nelas, cada cenário descreve suas superfícies ---
+piso, paredes, teto, frente dos armários --- como retângulos ligados pelas
+bordas. O animal desloca-se nas coordenadas da superfície em que está e,
+ao alcançar uma borda ligada a outra, passa para ela, com o corpo girando
+suavemente na quina de modo que o ventre permaneça voltado para a
+superfície. Os móveis que ocupam o piso são descritos como obstáculos,
+contornados pelos animais que andam no chão.
 
 \subsection{Exploração e descoberta}
 
 A partir do Nível~2, parte dos exemplares inicia a cena invisível,
-alojada em esconderijos distribuídos pelos ambientes. São vinte e um
-esconderijos no total --- cinco na sala, nove na cozinha, cinco na
-floresta e cinco no quintal --- e a fração de exemplares escondidos é de
-35\% nos níveis 2 e 3 e de 45\% nos níveis 4 e 5.
+alojada em esconderijos distribuídos pelos ambientes. São trinta e dois
+esconderijos no total: onze na sala (cinco no piso e seis em paredes e no
+teto, estes reservados à aranha --- atrás dos quadros, da cortina e da
+televisão), onze na cozinha (nove no piso e dentro dos armários, e dois
+na parede, atrás da geladeira e do fogão, reservados à barata), cinco na
+floresta e cinco no quintal. A fração de exemplares escondidos é de 35\%
+nos níveis 2 e 3 e de 45\% nos níveis 4 e 5, e o aviso de abertura
+informa quantos há a encontrar --- sem esse aviso, quem não sabe que há o
+que procurar não procura.
 
 Dois modos de revelação foram implementados:
 
@@ -411,6 +459,7 @@ sintético produz falso positivo.
 Computador & arrastar o cursor & teclas W A S D & clique \\
 Celular & girar o aparelho & controle circular na tela & toque \\
 Óculos & mover a cabeça & deslocamento físico & raio do controle ou olhar \\
+VR Box & mover a cabeça & \textit{joystick} ou marcha no lugar & mira e botão, ou olhar \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -423,6 +472,51 @@ olhar} e limitado pelas paredes do cenário, com folga de 45~cm.
 
 A velocidade adotada é de 1,4~m/s, próxima da caminhada humana. Valores
 superiores produzem desconforto em Realidade Virtual.
+
+\subsubsection{Óculos de encaixe (VR Box)}
+
+Para a sessão com participantes, foi acrescentado um modo para óculos de
+encaixe, nos quais o celular é colocado diante de duas lentes. Nesse
+modo a cena é desenhada duas vezes por quadro, uma para cada olho, com
+6,4~cm de separação, sem depender de suporte do navegador a WebXR. A
+seleção é feita pelo círculo de mira, com o botão de um controle
+Bluetooth ou, na ausência dele, pelo olhar mantido sobre o objeto.
+
+Três formas de deslocamento foram implementadas, porque os controles
+genéricos desses óculos variam muito na forma como informam o
+\textit{joystick} ao navegador:
+
+\begin{enumerate}
+  \item \textbf{\textit{joystick}}, com uma etapa de calibração em que a
+  pessoa empurra o controle para a frente e para a direita, de modo que
+  controles girados ou invertidos passem a andar na direção correta;
+  \item \textbf{marcha no lugar}: o acelerômetro do celular percebe o
+  ritmo dos passos, e dois passos seguidos iniciam o deslocamento na
+  direção do olhar. O celular conhece a orientação da cabeça, mas não a
+  posição do corpo, de modo que caminhar de fato pela sala não pode ser
+  acompanhado;
+  \item \textbf{controles de mão} dos óculos com WebXR, cujo
+  \textit{joystick} usa o mesmo caminho do controle circular.
+\end{enumerate}
+
+Em todos os casos a velocidade máxima é de cerca de 1~m/s, com
+aceleração e frenagem graduais de aproximadamente um terço de segundo:
+partidas e paradas instantâneas, que os olhos percebem e o ouvido interno
+não, estão entre as principais causas de desconforto em Realidade
+Virtual. As sessões nesse modo são registradas com o dispositivo
+\texttt{vrbox}, o que permite separá-las na análise.
+
+\subsubsection{Passar a mão na cobra}
+
+No Nível~5 da cobra, o exemplar principal repousa sobre uma pedra baixa,
+ao alcance das mãos. Com controles de mão rastreados, encostar o
+controle no corpo da cobra conta como contato, e o controle vibra. Sem
+eles --- no celular, no computador e no VR Box ---, o gesto é
+representado por apertar o botão sobre a cobra e deslizar o olhar pelo
+corpo dela, com uma mão desenhada no ponto de contato. A cobra reage ao
+primeiro contato encolhendo-se levemente e, em seguida, relaxa; não há
+bote, pelo mesmo motivo que exclui as animações de ataque. O início e a
+duração do contato são registrados como eventos da sessão.
 
 \subsection{Verificação técnica}
 \label{sec:verificacao}

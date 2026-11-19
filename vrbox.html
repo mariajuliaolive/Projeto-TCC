@@ -41,7 +41,7 @@
       <h1 class="preparo__titulo">Preparar o VR Box</h1>
       <p class="preparo__escolha" id="escolha"></p>
       <!-- muda a cada envio: confirma que o celular baixou o código novo -->
-      <p class="preparo__versao">Versão 5 do VR Box</p>
+      <p class="preparo__versao">Versão 6 do VR Box</p>
 
       <!-- ===== 1. CONTROLE ===== -->
       <section class="etapa">
@@ -60,6 +60,32 @@
           <!-- tudo o que chegou, na ordem: diz em que modo o controle está -->
           <ol class="controle__registro" id="controleRegistro"></ol>
         </div>
+
+        <!-- a direção certa: cada controle manda o joystick de um
+             jeito, às vezes girado -->
+        <div class="calibrar">
+          <p class="etapa__texto calibrar__texto" id="calibrarTexto">
+            Para andar na direção certa, calibre o joystick: toque no botão e
+            siga o que aparecer aqui.
+          </p>
+          <div class="calibrar__acoes">
+            <button class="botao botao--secundario" id="calibrar" type="button">
+              Calibrar o joystick
+            </button>
+            <button class="calibrar__apagar" id="apagarCalibracao" type="button" hidden>
+              apagar calibração
+            </button>
+          </div>
+        </div>
+
+        <label class="marcha">
+          <input type="checkbox" id="marcha" checked />
+          <span>
+            <strong>Andar marchando no lugar.</strong> O celular percebe os
+            passos e você anda para onde estiver olhando — funciona sem
+            controle.
+          </span>
+        </label>
       </section>
 
       <!-- ===== 2. AJUSTE DAS IMAGENS ===== -->
@@ -123,6 +149,7 @@
   </div>
 
   <script src="dados.js"></script>
+  <script src="joystick.js"></script>
   <script src="vrbox-entrada.js"></script>
 </body>
 </html>

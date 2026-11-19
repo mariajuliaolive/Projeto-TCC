@@ -159,7 +159,21 @@ function iniciarExperiencia() {
      ========================================================= */
   const cenario = montarCenario(animal.cenario, cenarioEl);
   const limites = cenario.limites;
-  const esconderijos = cenario.esconderijos;
+
+  /* Cada esconderijo pode dizer quem cabe nele: atrás de um
+     quadro, na parede, só a aranha — o rato, não. */
+  const esconderijos = cenario.esconderijos.filter(function (e) {
+    return !e.especies || e.especies.indexOf(animal.id) !== -1;
+  });
+
+  /* os pontos do chão onde o rato entra e sai (ver
+     comportamentos.js) */
+  const pontosNoChao = cenario.esconderijos
+    .filter(function (e) { return e.posicao; })
+    .map(function (e) { return e.posicao; });
+
+  /* obstáculos do cenário, mais os que esta página acrescentar */
+  const obstaculos = (cenario.obstaculos || []).slice();
 
   /* =========================================================
      4. ONDE CADA ANIMAL FICA
@@ -256,9 +270,17 @@ function iniciarExperiencia() {
       const escolhido = disponiveis.splice(
         Math.floor(sorteia(0, disponiveis.length)) % disponiveis.length, 1)[0];
 
+      /* escondido numa parede ou no teto: a posição vem da
+         superfície (ver cenarios.js) */
+      const ponto = escolhido.superficie
+        ? pontoNaSuperficie(cenario.superficies, escolhido.superficie.sup,
+                            escolhido.superficie.u, escolhido.superficie.v)
+        : escolhido.posicao;
+
       posicoes.push({
-        x: escolhido.posicao.x,
-        z: escolhido.posicao.z,
+        x: ponto.x,
+        y: ponto.y || 0,
+        z: ponto.z,
         esconderijo: escolhido
       });
     }
@@ -291,13 +313,50 @@ function iniciarExperiencia() {
 
   let jaRegistrouMedida = false;
 
+  /* O arquivo da cobra traz DUAS cobras, lado a lado, cada uma
+     com o seu esqueleto. Era por isso que elas apareciam sempre
+     aos pares. Ficam todas as peças da primeira; as da segunda
+     são escondidas — e deixam de ser atingidas pelo raio da mira,
+     que no Three.js não liga para o que está invisível. */
+  function manterUmaArmacao(objeto) {
+    const malhas = [];
+    objeto.traverse(function (o) {
+      if (o.isSkinnedMesh) { malhas.push(o); }
+    });
+    if (malhas.length < 2) {
+      return;
+    }
+    const esqueletoQueFica = malhas[0].skeleton;
+    malhas.forEach(function (malha) {
+      if (malha.skeleton !== esqueletoQueFica) {
+        malha.visible = false;
+        malha.raycast = function () {};
+      }
+    });
+  }
+
+  /* A caixa do que está VISÍVEL. A do Three.js conta também o
+     que está escondido, e a cobra seria medida com duas. */
+  function caixaVisivel(objeto) {
+    const caixa = new AFRAME.THREE.Box3();
+    objeto.updateMatrixWorld(true);
+    objeto.traverseVisible(function (o) {
+      if (o.isMesh) { caixa.expandByObject(o); }
+    });
+    return caixa;
+  }
+
   function ajustarModelo(elemento, tamanhoAlvo) {
     const objeto = elemento.getObject3D('mesh');
     if (!objeto) {
       return;
     }
 
-    const caixa = new AFRAME.THREE.Box3().setFromObject(objeto);
+    if (animal.umaArmacao) {
+      manterUmaArmacao(objeto);
+    }
+
+    const caixa = caixaVisivel(objeto);
     const medidas = new AFRAME.THREE.Vector3();
     caixa.getSize(medidas);
 
@@ -309,8 +368,20 @@ function iniciarExperiencia() {
     const fator = tamanhoAlvo / referencia;
     elemento.setAttribute('scale', `${fator} ${fator} ${fator}`);
 
-    const baseY = caixa.min.y * fator;
-    elemento.setAttribute('position', '0 ' + (-baseY) + ' 0');
+    /* A base encosta no chão, e o centro do corpo fica no centro
+       da raiz. Sem centralizar, um animal que anda giraria em
+       volta de um ponto fora dele — e a cobra que sobra, das
+       duas do arquivo, ficaria de lado. As contas descontam onde
+       a raiz está, porque a caixa é medida no mundo. */
+    const origem = new AFRAME.THREE.Vector3();
+    elemento.object3D.getWorldPosition(origem);
+    const centro = new AFRAME.THREE.Vector3();
+    caixa.getCenter(centro);
+
+    const baseY = (caixa.min.y - origem.y) * fator;
+    const desvioX = (centro.x - origem.x) * fator;
+    const desvioZ = (centro.z - origem.z) * fator;
+    elemento.setAttribute('position', `${-desvioX} ${-baseY} ${-desvioZ}`);
 
     /* o registro sai uma vez só: são até quinze cópias do mesmo
        modelo, e quinze linhas iguais no console não ajudam */
@@ -342,7 +413,7 @@ function iniciarExperiencia() {
      Virtual causa desconforto e, num sistema de exposição
      gradual, tira de quem usa o controle do próprio ritmo.
      ========================================================= */
-  function aplicarMovimentoDoCorpo(giro, indice, comportamento) {
+  function aplicarMovimentoDoCorpo(giro, indice, comportamento, guiadoPelaVida) {
     const temAnimacoes = Boolean(animal.animacoes);
     const defasagem = indice * 260;
 
@@ -352,7 +423,7 @@ function iniciarExperiencia() {
        os dois deixaria o bicho pulando. */
     const respiraSozinho = temAnimacoes
                            && comportamento !== 'quieto'
-                           && indice < LIMITE_ANIMADOS;
+                           && comAnimacao.has(indice);
 
     if (!respiraSozinho) {
       giro.setAttribute('animation__respirar', {
@@ -370,7 +441,10 @@ function iniciarExperiencia() {
     /* o quieto só respira. É ele que dá o contraste: sem
        nenhum parado, o grupo inteiro vira um só borrão de
        movimento e nada chama atenção. */
-    if (comportamento === 'quieto') {
+    /* quem anda pela "vida" (comportamentos.js) já vira o corpo
+       para onde vai: girar no lugar por cima disso o faria
+       andar de lado */
+    if (comportamento === 'quieto' || guiadoPelaVida) {
       return;
     }
 
@@ -460,7 +534,13 @@ function iniciarExperiencia() {
      As cópias além deste limite continuam se mexendo — elas têm
      o giro lento do corpo, que é barato — mas ficam na pose
      parada do arquivo.  */
-  const LIMITE_ANIMADOS = 8;
+  const LIMITE_ANIMADOS = 10;
+
+  /* Quem recebe as animações do arquivo, em ordem de prioridade:
+     o principal, depois os escondidos (que vão sair andando
+     quando forem encontrados), depois os que estão à vista.
+     Preenchido logo antes de criar os animais. */
+  let comAnimacao = new Set();
 
   /* ---------------------------------------------------------
      O QUE CADA CÓPIA FAZ
@@ -479,7 +559,7 @@ function iniciarExperiencia() {
      maioria se mexe. Mas nunca são todos de um jeito só: sempre
      há algum movimento na cena, e sempre algum animal parado.
      --------------------------------------------------------- */
-  function comportamentoDaCopia(indice) {
+  function comportamentoDaCopia(indice, escondida) {
     if (indice === 0) {
       /* O principal nunca fica parado — é o que a pessoa veio
          ver — mas também não passeia: ele está na distância
@@ -494,18 +574,21 @@ function iniciarExperiencia() {
       return sorte < 0.65 ? 'quieto' : 'inquieto';
     }
 
-    if (sorte < 0.25) { return 'quieto'; }
-    if (sorte < 0.65) { return 'inquieto'; }
+    /* quem estava escondido sai andando ao ser encontrado */
+    if (escondida) { return 'andarilho'; }
+
+    if (sorte < 0.2) { return 'quieto'; }
+    if (sorte < 0.4) { return 'inquieto'; }
     return 'andarilho';
   }
 
   function criarAnimal(posicao, indice) {
-    const comportamento = comportamentoDaCopia(indice);
     const esconderijo = posicao.esconderijo;
+    const comportamento = comportamentoDaCopia(indice, Boolean(esconderijo));
 
     const raiz = document.createElement('a-entity');
     raiz.classList.add('animal', 'clicavel');
-    raiz.setAttribute('position', `${posicao.x} 0 ${posicao.z}`);
+    raiz.setAttribute('position', `${posicao.x} ${posicao.y || 0} ${posicao.z}`);
 
     /* cada um olha para uma direção um pouco diferente */
     const giro = document.createElement('a-entity');
@@ -539,7 +622,7 @@ function iniciarExperiencia() {
        sem derrubar a taxa de quadros. */
     const usaAnimacao = Boolean(animal.animacoes)
                         && comportamento !== 'quieto'
-                        && indice < LIMITE_ANIMADOS;
+                        && comAnimacao.has(indice);
 
     if (usaAnimacao) {
       animadas = animadas + 1;
@@ -550,14 +633,39 @@ function iniciarExperiencia() {
       });
     }
 
-    function darVida() {
-      aplicarMovimentoDoCorpo(giro, indice, comportamento);
+    /* Quem é guiado pelo comportamento de espécie
+       (comportamentos.js), e não pelo passeio de ida e volta:
 
-      /* quem começa escondido só passeia depois de aparecer:
-         a saída do esconderijo já usa a posição, e duas
-         animações na mesma propriedade brigam entre si */
-      if (comportamento === 'andarilho' && !esconderijo) {
-        aplicarPasseio(raiz, posicao, indice);
+       - o principal, nos níveis com movimento, sobre um arco na
+         mesma distância (a cobra do nível 5 não: ela fica na
+         pedra, para ser tocada);
+       - os andarilhos à vista, se tiverem animação de andar;
+       - os escondidos numa parede ou no teto, desde o começo,
+         para ficarem com a barriga virada para a superfície —
+         parados até serem encontrados. */
+    const naPedra = indice === 0 && pedraDaCobra;
+    const guiadoPelaVida = nivel.movimento && usaAnimacao && !naPedra
+      && (indice === 0 || comportamento === 'andarilho');
+    const naSuperficie = Boolean(esconderijo && esconderijo.superficie);
+
+    function darVida() {
+      aplicarMovimentoDoCorpo(giro, indice, comportamento,
+        guiadoPelaVida || naSuperficie);
+
+      if (naSuperficie) {
+        ligarVida({ raiz, giro, modelo }, indice, {
+          inicio: esconderijo.superficie,
+          ativo: false
+        });
+      } else if (guiadoPelaVida && !esconderijo) {
+        /* parte das aranhas e baratas já começa na parede ou no
+           teto (nunca o principal, que define a distância) */
+        const sobeParede = indice > 0
+          && (animal.id === 'aranha' || animal.id === 'barata')
+          && sorteia(0, 1) < (animal.id === 'aranha' ? 0.5 : 0.35);
+        ligarVida({ raiz, giro, modelo }, indice, indice === 0
+          ? { arco: { raio: distancia, angulo: (16 + nivel.numero * 4) * Math.PI / 180 } }
+          : { comecarNaParede: sobeParede });
       }
     }
 
@@ -615,9 +723,22 @@ function iniciarExperiencia() {
           deQuantos: escondidosNoTotal
         });
 
-        if (comportamento === 'andarilho') {
-          /* espera a saída terminar antes de começar a passear,
-             senão as duas animações disputam a posição */
+        if (!nivel.movimento) {
+          return;
+        }
+
+        if (naSuperficie) {
+          /* já estava na parede, só esperando: sai andando */
+          const vida = raiz.components['vida-animal'];
+          if (vida) { vida.liberar(); }
+        } else if (guiadoPelaVida || usaAnimacao) {
+          /* espera a saída do esconderijo terminar antes de
+             começar a andar, senão as duas disputam a posição */
+          setTimeout(function () {
+            raiz.removeAttribute('animation__sair');
+            ligarVida({ raiz, giro, modelo }, indice, {});
+          }, 1400);
+        } else if (comportamento === 'andarilho') {
           setTimeout(function () {
             aplicarPasseio(raiz, esconderijo.saida, indice);
           }, 1400);
@@ -637,6 +758,12 @@ function iniciarExperiencia() {
          que a aplicação tem sobre superação. */
       tocouNoAnimal = true;
       marcar('tocou-no-animal', { indice: indice });
+
+      /* quem aceita carinho reage pelo carinho (comportamentos.js),
+         que é mais calmo que o sobressalto */
+      if (raiz.components.carinho) {
+        return;
+      }
 
       const animador = modelo.components.animador;
       const temReacaoPropria = animal.animacoes && animal.animacoes.reagindo;
@@ -660,9 +787,97 @@ function iniciarExperiencia() {
     return { raiz, giro, reacao, modelo, apoio };
   }
 
-  calcularPosicoes().forEach(function (posicao, indice) {
+  /* ---------------------------------------------------------
+     A COBRA DO NÍVEL 5, NUMA PEDRA
+
+     No nível de interação, a cobra principal fica sobre uma
+     pedra baixa e larga, na altura das mãos de quem se abaixa um
+     pouco. É ali que dá para passar a mão nela (ver carinho, em
+     comportamentos.js).
+     --------------------------------------------------------- */
+  const pedraDaCobra = animal.id === 'cobra' && nivel.interacao;
+  const ALTURA_DA_PEDRA = 0.45;
+
+  if (pedraDaCobra) {
+    const pedra = document.createElement('a-entity');
+    pedra.setAttribute('position', `0 0 ${-distancia}`);
+    const bloco = document.createElement('a-box');
+    bloco.setAttribute('width', 1.8);
+    bloco.setAttribute('height', ALTURA_DA_PEDRA);
+    bloco.setAttribute('depth', 1.0);
+    bloco.setAttribute('position', `0 ${ALTURA_DA_PEDRA / 2} 0`);
+    bloco.setAttribute('material', 'color: #85857C; roughness: 1; flatShading: true');
+    pedra.appendChild(bloco);
+    const tampo = document.createElement('a-box');
+    tampo.setAttribute('width', 1.7);
+    tampo.setAttribute('height', 0.04);
+    tampo.setAttribute('depth', 0.92);
+    tampo.setAttribute('position', `0 ${ALTURA_DA_PEDRA} 0`);
+    tampo.setAttribute('material', 'color: #96968C; roughness: 1');
+    pedra.appendChild(tampo);
+    cenarioEl.appendChild(pedra);
+    obstaculos.push({ x: -0.5, z: -distancia, raio: 0.6 }, { x: 0.5, z: -distancia, raio: 0.6 });
+  }
+
+  /* As cópias guiadas por comportamentos.js recebem a descrição
+     do lugar e o jeito da espécie. */
+  const clipesDaVida = animal.animacoes ? {
+    parado: animal.animacoes.parado,
+    /* o sapo não "anda": entre um pulo e outro fica parado, e o
+       pulo é tocado uma vez a cada salto */
+    movendo: animal.id === 'sapo' ? animal.animacoes.parado : animal.animacoes.movendo,
+    correr: animal.id === 'rato' ? 'Run' : null,
+    pulo: animal.id === 'sapo' ? 'Jump' : null
+  } : {};
+
+  function ligarVida(copia, indice, opcoes) {
+    copia.raiz.__vida = Object.assign({
+      especie: animal.id,
+      tamanho: tamanho,
+      superficies: cenario.superficies,
+      obstaculos: obstaculos,
+      limites: limites,
+      pontos: pontosNoChao,
+      modelo: copia.modelo,
+      giro: copia.giro,
+      clipes: clipesDaVida,
+      sorteia: sorteador(nivel.numero * 4111 + indice * 977 + 13)
+    }, opcoes);
+    copia.raiz.setAttribute('vida-animal', '');
+  }
+
+  const posicoesIniciais = calcularPosicoes();
+
+  if (pedraDaCobra) {
+    posicoesIniciais[0].y = ALTURA_DA_PEDRA + 0.02;
+  }
+
+  const ordemDeAnimacao = [0]
+    .concat(posicoesIniciais.map(function (p, i) { return p.esconderijo ? i : -1; })
+      .filter(function (i) { return i > 0; }))
+    .concat(posicoesIniciais.map(function (p, i) { return p.esconderijo ? -1 : i; })
+      .filter(function (i) { return i > 0; }));
+  comAnimacao = new Set(ordemDeAnimacao.slice(0, LIMITE_ANIMADOS));
+
+  posicoesIniciais.forEach(function (posicao, indice) {
     copias.push(criarAnimal(posicao, indice));
   });
+
+  /* passar a mão na cobra da pedra */
+  if (pedraDaCobra && copias[0]) {
+    const cobra = copias[0].raiz;
+    cobra.classList.add('acariciavel');
+    cobra.__carinho = {
+      aoComecar: function (como) {
+        tocouNoAnimal = true;
+        marcar('carinho-inicio', { como: como });
+      },
+      aoTerminar: function (segundos) {
+        marcar('carinho-fim', { segundos: Math.round(segundos * 10) / 10 });
+      }
+    };
+    cobra.setAttribute('carinho', '');
+  }
 
   mostrarEncontrados();
 
@@ -891,7 +1106,8 @@ function iniciarExperiencia() {
   if (MODO_VRBOX) {
     /* curto de propósito: dentro da caixa, ler cansa */
     textoAjuda =
-      'Vire a cabeça para olhar. O joystick anda. Para selecionar, ponha '
+      'Vire a cabeça para olhar. Para andar, use o joystick ou marche no '
+      + 'lugar. Para selecionar, ponha '
       + 'o círculo sobre o objeto e aperte um botão (sem controle, segure '
       + 'o olhar). Segure um botão 2 s para trazer a frente para onde você '
       + 'olha. '
@@ -1357,10 +1573,34 @@ function iniciarExperiencia() {
 
   atualizarConsole();
 
+  /* A procura é anunciada. Os escondidos já existiam desde o
+     nível 2, mas nada dizia que eles estavam lá — e quem não
+     sabe que há o que procurar não procura. */
+  const NOMES_ESCONDIDOS = {
+    aranha: ['aranha escondida', 'aranhas escondidas'],
+    barata: ['barata escondida', 'baratas escondidas'],
+    rato: ['rato escondido', 'ratos escondidos'],
+    sapo: ['sapo escondido', 'sapos escondidos'],
+    cobra: ['cobra escondida', 'cobras escondidas']
+  };
+
+  function textoDoAviso() {
+    let texto = nivel.instrucao;
+    if (escondidosNoTotal > 0) {
+      const nomes = NOMES_ESCONDIDOS[animal.id] || ['escondido', 'escondidos'];
+      const nome = escondidosNoTotal === 1 ? nomes[0] : nomes[1];
+      texto += ` Procure: há ${escondidosNoTotal} ${nome} pelo ambiente.`;
+    }
+    if (pedraDaCobra) {
+      texto += ' Se quiser, aproxime-se da pedra e passe a mão na cobra.';
+    }
+    return texto;
+  }
+
   /* o aviso central repete o nível e a instrução, e some só */
   avisoAbertura.setAttribute('painel-texto', {
     titulo: `Nível ${nivel.numero} de ${NIVEIS.length} — ${nivel.nome}`,
-    texto: nivel.instrucao,
+    texto: textoDoAviso(),
     destacado: true
   });
 
@@ -1461,7 +1701,7 @@ function iniciarExperiencia() {
        também os botões. Fora do óculos ela volta a enxergar só
        os animais — é o que impede a seleção por olhar de acionar
        um botão sozinha. */
-    mira.setAttribute('raycaster', 'objects', '.clicavel, .alvo');
+    mira.setAttribute('raycaster', 'objects', '.clicavel, .clicavel *, .alvo');
 
     /* Entrar em VR exigiu um clique, então o áudio pode voltar. */
     if (somLigado) {
@@ -1478,9 +1718,29 @@ function iniciarExperiencia() {
 
   cena.addEventListener('exit-vr', function () {
     escolherLayout();
-    mira.setAttribute('raycaster', 'objects', '.clicavel');
+    mira.setAttribute('raycaster', 'objects', '.clicavel, .clicavel *');
     mira.setAttribute('fuse', ehMobile);
     console.log('Saiu do modo VR.');
+  });
+
+  /* ---------- joystick dos controles de mão (Quest e afins) ----------
+     O mesmo caminho do círculo "andar": anda na direção do
+     olhar e para nas paredes. Velocidade reduzida (70%) pelo
+     mesmo motivo do VR Box: dentro do óculos, rápido enjoa. */
+  [maoEsquerda, maoDireita].forEach(function (mao) {
+    if (!mao) {
+      return;
+    }
+    mao.addEventListener('thumbstickmoved', function (evento) {
+      const andar = rig.components['andar-toque'];
+      if (!andar || !andar.direcao || andar.ativo) {
+        return;
+      }
+      const x = Math.abs(evento.detail.x) > 0.2 ? evento.detail.x : 0;
+      const y = Math.abs(evento.detail.y) > 0.2 ? evento.detail.y : 0;
+      andar.direcao.x = x * 0.7;
+      andar.direcao.y = y * 0.7;
+    });
   });
 
   cena.addEventListener('controllerconnected', function (evento) {
@@ -1608,7 +1868,7 @@ function iniciarExperiencia() {
 
     avisoAbertura.setAttribute('painel-texto', {
       titulo: `Nível ${nivel.numero} de ${NIVEIS.length} — ${nivel.nome}`,
-      texto: nivel.instrucao,
+      texto: textoDoAviso(),
       altura: 0.34,
       destacado: true
     });

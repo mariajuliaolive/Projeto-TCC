@@ -195,6 +195,7 @@ function vaso(pai, position, escala) {
 }
 
 function arvore(pai, position, altura, corCopa) {
+  obstaculoNaPosicao(position, altura * 0.06 + 0.1);
   const grupo = criar('a-entity', { position }, pai);
   criar('a-cylinder', {
     position: `0 ${altura / 2} 0`, radius: altura * 0.045,
@@ -209,6 +210,7 @@ function arvore(pai, position, altura, corCopa) {
 }
 
 function arbusto(pai, position, raio, cor) {
+  obstaculoNaPosicao(position, raio * 1.1);
   const grupo = criar('a-entity', { position }, pai);
   criar('a-sphere', { position: `0 ${raio * 0.8} 0`, radius: raio, color: cor, roughness: 1, ...POUCAS_FACES }, grupo);
   criar('a-sphere', { position: `${raio * 0.7} ${raio * 0.5} ${raio * 0.2}`, radius: raio * 0.65, color: cor, roughness: 1, ...POUCAS_FACES }, grupo);
@@ -240,6 +242,7 @@ function arbusto(pai, position, raio, cor) {
 /* Pedra: uma esfera de poucas faces, achatada e com as faces
    à mostra (flatShading). Lisa, pareceria uma bola. */
 function pedra(pai, x, z, raio, cor) {
+  obstaculo(x, z, raio * 1.25);
   return criar('a-sphere', {
     position: `${x} ${raio * 0.45} ${z}`,
     radius: raio,
@@ -278,6 +281,7 @@ function cogumelo(pai, x, z, escala) {
 
 /* Árvore de copa redonda, para a mata não ser só de pinheiros. */
 function arvoreFrondosa(pai, position, altura, corCopa) {
+  obstaculoNaPosicao(position, altura * 0.06 + 0.1);
   const grupo = criar('a-entity', { position }, pai);
   criar('a-cylinder', {
     position: `0 ${altura * 0.28} 0`, radius: altura * 0.05,
@@ -324,6 +328,52 @@ function plafon(pai, position) {
 /* Lista preenchida por cada cenário: onde um animal pode estar
    escondido, e a porta que o revela (quando houver). */
 let esconderijos = [];
+
+/* ---------------------------------------------------------
+   SUPERFÍCIES E OBSTÁCULOS (usados por comportamentos.js)
+
+   superficies  os retângulos por onde um animal pode andar:
+                chão, paredes, teto, frente dos armários. Cada
+                um diz quais bordas levam a qual outro, e quais
+                espécies podem andar nele (o rato não sobe na
+                parede).
+
+                u e v são escolhidos para que u × v aponte para
+                DENTRO do cômodo: é para lá que fica a barriga
+                do animal.
+
+   obstaculos   círculos no chão onde há móvel. Os animais
+                desviam deles em vez de atravessá-los.
+   --------------------------------------------------------- */
+let superficies = [];
+let obstaculos = [];
+
+function superficie(definicao) {
+  superficies.push(definicao);
+}
+
+function obstaculo(x, z, raio) {
+  obstaculos.push({ x: x, z: z, raio: raio });
+}
+
+/* as peças que recebem posição em texto ("x y z") */
+function obstaculoNaPosicao(posicao, raio) {
+  const partes = String(posicao).split(' ').map(Number);
+  obstaculo(partes[0], partes[2], raio);
+}
+
+/* Um esconderijo numa parede ou no teto: atrás de um quadro,
+   atrás da geladeira, num canto do teto. "especies" diz quem
+   pode estar lá — rato não se esconde atrás de quadro. */
+function esconderijoNaSuperficie(id, u, v, especies) {
+  esconderijos.push({
+    posicao: null,
+    superficie: { sup: id, u: u, v: v },
+    saida: { x: 0, z: 0 },
+    porta: null,
+    especies: especies
+  });
+}
 
 /* Um esconderijo guarda três coisas·
 
@@ -483,6 +533,41 @@ function montarSala(raiz) {
   plafon(raiz, '0 2.775 -4');
 
   /* onde um bicho se esconderia numa sala */
+  /* ---------- por onde os animais andam ---------- */
+  superficie({ id: 'chao', chao: true, origem: [0, 0, 0], u: [1, 0, 0], v: [0, 0, -1],
+    u0: -3, u1: 3, v0: 0.6, v1: 8.5, semMargemV0: true,
+    ligacoes: { u0: 'paredeEsq', u1: 'paredeDir', v1: 'paredeFundo' } });
+  superficie({ id: 'paredeFundo', origem: [0, 0, -8.49], u: [1, 0, 0], v: [0, 1, 0],
+    u0: -3, u1: 3, v0: 0, v1: 2.8, especies: ['aranha', 'barata'],
+    ligacoes: { v0: 'chao', u0: 'paredeEsq', u1: 'paredeDir', v1: 'teto' } });
+  superficie({ id: 'paredeEsq', origem: [-2.99, 0, 0], u: [0, 0, -1], v: [0, 1, 0],
+    u0: 0.6, u1: 8.5, v0: 0, v1: 2.8, especies: ['aranha', 'barata'],
+    ligacoes: { v0: 'chao', u1: 'paredeFundo', v1: 'teto' } });
+  superficie({ id: 'paredeDir', origem: [2.99, 0, 0], u: [0, 0, 1], v: [0, 1, 0],
+    u0: -8.5, u1: -0.6, v0: 0, v1: 2.8, especies: ['aranha', 'barata'],
+    ligacoes: { v0: 'chao', u0: 'paredeFundo', v1: 'teto' } });
+  superficie({ id: 'teto', origem: [0, 2.79, 0], u: [1, 0, 0], v: [0, 0, 1],
+    u0: -3, u1: 3, v0: -8.5, v1: -0.6, especies: ['aranha'],
+    ligacoes: { u0: 'paredeEsq', u1: 'paredeDir', v0: 'paredeFundo' } });
+
+  /* os móveis que ocupam o chão (a mesa de centro não: dá para
+     passar por baixo dela) */
+  obstaculo(-2.15, -3.6, 0.5);  obstaculo(-2.15, -4.8, 0.5);   // sofá
+  obstaculo(2.55, -4.0, 0.3);   obstaculo(2.55, -4.6, 0.3);   obstaculo(2.55, -5.2, 0.3); // tevê
+  obstaculo(-2.6, -6.4, 0.22);                                   // luminária
+  obstaculo(2.5, -7.4, 0.25);                                    // vaso
+  obstaculo(-2.4, -8.3, 0.25);  obstaculo(-1.8, -8.3, 0.25);   // estante
+  obstaculo(-2.62, -2.75, 0.26);                                 // mesinha
+
+  /* esconderijos só da aranha: atrás dos quadros, atrás da
+     cortina, atrás da tevê e num canto do teto */
+  esconderijoNaSuperficie('paredeEsq', 3.0, 1.75, ['aranha']);
+  esconderijoNaSuperficie('paredeEsq', 4.7, 1.8, ['aranha']);
+  esconderijoNaSuperficie('paredeFundo', -1.02, 1.4, ['aranha']);
+  esconderijoNaSuperficie('paredeFundo', 1.02, 1.9, ['aranha']);
+  esconderijoNaSuperficie('paredeDir', -4.6, 1.2, ['aranha']);
+  esconderijoNaSuperficie('teto', 2.6, -8.1, ['aranha']);
+
   esconderijo(-2.1, -4.2);    // sob o sofá
   esconderijo(-0.35, -4.3);   // sob a mesa de centro
   esconderijo(2.3, -4.6);     // atrás da estante
@@ -652,6 +737,37 @@ function montarCozinha(raiz) {
   plafon(raiz, '0 2.675 -3.5');
 
   /* outros cantos onde uma barata se esconderia */
+  /* ---------- por onde as baratas andam ----------
+     o chão vai só até a frente dos armários; dali se sobe pela
+     porta do armário até a bancada, e da bancada para a parede */
+  superficie({ id: 'chao', chao: true, origem: [0, 0, 0], u: [1, 0, 0], v: [0, 0, -1],
+    u0: -1.88, u1: 2.5, v0: 0.6, v1: 7.5, semMargemV0: true,
+    ligacoes: { u0: 'armario', u1: 'paredeDir', v1: 'paredeFundo' } });
+  superficie({ id: 'armario', origem: [-1.875, 0, 0], u: [0, 0, -1], v: [0, 1, 0],
+    u0: 0.5, u1: 6.5, v0: 0.12, v1: 0.88, especies: ['barata'],
+    ligacoes: { v0: 'chao', v1: 'bancada' } });
+  superficie({ id: 'bancada', origem: [0, 0.93, 0], u: [1, 0, 0], v: [0, 0, -1],
+    u0: -2.5, u1: -1.86, v0: 0.5, v1: 6.5, especies: ['barata'],
+    ligacoes: { u1: 'armario', u0: 'paredeEsqAlta' } });
+  superficie({ id: 'paredeEsqAlta', origem: [-2.49, 0, 0], u: [0, 0, -1], v: [0, 1, 0],
+    u0: 0.5, u1: 6.5, v0: 0.93, v1: 1.6, especies: ['barata'],
+    ligacoes: { v0: 'bancada' } });
+  superficie({ id: 'paredeFundo', origem: [0, 0, -7.49], u: [1, 0, 0], v: [0, 1, 0],
+    u0: -1.88, u1: 2.5, v0: 0, v1: 2.65, especies: ['barata'],
+    ligacoes: { v0: 'chao', u1: 'paredeDir' } });
+  superficie({ id: 'paredeDir', origem: [2.49, 0, 0], u: [0, 0, 1], v: [0, 1, 0],
+    u0: -7.5, u1: -0.6, v0: 0, v1: 1.35, especies: ['barata'],
+    ligacoes: { v0: 'chao', u0: 'paredeFundo' } });
+
+  obstaculo(2.1, -6.2, 0.45);   // geladeira
+  obstaculo(2.15, -4.3, 0.45);  // fogão
+  obstaculo(1.9, -2.6, 0.24);   // lixeira
+
+  /* atrás da geladeira e atrás do fogão: aparecem subindo pela
+     parede quando alguém chega perto */
+  esconderijoNaSuperficie('paredeDir', -6.2, 0.9, ['barata']);
+  esconderijoNaSuperficie('paredeDir', -4.3, 0.5, ['barata']);
+
   esconderijo(1.9, -2.6);      // atrás da lixeira
   esconderijo(2.05, -6.2);     // sob a geladeira
   esconderijo(2.1, -4.3);      // atrás do fogão
@@ -703,9 +819,11 @@ function montarFloresta(raiz) {
   criar('a-cylinder', {
     position: '-3.4 0.16 -5.5', rotation: '0 0 90', radius: 0.16, height: 2.6, color: '#5A4330', 'segments-radial': 9
   }, raiz);
+  obstaculo(-4.4, -5.5, 0.25);  obstaculo(-3.4, -5.5, 0.25);  obstaculo(-2.4, -5.5, 0.25);
   criar('a-cylinder', {
     position: '3.8 0.13 -8.2', rotation: '0 34 90', radius: 0.13, height: 2.0, color: '#4E3A2A', 'segments-radial': 9
   }, raiz);
+  obstaculo(3.0, -7.65, 0.22);  obstaculo(3.8, -8.2, 0.22);  obstaculo(4.6, -8.75, 0.22);
 
   /* pedras */
   [[-1.9, -7.3, 0.28], [2.4, -6.1, 0.22], [-4.6, -9.4, 0.34]].forEach(function (p) {
@@ -751,6 +869,7 @@ function montarFloresta(raiz) {
 
   /* tocos */
   criar('a-cylinder', { position: '5.9 0.2 -7.0', radius: 0.26, height: 0.4, color: '#6B5236', roughness: 1, 'segments-radial': 9 }, raiz);
+  obstaculo(5.9, -7.0, 0.3);  obstaculo(-6.0, -8.6, 0.25);
   criar('a-cylinder', { position: '-6.0 0.15 -8.6', radius: 0.2, height: 0.3, color: '#5A4330', roughness: 1, 'segments-radial': 9 }, raiz);
 
   /* cogumelos ao pé do tronco caído */
@@ -758,6 +877,9 @@ function montarFloresta(raiz) {
   cogumelo(raiz, -3.25, -5.05, 1.1);
 
   /* sob os troncos e entre as pedras */
+  superficie({ id: 'chao', chao: true, origem: [0, 0, 0], u: [1, 0, 0], v: [0, 0, -1],
+    u0: -6, u1: 6, v0: 0.6, v1: 14.5, semMargemV0: true });
+
   esconderijo(-3.4, -5.5);
   esconderijo(3.8, -8.2);
   esconderijo(-1.9, -7.3);
@@ -889,6 +1011,12 @@ function montarQuintal(raiz) {
   arvoreFrondosa(raiz, '9.2 0 -3.2', 4.6, '#4A7038');
 
   /* junto da água, do canteiro e dos vasos */
+  superficie({ id: 'chao', chao: true, origem: [0, 0, 0], u: [1, 0, 0], v: [0, 0, -1],
+    u0: -6, u1: 6, v0: 0.6, v1: 9.5, semMargemV0: true });
+  obstaculo(-4.2, -5.5, 1.1);                          // tanque
+  obstaculo(3.1, -4, 0.1);  obstaculo(5.9, -4, 0.1);   // postes do varal
+  obstaculo(-2.75, -5.9, 0.16);                        // balde
+
   esconderijo(-4.2, -5.5);
   esconderijo(-3.4, 0.2);
   esconderijo(3.2, 0.4);
@@ -927,12 +1055,16 @@ function montarCenario(nome, raiz) {
   }
 
   esconderijos = [];
+  superficies = [];
+  obstaculos = [];
   montar(raiz);
 
   console.log(`Cenário montado: ${nome} — ${esconderijos.length} esconderijos.`);
 
   return {
     limites: LIMITES[nome] || LIMITES.sala,
-    esconderijos: esconderijos
+    esconderijos: esconderijos,
+    superficies: superficies,
+    obstaculos: obstaculos
   };
 }

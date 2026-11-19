@@ -242,17 +242,25 @@
          ========================================================== -->
     <a-entity id="maoEsquerda"
               laser-controls="hand: left"
-              raycaster="objects: .clicavel, .alvo; far: 10"></a-entity>
+              raycaster="objects: .clicavel, .clicavel *, .alvo; far: 10"></a-entity>
 
     <a-entity id="maoDireita"
               laser-controls="hand: right"
-              raycaster="objects: .clicavel, .alvo; far: 10"></a-entity>
+              raycaster="objects: .clicavel, .clicavel *, .alvo; far: 10"></a-entity>
 
     <!-- ==========================================================
          PONTEIRO DA INTERFACE
 
          Dois apontadores, e não um, porque são duas coisas
          diferentes de apontar.
+
+         ".clicavel *" (os filhos) é necessário: o raio do A-Frame
+         só atinge a malha do PRÓPRIO elemento, e a raiz de um
+         animal ou a dobradiça de uma porta não têm malha — ela fica
+         no filho (o modelo, a tábua da porta). Só com ".clicavel" o
+         raio não acertava animal nenhum, e tocar no animal no
+         nível 5 não funcionava. O clique no filho sobe até a raiz,
+         onde está quem o escuta.
 
          A MIRA (dentro da câmera) enxerga apenas .clicavel: os
          animais e as portas de armário. No celular ela seleciona
@@ -291,7 +299,7 @@
         color="#3ED0C0"
         fuse="false"
         fuse-timeout="1200"
-        raycaster="objects: .clicavel; far: 30">
+        raycaster="objects: .clicavel, .clicavel *; far: 30">
       </a-cursor>
     </a-camera>
   </a-entity>
@@ -309,6 +317,8 @@
 <script src="descoberta.js"></script>
 <script src="controles.js"></script>
 <script src="metricas.js"></script>
+<script src="comportamentos.js"></script>
+<script src="joystick.js"></script>
 <script src="vrbox.js"></script>
 <script src="experiencia.js"></script>
 </body>

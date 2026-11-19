@@ -145,7 +145,17 @@ AFRAME.registerComponent('modo-vrbox', {
 
     /* Joystick parado não fica exatamente em zero. Abaixo disto,
        considera-se solto. */
-    zonaMorta: { type: 'number', default: 0.25 }
+    zonaMorta: { type: 'number', default: 0.25 },
+
+    /* Velocidade máxima, como fração da do círculo "andar"
+       (1,4 m/s). Dentro do óculos, 1,4 m/s é rápido: o corpo
+       está parado e os olhos dizem que ele corre, e essa
+       diferença é o que enjoa. 0,7 dá cerca de 1 m/s, um passo
+       calmo. */
+    ritmo: { type: 'number', default: 0.7 },
+
+    /* Andar marchando no lugar, pelo sensor do celular. */
+    marcha: { type: 'boolean', default: true }
   },
 
   init: function () {
@@ -154,10 +164,13 @@ AFRAME.registerComponent('modo-vrbox', {
     this.apertadoDesde = 0;        // quando o botão foi apertado
     this.botoes = {};              // estado de cada botão, por índice
     this.botaoDoAperto = null;     // qual botão começou o aperto atual
-    this.eixoUtil = {};            // eixos que já passaram pelo centro
-    this.eixoDirecional = {};      // eixos que são direcional de 8 posições
+    this.estadoEixos = JOYSTICK.novoEstado();   // ver joystick.js
+    this.calibracao = JOYSTICK.lerCalibracao();
+    this.andarSuave = { x: 0, y: 0 };           // direção já amaciada
+    this.passos = [];                            // instantes dos últimos passos
+    this.marchandoAte = 0;
     this.ultimoSinal = null;       // o que chegou do controle por último
-    this.teclasAndar = { cima: false, baixo: false, esquerda: false, direita: false };
+    this.teclasAndar = {};                       // tecla de seta → vetor
     this.estereo = new AFRAME.THREE.StereoCamera();
     this.tamanho = new AFRAME.THREE.Vector2();
 
@@ -181,6 +194,14 @@ AFRAME.registerComponent('modo-vrbox', {
     if (this.data.controle) {
       this.avisarQueHaControle();
     }
+
+    /* a página de entrada deixa desligar a marcha no lugar */
+    try {
+      this.marchaDesligada = localStorage.getItem('vr-exposicao:vrbox-marcha') === 'nao';
+    } catch (erro) { /* navegação anônima */ }
+
+    this.aoMovimentoDoCelular = this.aoMovimentoDoCelular.bind(this);
+    window.addEventListener('devicemotion', this.aoMovimentoDoCelular);
 
     /* anota o giro da cabeça ao sair, para a página seguinte */
     this.aoSair = function () {
@@ -212,7 +233,7 @@ AFRAME.registerComponent('modo-vrbox', {
       return;
     }
 
-    mira.setAttribute('raycaster', 'objects', '.clicavel, .alvo');
+    mira.setAttribute('raycaster', 'objects', '.clicavel, .clicavel *, .alvo');
 
     /* downEvents e upEvents com nomes que ninguém dispara: com
        eles preenchidos, o cursor do A-Frame deixa de escutar a
@@ -344,6 +365,18 @@ AFRAME.registerComponent('modo-vrbox', {
     if (!this.apertadoDesde) {
       this.apertadoDesde = performance.now();
       this.fonteDoAperto = fonte;
+
+      /* Apertar sobre um animal que aceita carinho começa o
+         "passar a mão": enquanto o botão estiver apertado, o
+         olhar desliza sobre ele como uma mão (ver carinho, em
+         comportamentos.js). */
+      const cursor = this.mira && this.mira.components.cursor;
+      const alvo = cursor && cursor.intersectedEl;
+      const animal = alvo && alvo.closest && alvo.closest('.acariciavel');
+      if (animal) {
+        this.acariciando = animal;
+        animal.emit('carinho-apertou', { cursor: this.mira }, false);
+      }
     }
   },
 
@@ -354,6 +387,17 @@ AFRAME.registerComponent('modo-vrbox', {
     const segurou = performance.now() - this.apertadoDesde;
     this.apertadoDesde = 0;
     this.fonteDoAperto = null;
+
+    const acariciado = this.acariciando;
+    if (acariciado) {
+      this.acariciando = null;
+      acariciado.emit('carinho-soltou', null, false);
+      /* segurar sobre o animal é passar a mão, e não
+         recentralizar a cena */
+      if (segurou >= this.data.segurar) {
+        return;
+      }
+    }
 
     if (segurou >= this.data.segurar) {
       this.recentralizar();
@@ -438,13 +482,7 @@ AFRAME.registerComponent('modo-vrbox', {
      botão.
      --------------------------------------------------------- */
   direcaoDaTecla: function (evento) {
-    const mapa = {
-      ArrowUp: 'cima', KeyW: 'cima',
-      ArrowDown: 'baixo', KeyS: 'baixo',
-      ArrowLeft: 'esquerda', KeyA: 'esquerda',
-      ArrowRight: 'direita', KeyD: 'direita'
-    };
-    return mapa[evento.code] || mapa[evento.key] || null;
+    return JOYSTICK.vetorDaTecla(evento);
   },
 
   ehTeclaIgnorada: function (evento) {
@@ -461,7 +499,7 @@ AFRAME.registerComponent('modo-vrbox', {
 
     const direcao = this.direcaoDaTecla(evento);
     if (direcao) {
-      this.teclasAndar[direcao] = true;
+      this.teclasAndar[evento.code || evento.key] = direcao;
     } else if (!evento.repeat) {
       this.aoApertar('tecla');
     }
@@ -476,7 +514,7 @@ AFRAME.registerComponent('modo-vrbox', {
     }
     const direcao = this.direcaoDaTecla(evento);
     if (direcao) {
-      this.teclasAndar[direcao] = false;
+      delete this.teclasAndar[evento.code || evento.key];
     } else {
       this.aoSoltar('tecla');
     }
@@ -599,52 +637,10 @@ AFRAME.registerComponent('modo-vrbox', {
     }
 
     /* ---------- direção ----------
-
-       O joystick pode chegar de dois jeitos, conforme o controle.
-
-       PAR DE EIXOS. Um eixo para o lado, outro para frente e
-       trás. Pode ser qualquer par — 0 e 1, 2 e 3, 6 e 7... — e
-       a primeira versão só olhava os dois primeiros. Agora vale
-       o par que estiver mais empurrado.
-
-       DIRECIONAL NUM EIXO SÓ. Alguns controles mandam as oito
-       direções num único número: parado ele fica acima de 1
-       (cerca de 1,29), e cada direção é um valor entre -1 e 1.
-       -1 é para cima, e a cada 2/7 gira-se 45 graus no sentido
-       do relógio. É assim que o Chrome entrega o "hat" de muitos
-       controles genéricos no Android. */
-    for (let i = 0; i < eixos.length; i++) {
-      const v = eixos[i];
-      if (this.eixoDirecional[i] === undefined) {
-        /* o primeiro valor visto diz que tipo de eixo é */
-        this.eixoDirecional[i] = Math.abs(v) > 1.05;
-      }
-      if (!this.eixoDirecional[i] && Math.abs(v) < 0.5) {
-        this.eixoUtil[i] = true;
-      }
-    }
-    const valor = function (i) {
-      return componente.eixoUtil[i] ? eixos[i] || 0 : 0;
-    };
-
-    let x = 0;
-    let y = 0;
-    for (let i = 0; i + 1 < eixos.length; i += 2) {
-      if (Math.hypot(valor(i), valor(i + 1)) > Math.hypot(x, y)) {
-        x = valor(i);
-        y = valor(i + 1);
-      }
-    }
-
-    for (let i = 0; i < eixos.length; i++) {
-      const v = eixos[i];
-      if (this.eixoDirecional[i] && Math.abs(v) <= 1.0001) {
-        const passo = Math.round((v + 1) * 3.5) % 8;     // 0 = cima, 2 = direita...
-        const angulo = passo * Math.PI / 4;
-        x = Math.sin(angulo);
-        y = -Math.cos(angulo);
-      }
-    }
+       A leitura do joystick fica em joystick.js, compartilhada
+       com a página de calibração: as duas precisam entender o
+       controle do mesmo jeito. */
+    let { x, y } = JOYSTICK.lerEixos(eixos, this.estadoEixos);
 
     if (Math.hypot(x, y) < this.data.zonaMorta) {
       x = 0;
@@ -715,7 +711,7 @@ AFRAME.registerComponent('modo-vrbox', {
   /* =========================================================
      A CADA QUADRO
      ========================================================= */
-  tick: function () {
+  tick: function (tempo, intervalo) {
     this.instalarDesenhoDuplo();
 
     /* controle */
@@ -726,19 +722,91 @@ AFRAME.registerComponent('modo-vrbox', {
     }
 
     /* teclado soma com o controle */
-    const t = this.teclasAndar;
-    if (t.cima) { direcao.y = -1; }
-    if (t.baixo) { direcao.y = 1; }
-    if (t.esquerda) { direcao.x = -1; }
-    if (t.direita) { direcao.x = 1; }
+    Object.keys(this.teclasAndar).forEach(function (tecla) {
+      const v = this.teclasAndar[tecla];
+      direcao.x += v.x;
+      direcao.y += v.y;
+    }, this);
+
+    /* A calibração feita em vrbox.html gira a leitura para que
+       "frente" no controle seja frente na cena. */
+    direcao = JOYSTICK.corrigir(direcao, this.calibracao);
+
+    /* Marchar no lugar anda para a frente (ver aoMovimentoDoCelular). */
+    if (this.data.marcha && !this.marchaDesligada && performance.now() < this.marchandoAte) {
+      direcao.y = Math.min(direcao.y, -0.8);
+    }
+
+    const forca = Math.hypot(direcao.x, direcao.y);
+    if (forca > 1) {
+      direcao.x /= forca;
+      direcao.y /= forca;
+    }
+
+    /* ARRANQUE E PARADA SUAVES
+
+       Parar ou sair do lugar de uma vez é o movimento que mais
+       enjoa em Realidade Virtual: os olhos veem uma aceleração
+       que o ouvido interno não sente. Aqui a velocidade chega
+       ao valor pedido em cerca de um terço de segundo. */
+    const passo = 1 - Math.exp(-(intervalo || 16) / 1000 * 7);
+    const suave = this.andarSuave;
+    suave.x += (direcao.x * this.data.ritmo - suave.x) * passo;
+    suave.y += (direcao.y * this.data.ritmo - suave.y) * passo;
+    if (Math.abs(suave.x) < 0.01 && !direcao.x) { suave.x = 0; }
+    if (Math.abs(suave.y) < 0.01 && !direcao.y) { suave.y = 0; }
 
     /* Quem anda é o componente andar-toque, o mesmo do círculo
        na tela: ele já sabe andar na direção do olhar e parar
        nas paredes. Aqui só se diz para onde. */
     const andar = this.rig && this.rig.components['andar-toque'];
     if (andar && andar.direcao && !andar.ativo) {
-      andar.direcao.x = direcao.x;
-      andar.direcao.y = direcao.y;
+      andar.direcao.x = suave.x;
+      andar.direcao.y = suave.y;
+    }
+  },
+
+  /* ---------------------------------------------------------
+     MARCHAR NO LUGAR
+
+     O celular não sabe ONDE a pessoa está — só para onde ela
+     olha. Andar de verdade pela sala não move ninguém na cena.
+     O que ele sente é o chacoalhar de cada passo: marchando no
+     lugar, a cabeça sobe e desce num ritmo que o acelerômetro
+     percebe bem.
+
+     Cada pico de aceleração acima de 1,2 m/s² (já sem a
+     gravidade) conta como passo. Dois passos em menos de 1,5 s
+     começam a caminhada, e ela continua enquanto os passos
+     continuarem. Um passo só — um esbarrão, um ajeitar na
+     cadeira — não move ninguém. Virar a cabeça quase não mexe
+     o acelerômetro, então olhar em volta também não.
+     --------------------------------------------------------- */
+  aoMovimentoDoCelular: function (evento) {
+    const a = evento.accelerationIncludingGravity;
+    if (!a || a.x === null) {
+      return;
+    }
+    const modulo = Math.hypot(a.x, a.y, a.z);
+
+    /* a gravidade é o que fica quando se tira a média lenta */
+    this.gravidade = this.gravidade === undefined
+      ? modulo
+      : this.gravidade * 0.92 + modulo * 0.08;
+    const sacudida = modulo - this.gravidade;
+
+    const agora = performance.now();
+    if (sacudida > 1.2 && !this.noPico && agora - (this.ultimoPasso || 0) > 280) {
+      this.noPico = true;
+      this.ultimoPasso = agora;
+      this.passos = this.passos.filter(function (t) { return agora - t < 1500; });
+      this.passos.push(agora);
+      if (this.passos.length >= 2) {
+        this.marchandoAte = agora + 650;
+        this.anotarSinal('passos (marchando)');
+      }
+    } else if (sacudida < 0.3) {
+      this.noPico = false;
     }
   },
 
@@ -819,6 +887,7 @@ AFRAME.registerComponent('modo-vrbox', {
   remove: function () {
     this.ligado = false;
     window.removeEventListener('pagehide', this.aoSair);
+    window.removeEventListener('devicemotion', this.aoMovimentoDoCelular);
     window.removeEventListener('keydown', this.aoTeclaDescer);
     window.removeEventListener('keyup', this.aoTeclaSubir);
     document.removeEventListener('visibilitychange', this.aoVoltar);

@@ -151,6 +151,59 @@
   display: none;
 }
 
+/* ---------- calibração e marcha ---------- */
+.calibrar {
+  margin-top: 16px;
+}
+
+.calibrar__texto {
+  margin-bottom: 10px;
+}
+
+.calibrar--ativa .calibrar__texto {
+  color: var(--verde);
+  font-weight: 600;
+}
+
+.calibrar__acoes {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.calibrar__apagar {
+  border: 0;
+  background: none;
+  color: var(--texto-suave);
+  text-decoration: underline;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.marcha {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--texto-suave);
+  cursor: pointer;
+}
+
+.marcha input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  accent-color: var(--verde);
+}
+
+.marcha strong {
+  color: var(--texto);
+}
+
 /* ---------- ajuste ---------- */
 .ajuste {
   display: grid;

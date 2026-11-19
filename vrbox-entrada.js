@@ -423,3 +423,137 @@ document.addEventListener('visibilitychange', function () {
     manterTelaAcesa();
   }
 });
+
+/* =========================================================
+   6. CALIBRAR O JOYSTICK
+
+   Duas perguntas: para onde vai "frente" e para onde vai
+   "direita". A resposta fica guardada neste aparelho e a
+   experiência gira a leitura do controle de acordo (ver
+   joystick.js). Sem isso, um controle feito para ser segurado
+   de lado anda de lado quando se empurra para a frente.
+   ========================================================= */
+const caixaCalibrar = document.querySelector('.calibrar');
+const textoCalibrar = document.querySelector('#calibrarTexto');
+const botaoCalibrar = document.querySelector('#calibrar');
+const botaoApagar = document.querySelector('#apagarCalibracao');
+
+let calibrando = null;          // 'frente' | 'direita' | null
+let leituraFrente = null;
+let empurradoDesde = 0;
+let ultimaLeitura = null;
+const estadoCalibracao = JOYSTICK.novoEstado();
+
+function mostrarCalibracao() {
+  let guardada = null;
+  try {
+    guardada = JSON.parse(localStorage.getItem('vr-exposicao:vrbox-joystick'));
+  } catch (erro) { /* nada guardado */ }
+  botaoApagar.hidden = !guardada;
+  if (!calibrando) {
+    textoCalibrar.textContent = guardada
+      ? 'Joystick calibrado neste celular. Se ainda andar torto, calibre de novo.'
+      : 'Para andar na direção certa, calibre o joystick: toque no botão e '
+        + 'siga o que aparecer aqui.';
+  }
+}
+
+function pedir(qual) {
+  calibrando = qual;
+  empurradoDesde = 0;
+  caixaCalibrar.classList.add('calibrar--ativa');
+  textoCalibrar.textContent = qual === 'frente'
+    ? 'Empurre o joystick para a FRENTE e segure…'
+    : 'Agora empurre para a DIREITA e segure…';
+}
+
+/* A leitura de agora: do joystick ou de uma seta do teclado. */
+let setaApertada = null;
+window.addEventListener('keydown', function (evento) {
+  const v = JOYSTICK.vetorDaTecla(evento);
+  if (v && calibrando) {
+    setaApertada = v;
+    evento.preventDefault();
+  }
+});
+window.addEventListener('keyup', function (evento) {
+  if (JOYSTICK.vetorDaTecla(evento)) {
+    setaApertada = null;
+  }
+});
+
+function leituraAtual() {
+  if (setaApertada) {
+    return setaApertada;
+  }
+  const gamepad = primeiroGamepad();
+  if (!gamepad) {
+    return { x: 0, y: 0 };
+  }
+  return JOYSTICK.lerEixos(Array.prototype.slice.call(gamepad.axes), estadoCalibracao);
+}
+
+function acompanharCalibracao() {
+  if (!calibrando) {
+    return;
+  }
+  const v = leituraAtual();
+  const forca = Math.hypot(v.x, v.y);
+
+  if (forca > 0.6) {
+    if (!empurradoDesde) {
+      empurradoDesde = performance.now();
+    }
+    ultimaLeitura = { x: v.x / forca, y: v.y / forca };
+
+    /* segurou por um terço de segundo: vale */
+    if (performance.now() - empurradoDesde > 350) {
+      if (calibrando === 'frente') {
+        leituraFrente = ultimaLeitura;
+        calibrando = 'esperandoSoltar';
+        textoCalibrar.textContent = 'Pode soltar.';
+      } else if (calibrando === 'direita') {
+        const calibracao = JOYSTICK.calcularCalibracao(leituraFrente, ultimaLeitura);
+        JOYSTICK.guardarCalibracao(calibracao);
+        calibrando = null;
+        caixaCalibrar.classList.remove('calibrar--ativa');
+        textoCalibrar.textContent = 'Pronto! Joystick calibrado'
+          + (calibracao.espelhado ? ' (estava invertido).' : '.');
+        botaoApagar.hidden = false;
+        return;
+      }
+    }
+  } else {
+    empurradoDesde = 0;
+    if (calibrando === 'esperandoSoltar') {
+      pedir('direita');
+    }
+  }
+  requestAnimationFrame(acompanharCalibracao);
+}
+
+botaoCalibrar.addEventListener('click', function () {
+  pedir('frente');
+  acompanharCalibracao();
+});
+
+botaoApagar.addEventListener('click', function () {
+  JOYSTICK.apagarCalibracao();
+  mostrarCalibracao();
+});
+
+mostrarCalibracao();
+
+/* =========================================================
+   7. MARCHAR NO LUGAR (ligado ou desligado)
+   ========================================================= */
+const campoMarcha = document.querySelector('#marcha');
+try {
+  campoMarcha.checked = localStorage.getItem('vr-exposicao:vrbox-marcha') !== 'nao';
+} catch (erro) { /* navegação anônima */ }
+
+campoMarcha.addEventListener('change', function () {
+  try {
+    localStorage.setItem('vr-exposicao:vrbox-marcha', campoMarcha.checked ? 'sim' : 'nao');
+  } catch (erro) { /* navegação anônima */ }
+});
