@@ -175,12 +175,33 @@ AFRAME.registerComponent('painel-texto', {
          dentro dele e pode ocupar boa parte da altura. Com
          título, é um painel de leitura e precisa caber em várias
          linhas. Daí a diferença grande entre os dois valores. */
-      const tamanhoTexto = d.titulo ? A * 0.115 : A * 0.30;
+      let tamanhoTexto = d.titulo ? A * 0.115 : A * 0.30;
       ctx.font = '400 ' + tamanhoTexto + 'px ' + fonte;
       ctx.fillStyle = '#ECF1F8';
 
-      const linhas = this.quebrarEmLinhas(d.texto, L - margem * 2);
-      const alturaLinha = tamanhoTexto * 1.35;
+      let linhas = this.quebrarEmLinhas(d.texto, L - margem * 2);
+      let alturaLinha = tamanhoTexto * 1.35;
+
+      /* TEXTO QUE NÃO CABE
+
+         Como a letra acompanha a altura do painel, um texto longo
+         não cabe em painel nenhum: aumentar o painel aumenta a
+         letra junto. A última linha simplesmente saía pela borda
+         — foi o que aconteceu com a ajuda do VR Box.
+
+         Então, se não couber, a letra diminui um pouco de cada
+         vez até caber, com um piso de 60% do tamanho normal para
+         continuar legível. */
+      if (d.titulo) {
+        const disponivel = A - y - margem;
+        const minimo = tamanhoTexto * 0.6;
+        while (linhas.length * alturaLinha > disponivel && tamanhoTexto > minimo) {
+          tamanhoTexto = tamanhoTexto * 0.94;
+          ctx.font = '400 ' + tamanhoTexto + 'px ' + fonte;
+          linhas = this.quebrarEmLinhas(d.texto, L - margem * 2);
+          alturaLinha = tamanhoTexto * 1.35;
+        }
+      }
 
       /* sem título, o texto fica centralizado na vertical
          (é o caso dos botões) */

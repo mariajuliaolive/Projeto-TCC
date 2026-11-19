@@ -59,6 +59,22 @@ if (MODO_VRBOX) {
   if (cenaVrbox) {
     cenaVrbox.setAttribute('device-orientation-permission-ui', 'enabled', false);
   }
+
+  /* LETRA NÍTIDA
+
+     Os painéis são desenhados num canvas e colados na cena como
+     imagem. Com 760 pixels por metro, a imagem tem MENOS pixels
+     do que a tela usa para mostrá-la dentro do VR Box — a lente
+     amplia, e a letra fica borrada. O dobro resolve. Fica só
+     aqui, porque no computador não faz diferença e custa
+     memória. Precisa acontecer antes de a cena montar os
+     painéis, e por isso está no carregamento do arquivo. */
+  ['painel-texto', 'console-cena'].forEach(function (nome) {
+    const componente = AFRAME.components[nome];
+    if (componente && componente.Component) {
+      componente.Component.prototype.PIXELS_POR_METRO = 1520;
+    }
+  });
 }
 
 /* ---------------------------------------------------------
@@ -363,9 +379,7 @@ AFRAME.registerComponent('modo-vrbox', {
   /* Uma frase sobre o que chega do controle agora. */
   descreverSinal: function () {
     if (!this.ultimoSinal) {
-      return this.temControle
-        ? 'controle esperado, mas nenhum sinal ainda.'
-        : 'nenhum sinal ainda.';
+      return 'aguardando sinal.';
     }
     const segundos = Math.round((performance.now() - this.ultimoSinal.quando) / 1000);
     return this.ultimoSinal.texto

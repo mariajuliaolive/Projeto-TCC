@@ -807,6 +807,31 @@ function iniciarExperiencia() {
     avisoAbertura.setAttribute('painel-texto', { largura: 0.74, altura: 0.42 });
   }
 
+  /* VR BOX: o arranjo de óculos, AUMENTADO.
+
+     Dentro da caixa cada olho vê meia tela, ampliada pela lente,
+     e o texto do arranjo lateral ficava com menos de 2 graus de
+     altura — pouco para lentes simples, que borram as bordas.
+     Tudo cresce cerca de 35%, e o console vai mais para a
+     esquerda (48 graus em vez de 26) e um pouco mais para baixo
+     (18 graus), para o tamanho maior não tapar a frente da cena:
+     olhando reto, ele ocupa só o canto de baixo à esquerda. */
+  function layoutVrbox() {
+    layoutLateral();
+
+    consoleCena.setAttribute('position', '-0.650 1.316 -0.585');
+    consoleCena.setAttribute('rotation', '-18 48 0');
+    consoleCena.setAttribute('scale', '1.35 1.35 1.35');
+
+    avisoAbertura.setAttribute('scale', '1.3 1.3 1.3');
+    /* a ajuda do VR Box é a mais longa: o painel fica mais largo
+       e mais alto, e um pouco menos ampliado, para ocupar a mesma
+       área da visão com letra maior */
+    painelAjuda.setAttribute('scale', '1.15 1.15 1.15');
+    painelAjuda.setAttribute('painel-texto', { largura: 1.05, altura: 0.6 });
+    escalaAnsiedade.setAttribute('scale', '1.25 1.25 1.25');
+  }
+
   /* Os botões acompanham o painel: se ele muda de tamanho e
      eles não, sobram para fora das bordas.
 
@@ -840,7 +865,9 @@ function iniciarExperiencia() {
 
     /* No VR Box a tela está dividida em duas e a pessoa gira a
        cabeça como num óculos: vale o arranjo de óculos. */
-    if (temToque && !cena.is('vr-mode') && !MODO_VRBOX) {
+    if (MODO_VRBOX) {
+      layoutVrbox();
+    } else if (temToque && !cena.is('vr-mode')) {
       layoutCelular();
     } else {
       layoutLateral();
@@ -862,14 +889,14 @@ function iniciarExperiencia() {
   let textoAjuda;
 
   if (MODO_VRBOX) {
+    /* curto de propósito: dentro da caixa, ler cansa */
     textoAjuda =
-      'Vire a cabeça para olhar em volta. Use o joystick do controle para '
-      + 'andar. Para selecionar, coloque o círculo sobre o objeto e aperte '
-      + 'um botão do controle — sem controle, mantenha o olhar até o '
-      + 'círculo fechar. Segure um botão por 2 segundos para trazer a '
-      + 'frente da cena para onde você está olhando. '
+      'Vire a cabeça para olhar. O joystick anda. Para selecionar, ponha '
+      + 'o círculo sobre o objeto e aperte um botão (sem controle, segure '
+      + 'o olhar). Segure um botão 2 s para trazer a frente para onde você '
+      + 'olha. '
       + comoProcurar
-      + 'Use "Sair" para encerrar a qualquer momento.';
+      + '"Sair" encerra a qualquer momento.';
   } else if (ehMobile) {
     mira.setAttribute('fuse', true);
     textoAjuda =
@@ -1518,9 +1545,8 @@ function iniciarExperiencia() {
   function textoDaPreparacao() {
     const modo = cena.components['modo-vrbox'];
     const sinal = modo ? modo.descreverSinal() : '';
-    return 'Com o óculos no rosto, aperte qualquer botão do controle. '
-         + 'Sem controle, olhe para este quadro até o círculo fechar.  '
-         + 'Controle: ' + sinal;
+    return 'Já de óculos, aperte qualquer botão. Sem controle, olhe para '
+         + 'este quadro até o círculo fechar.  Controle: ' + sinal;
   }
 
   function comecarPreparacaoVrbox() {
@@ -1529,9 +1555,9 @@ function iniciarExperiencia() {
     /* o quadro fica na altura dos olhos e um pouco mais alto,
        para caber a linha do controle */
     avisoAbertura.setAttribute('painel-texto', {
-      titulo: 'Coloque o celular no VR Box',
+      titulo: 'Coloque o óculos',
       texto: textoDaPreparacao(),
-      altura: 0.42,
+      altura: 0.46,
       destacado: true
     });
     relogioDoSinal = setInterval(function () {
