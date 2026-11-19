@@ -136,7 +136,10 @@ AFRAME.registerComponent('modo-vrbox', {
     this.ligado = true;
     this.temControle = false;
     this.apertadoDesde = 0;        // quando o botão foi apertado
-    this.botoesAntes = [];
+    this.botoes = {};              // estado de cada botão, por índice
+    this.botaoDoAperto = null;     // qual botão começou o aperto atual
+    this.eixoUtil = {};            // eixos que já passaram pelo centro
+    this.ultimoSinal = null;       // o que chegou do controle por último
     this.teclasAndar = { cima: false, baixo: false, esquerda: false, direita: false };
     this.estereo = new AFRAME.THREE.StereoCamera();
     this.tamanho = new AFRAME.THREE.Vector2();
@@ -208,6 +211,12 @@ AFRAME.registerComponent('modo-vrbox', {
     mira.setAttribute('animation__fechando', {
       property: 'scale', startEvents: 'fusing', easing: 'linear',
       dur: this.data.olhar, from: '1 1 1', to: '0.25 0.25 0.25'
+    });
+    /* Pulso a cada botão recebido. Sem ele, apertar sem nada na
+       mira parece igual a o controle não funcionar. */
+    mira.setAttribute('animation__pulso', {
+      property: 'scale', startEvents: 'vrbox-pulso', easing: 'easeOutQuad',
+      dur: 250, from: '1.8 1.8 1.8', to: '1 1 1'
     });
     mira.setAttribute('animation__abrindo', {
       property: 'scale', startEvents: 'mouseleave, click', easing: 'easeOutQuad',
@@ -334,7 +343,32 @@ AFRAME.registerComponent('modo-vrbox', {
       return;
     }
 
+    /* Avisa a cena que houve um botão, esteja a mira onde
+       estiver. É o que dá a partida no primeiro nível: ali a
+       pessoa acabou de pôr o óculos e não precisa mirar nada. */
+    this.el.emit('vrbox-botao', { fonte: fonte });
+    if (this.mira) {
+      this.mira.emit('vrbox-pulso', null, false);
+    }
+
     this.selecionar();
+  },
+
+  /* Anota o último sinal, para o quadro de preparo mostrar. */
+  anotarSinal: function (texto) {
+    this.ultimoSinal = { texto: texto, quando: performance.now() };
+  },
+
+  /* Uma frase sobre o que chega do controle agora. */
+  descreverSinal: function () {
+    if (!this.ultimoSinal) {
+      return this.temControle
+        ? 'controle esperado, mas nenhum sinal ainda.'
+        : 'nenhum sinal ainda.';
+    }
+    const segundos = Math.round((performance.now() - this.ultimoSinal.quando) / 1000);
+    return this.ultimoSinal.texto
+      + (segundos < 2 ? ' (agora)' : ` (há ${segundos} s)`) + '.';
   },
 
   /* ---------------------------------------------------------
@@ -408,6 +442,7 @@ AFRAME.registerComponent('modo-vrbox', {
       return;
     }
     this.avisarQueHaControle();
+    this.anotarSinal('tecla ' + (evento.key === ' ' ? 'Espaço' : evento.key));
 
     const direcao = this.direcaoDaTecla(evento);
     if (direcao) {
@@ -437,86 +472,149 @@ AFRAME.registerComponent('modo-vrbox', {
 
      No modo de jogo, o controle aparece para o navegador como
      um gamepad. Não há evento para "botão apertado": o estado
-     precisa ser lido a cada quadro, e a mudança de solto para
-     apertado é detectada comparando com o quadro anterior.
+     precisa ser lido a cada quadro e comparado com o anterior.
+
+     TRÊS CUIDADOS, aprendidos no teste com o controle de verdade
+
+     1. DUAS FONTES. A experiência roda dentro de vrbox.html, e
+        em alguns celulares o quadro de dentro enxerga o
+        controle mal ou nada. A página de fora enxerga e repassa
+        (window.__controleExterno). As duas leituras são somadas:
+        um botão conta como apertado se qualquer uma o vir.
+
+     2. BOTÃO PRESO. Controles baratos costumam informar algum
+        botão ou gatilho como apertado o tempo todo. A primeira
+        versão esperava TODOS os botões soltos para registrar o
+        clique — com um preso, nunca registrava. Agora cada botão
+        é acompanhado sozinho: o clique é o aperto e a soltura do
+        MESMO botão, e um botão que já aparece apertado é
+        ignorado até ser solto uma vez.
+
+     3. EIXO PRESO. Do mesmo jeito, alguns informam um eixo que
+        não existe parado em -1 ou 1, o que faria a pessoa andar
+        sozinha. Um eixo só passa a valer depois de ter sido visto
+        perto do centro — e um joystick solto está no centro.
 
      Os botões 12 a 15 são as setas (direcional) no padrão do
      navegador; eles andam, não selecionam.
-
-     Se esta página estiver dentro de vrbox.html e não enxergar
-     o controle por conta própria, usa o que a página de fora
-     enxerga e repassa (window.__controleExterno).
      --------------------------------------------------------- */
-  lerGamepad: function () {
-    let gamepad = null;
+  lerControles: function () {
+    const lidos = [];
 
     if (navigator.getGamepads) {
       const lista = navigator.getGamepads();
       for (let i = 0; i < lista.length; i++) {
         if (lista[i] && lista[i].connected !== false) {
-          gamepad = lista[i];
-          break;
+          lidos.push({ fonte: 'direto', pad: lista[i] });
         }
       }
     }
 
-    if (!gamepad && window.__controleExterno
-        && performance.now() - window.__controleExterno.recebidoEm < 250) {
-      gamepad = window.__controleExterno;
+    const externo = window.__controleExterno;
+    if (externo && performance.now() - externo.recebidoEm < 250) {
+      lidos.push({ fonte: 'repassado', pad: externo });
     }
 
-    return gamepad;
+    return lidos;
   },
 
-  tratarGamepad: function (gamepad) {
-    const padrao = gamepad.mapping === 'standard';
+  estaApertado: function (botao) {
+    if (!botao) {
+      return false;
+    }
+    if (typeof botao !== 'object') {
+      return Boolean(botao);
+    }
+    return Boolean(botao.pressed) || (botao.value || 0) > 0.5;
+  },
+
+  tratarControles: function (lidos) {
+    const padrao = lidos.some(function (l) { return l.pad.mapping === 'standard'; });
     const setas = padrao ? [12, 13, 14, 15] : [];
-    let algumApertado = false;
-    let mudou = false;
+    const apertados = {};
+    const eixos = [];
+    const componente = this;
+    let fontes = [];
 
-    for (let i = 0; i < gamepad.buttons.length; i++) {
-      const botao = gamepad.buttons[i];
-      const apertado = typeof botao === 'object' ? botao.pressed : Boolean(botao);
-
-      if (apertado !== Boolean(this.botoesAntes[i])) {
-        mudou = true;
+    lidos.forEach(function (lido) {
+      fontes.push(lido.fonte);
+      for (let i = 0; i < lido.pad.buttons.length; i++) {
+        if (componente.estaApertado(lido.pad.buttons[i])) {
+          apertados[i] = true;
+        }
       }
-      this.botoesAntes[i] = apertado;
+      for (let i = 0; i < lido.pad.axes.length; i++) {
+        const v = lido.pad.axes[i] || 0;
+        if (eixos[i] === undefined || Math.abs(v) > Math.abs(eixos[i])) {
+          eixos[i] = v;
+        }
+      }
+    });
+    fontes = fontes.filter(function (f, i) { return fontes.indexOf(f) === i; }).join(' + ');
 
-      if (apertado && setas.indexOf(i) === -1) {
-        algumApertado = true;
+    /* ---------- botões, um a um ---------- */
+    const total = Math.max.apply(null, lidos.map(function (l) { return l.pad.buttons.length; }).concat([0]));
+    for (let i = 0; i < total; i++) {
+      const agora = Boolean(apertados[i]);
+      let estado = this.botoes[i];
+
+      if (!estado) {
+        /* primeira vez que este botão é visto: se já está
+           apertado, é tratado como preso */
+        this.botoes[i] = { apertado: agora, preso: agora };
+        continue;
+      }
+
+      if (agora && !estado.apertado) {                 // apertou
+        estado.preso = false;
+        this.avisarQueHaControle();
+        this.anotarSinal(`botão ${i} (${fontes})`);
+        if (setas.indexOf(i) === -1 && this.botaoDoAperto === null) {
+          this.botaoDoAperto = i;
+          this.aoApertar('controle');
+        }
+      } else if (!agora && estado.apertado) {          // soltou
+        estado.preso = false;
+        if (i === this.botaoDoAperto) {
+          this.botaoDoAperto = null;
+          this.aoSoltar('controle');
+        }
+      }
+      estado.apertado = agora;
+    }
+
+    /* ---------- direção ---------- */
+    for (let i = 0; i < eixos.length; i++) {
+      if (Math.abs(eixos[i]) < 0.5) {
+        this.eixoUtil[i] = true;
       }
     }
+    const valor = function (i) {
+      return componente.eixoUtil[i] ? eixos[i] || 0 : 0;
+    };
 
-    if (mudou || algumApertado) {
-      this.avisarQueHaControle();
+    /* o joystick pode vir nos eixos 0 e 1 ou nos 2 e 3: vale o
+       par que estiver mais empurrado */
+    let x = valor(0);
+    let y = valor(1);
+    if (Math.hypot(valor(2), valor(3)) > Math.hypot(x, y)) {
+      x = valor(2);
+      y = valor(3);
     }
 
-    if (algumApertado) {
-      this.aoApertar('controle');
-    } else {
-      this.aoSoltar('controle');
-    }
-
-    /* direção: joystick (eixos 0 e 1) ou setas */
-    let x = gamepad.axes.length > 1 ? gamepad.axes[0] : 0;
-    let y = gamepad.axes.length > 1 ? gamepad.axes[1] : 0;
     if (Math.hypot(x, y) < this.data.zonaMorta) {
       x = 0;
       y = 0;
     } else {
       this.avisarQueHaControle();
+      this.anotarSinal(`joystick (${fontes})`);
     }
 
-    const b = function (i) {
-      const botao = gamepad.buttons[i];
-      return botao && (typeof botao === 'object' ? botao.pressed : Boolean(botao));
-    };
     if (padrao) {
-      if (b(12)) { y = -1; }
-      if (b(13)) { y = 1; }
-      if (b(14)) { x = -1; }
-      if (b(15)) { x = 1; }
+      if (apertados[12]) { y = -1; }
+      if (apertados[13]) { y = 1; }
+      if (apertados[14]) { x = -1; }
+      if (apertados[15]) { x = 1; }
     }
 
     return { x: x, y: y };
@@ -578,9 +676,9 @@ AFRAME.registerComponent('modo-vrbox', {
 
     /* controle */
     let direcao = { x: 0, y: 0 };
-    const gamepad = this.lerGamepad();
-    if (gamepad) {
-      direcao = this.tratarGamepad(gamepad);
+    const lidos = this.lerControles();
+    if (lidos.length) {
+      direcao = this.tratarControles(lidos);
     }
 
     /* teclado soma com o controle */

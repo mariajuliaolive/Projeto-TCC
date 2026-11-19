@@ -99,13 +99,17 @@ function mostrarControle() {
         apertados.push(indice);
       }
     });
-    const eixos = Array.prototype.slice.call(gamepad.axes, 0, 2)
-      .map(function (v) { return v.toFixed(2); }).join(' , ');
+    /* todos os eixos, e não só os dois primeiros: o joystick pode
+       vir em outro par, e um eixo parado em -1 ou 1 mostra que
+       o controle informa um eixo que não existe */
+    const eixos = Array.prototype.slice.call(gamepad.axes)
+      .map(function (v, i) { return `${i}: ${v.toFixed(2)}`; }).join('  ');
 
     caixaControle.classList.add('controle--ok');
     situacao.textContent = 'Controle reconhecido (modo jogo).';
     detalhe.textContent =
-      `${gamepad.id} · joystick: ${eixos || '—'} · botões apertados: `
+      `${gamepad.id} · padrão: ${gamepad.mapping || 'não'} · `
+      + `${gamepad.buttons.length} botões · eixos ${eixos || '—'} · apertados agora: `
       + (apertados.length ? apertados.join(', ') : 'nenhum');
   } else if (ultimaTecla) {
     caixaControle.classList.add('controle--ok');
@@ -303,7 +307,7 @@ function repassarControle() {
       janela.__controleExterno = {
         id: gamepad.id,
         mapping: gamepad.mapping,
-        buttons: gamepad.buttons.map(function (b) { return { pressed: b.pressed }; }),
+        buttons: gamepad.buttons.map(function (b) { return { pressed: b.pressed, value: b.value }; }),
         axes: Array.prototype.slice.call(gamepad.axes),
         recebidoEm: janela.performance.now()
       };

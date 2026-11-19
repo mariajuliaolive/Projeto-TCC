@@ -1493,7 +1493,7 @@ function iniciarExperiencia() {
     const distanciaAviso = 1.15;
     giroDoAviso = giro;
     avisoAbertura.object3D.position.set(
-      -Math.sin(giro) * distanciaAviso, 1.45, -Math.cos(giro) * distanciaAviso);
+      -Math.sin(giro) * distanciaAviso, 1.6, -Math.cos(giro) * distanciaAviso);
     avisoAbertura.object3D.rotation.set(0, giro, 0);
   }
 
@@ -1510,16 +1510,38 @@ function iniciarExperiencia() {
     quadroDoAviso = requestAnimationFrame(acompanharOlhar);
   }
 
+  let relogioDoSinal = null;
+
+  /* O quadro mostra, ao vivo, o que chega do controle. É a forma
+     de saber, já de óculos, se o problema é o controle não
+     chegar ou outra coisa. */
+  function textoDaPreparacao() {
+    const modo = cena.components['modo-vrbox'];
+    const sinal = modo ? modo.descreverSinal() : '';
+    return 'Com o óculos no rosto, aperte qualquer botão do controle. '
+         + 'Sem controle, olhe para este quadro até o círculo fechar.  '
+         + 'Controle: ' + sinal;
+  }
+
   function comecarPreparacaoVrbox() {
     preparacaoAtiva = true;
 
+    /* o quadro fica na altura dos olhos e um pouco mais alto,
+       para caber a linha do controle */
     avisoAbertura.setAttribute('painel-texto', {
       titulo: 'Coloque o celular no VR Box',
-      texto: 'Com o óculos no rosto, olhe para este quadro e aperte um botão '
-             + 'do controle. Sem controle, mantenha o olhar aqui até o '
-             + 'círculo fechar.',
+      texto: textoDaPreparacao(),
+      altura: 0.42,
       destacado: true
     });
+    relogioDoSinal = setInterval(function () {
+      avisoAbertura.setAttribute('painel-texto', 'texto', textoDaPreparacao());
+    }, 500);
+
+    /* Qualquer botão dá a partida, esteja a mira onde estiver.
+       A primeira versão exigia o círculo sobre o quadro, e um
+       olhar um pouco acima já fazia o botão não fazer nada. */
+    cena.addEventListener('vrbox-botao', terminarPreparacaoVrbox);
 
     /* o aviso não some sozinho enquanto a pessoa se prepara */
     avisoAbertura.setAttribute('aviso-abertura', 'duracao', 3600000);
@@ -1542,7 +1564,9 @@ function iniciarExperiencia() {
     }
     preparacaoAtiva = false;
     cancelAnimationFrame(quadroDoAviso);
+    clearInterval(relogioDoSinal);
     avisoAbertura.removeEventListener('click', terminarPreparacaoVrbox);
+    cena.removeEventListener('vrbox-botao', terminarPreparacaoVrbox);
 
     const modo = cena.components['modo-vrbox'];
     if (modo) {
@@ -1559,6 +1583,7 @@ function iniciarExperiencia() {
     avisoAbertura.setAttribute('painel-texto', {
       titulo: `Nível ${nivel.numero} de ${NIVEIS.length} — ${nivel.nome}`,
       texto: nivel.instrucao,
+      altura: 0.34,
       destacado: true
     });
 
