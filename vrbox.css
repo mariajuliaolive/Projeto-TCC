@@ -1,0 +1,232 @@
+/* =========================================================
+   PREPARAR O VR BOX
+   Carregado depois de base.css, que traz as variáveis.
+   ========================================================= */
+
+.preparo {
+  padding: 32px 0 64px;
+}
+
+.preparo__interno {
+  max-width: 680px;
+}
+
+.preparo__voltar {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: var(--texto-suave);
+  font-size: 14px;
+}
+
+.preparo__titulo {
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  margin-bottom: 6px;
+}
+
+.preparo__escolha {
+  color: var(--texto-suave);
+  margin-bottom: 28px;
+}
+
+.preparo__escolha strong {
+  color: var(--texto);
+}
+
+/* ---------- etapas ---------- */
+.etapa {
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+}
+
+.etapa__titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+
+.etapa__numero {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--verde);
+  color: #06281F;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.etapa__opcional {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--texto-suave);
+}
+
+.etapa__texto,
+.etapa__lista {
+  color: var(--texto-suave);
+  font-size: 14.5px;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.etapa__lista {
+  padding-left: 20px;
+}
+
+.etapa__lista li + li {
+  margin-top: 4px;
+}
+
+.etapa__nota {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #FFC9A8;
+}
+
+.etapa__nota:empty {
+  display: none;
+}
+
+.preparo__entrar {
+  width: 100%;
+  text-align: center;
+  font-size: 1.05rem;
+  padding-block: 16px;
+}
+
+/* ---------- teste do controle ---------- */
+.controle {
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px dashed var(--borda);
+  background: var(--superficie-2);
+}
+
+.controle--ok {
+  border-style: solid;
+  border-color: rgba(62, 208, 192, 0.5);
+}
+
+.controle__situacao {
+  font-weight: 600;
+}
+
+.controle--ok .controle__situacao {
+  color: var(--verde);
+}
+
+.controle__detalhe {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--texto-suave);
+  font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
+
+.controle__detalhe:empty {
+  display: none;
+}
+
+/* ---------- ajuste ---------- */
+.ajuste {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+
+.ajuste input {
+  width: 100%;
+  accent-color: var(--verde);
+}
+
+.ajuste output {
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+
+/* =========================================================
+   PALCO — a experiência em tela cheia
+   ========================================================= */
+.palco {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #000;
+}
+
+.palco__quadro {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.palco__retomar {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: rgba(0, 0, 0, 0.82);
+  color: #fff;
+  font: 600 20px/1.4 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+/* =========================================================
+   TESTE DO AJUSTE — duas cruzes, uma para cada lente
+   ========================================================= */
+.teste-ajuste {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: #000;
+}
+
+.teste-ajuste__cruz {
+  position: absolute;
+  top: 50%;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+}
+
+.teste-ajuste__cruz::before,
+.teste-ajuste__cruz::after {
+  content: "";
+  position: absolute;
+  background: #3ED0C0;
+}
+
+.teste-ajuste__cruz::before {
+  left: 50%;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  transform: translateX(-50%);
+}
+
+.teste-ajuste__cruz::after {
+  top: 50%;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  transform: translateY(-50%);
+}
+
+.teste-ajuste__texto {
+  position: absolute;
+  bottom: 16px;
+  width: 100%;
+  text-align: center;
+  color: #9AA9C4;
+  font-size: 13px;
+}

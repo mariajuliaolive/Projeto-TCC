@@ -13,6 +13,19 @@ const botaoEntrar  = document.querySelector('#botaoEntrar');
 let animalEscolhido = null;
 let nivelEscolhido = null;
 
+/* Como a pessoa vai usar: na tela ou no VR Box. Fica lembrado
+   neste aparelho, porque no dia da coleta o mesmo celular é
+   usado sempre do mesmo jeito. */
+const CHAVE_MODO = 'vr-exposicao:modo';
+let modoEscolhido = 'tela';
+try {
+  modoEscolhido = localStorage.getItem(CHAVE_MODO) || 'tela';
+} catch (erro) { /* navegação anônima */ }
+const campoModo = formulario.querySelector(`input[name="modo"][value="${modoEscolhido}"]`);
+if (campoModo) {
+  campoModo.checked = true;
+}
+
 /* ---------------------------------------------------------
    1. MONTAR AS OPÇÕES DE ANIMAL
    --------------------------------------------------------- */
@@ -62,6 +75,11 @@ formulario.addEventListener('change', function (evento) {
     animalEscolhido = campo.value;
   } else if (campo.name === 'nivel') {
     nivelEscolhido = campo.value;
+  } else if (campo.name === 'modo') {
+    modoEscolhido = campo.value;
+    try {
+      localStorage.setItem(CHAVE_MODO, modoEscolhido);
+    } catch (erro) { /* navegação anônima */ }
   }
 
   atualizarResumo();
@@ -92,7 +110,14 @@ function atualizarResumo() {
 
   botaoEntrar.classList.remove('botao--desativado');
   botaoEntrar.setAttribute('aria-disabled', 'false');
-  botaoEntrar.href = `experiencia.html?animal=${animal.id}&nivel=${nivel.numero}`;
+  /* No VR Box, a entrada passa antes por vrbox.html: lá se testa
+     o controle e se entra em tela cheia, coisa que só pode
+     acontecer com um toque da pessoa. */
+  const pagina = modoEscolhido === 'vrbox' ? 'vrbox.html' : 'experiencia.html';
+  botaoEntrar.href = `${pagina}?animal=${animal.id}&nivel=${nivel.numero}`;
+  botaoEntrar.textContent = modoEscolhido === 'vrbox'
+    ? 'Preparar o VR Box'
+    : 'Entrar no ambiente';
 }
 
 /* =========================================================

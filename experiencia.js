@@ -92,9 +92,45 @@ function iniciarExperiencia() {
      recusada — mas continua no navegador, e é o que permite
      você testar ajustes e ver as medidas sem precisar se
      cadastrar antes. */
-  const comoEstouUsando = AFRAME.utils.device.checkHeadsetConnected()
-    ? 'oculos'
-    : (AFRAME.utils.device.isMobile() ? 'celular' : 'computador');
+  const comoEstouUsando = MODO_VRBOX
+    ? 'vrbox'
+    : AFRAME.utils.device.checkHeadsetConnected()
+      ? 'oculos'
+      : (AFRAME.utils.device.isMobile() ? 'celular' : 'computador');
+
+  /* =========================================================
+     MODO VR BOX (ver vrbox.js)
+
+     "preparar" só vem no primeiro nível, quando a pessoa ainda
+     está colocando o celular na caixa. Nos outros, ela já está
+     de óculos.
+     ========================================================= */
+  const preparandoVrbox = MODO_VRBOX && parametros.get('preparar') === '1';
+
+  if (MODO_VRBOX) {
+    cena.setAttribute('modo-vrbox', {
+      separacao: Number(parametros.get('sep')) || 0.5,
+      controle: parametros.get('controle') === '1'
+    });
+  }
+
+  /* O endereço de um nível, mantendo o modo em que se está.
+     Sem isso, "Próximo nível" levaria para fora do VR Box. */
+  function enderecoDoNivel(numero) {
+    let endereco = `experiencia.html?animal=${animal.id}&nivel=${numero}`;
+    if (MODO_VRBOX) {
+      endereco += '&vrbox=1';
+      if (parametros.get('sep')) {
+        endereco += '&sep=' + encodeURIComponent(parametros.get('sep'));
+      }
+      /* quem já usou o controle aqui continua com ele no próximo */
+      const modo = cena.components['modo-vrbox'];
+      if ((modo && modo.temControle) || parametros.get('controle') === '1') {
+        endereco += '&controle=1';
+      }
+    }
+    return endereco;
+  }
 
   const sessao = Armazenamento.abrirSessao(
     animal.id, nivel.numero, comoEstouUsando);
@@ -802,7 +838,9 @@ function iniciarExperiencia() {
     mostrarEscala(false);
     mostrarAjuda(false);
 
-    if (temToque && !cena.is('vr-mode')) {
+    /* No VR Box a tela está dividida em duas e a pessoa gira a
+       cabeça como num óculos: vale o arranjo de óculos. */
+    if (temToque && !cena.is('vr-mode') && !MODO_VRBOX) {
       layoutCelular();
     } else {
       layoutLateral();
@@ -823,7 +861,16 @@ function iniciarExperiencia() {
 
   let textoAjuda;
 
-  if (ehMobile) {
+  if (MODO_VRBOX) {
+    textoAjuda =
+      'Vire a cabeça para olhar em volta. Use o joystick do controle para '
+      + 'andar. Para selecionar, coloque o círculo sobre o objeto e aperte '
+      + 'um botão do controle — sem controle, mantenha o olhar até o '
+      + 'círculo fechar. Segure um botão por 2 segundos para trazer a '
+      + 'frente da cena para onde você está olhando. '
+      + comoProcurar
+      + 'Use "Sair" para encerrar a qualquer momento.';
+  } else if (ehMobile) {
     mira.setAttribute('fuse', true);
     textoAjuda =
       'Gire o aparelho para olhar em volta. ' + comoAndar
@@ -1179,13 +1226,19 @@ function iniciarExperiencia() {
 
   /* ---------- Reiniciar nível ---------- */
   btn3dReiniciar.addEventListener('click', function () {
+    if (MODO_VRBOX) {
+      /* recarregar repetiria a etapa de "coloque o celular na
+         caixa", e quem reinicia já está de óculos */
+      window.location.replace(enderecoDoNivel(nivel.numero));
+      return;
+    }
     window.location.reload();
   });
 
   /* ---------- Próximo nível ---------- */
   const proximoNumero = nivel.numero + 1;
   const proximoEndereco = buscarNivel(proximoNumero)
-    ? `experiencia.html?animal=${animal.id}&nivel=${proximoNumero}`
+    ? enderecoDoNivel(proximoNumero)
     : null;
 
   /* Um ouvinte só, que fecha a sessão E navega.
@@ -1202,7 +1255,9 @@ function iniciarExperiencia() {
     fecharSessao('proximo');
 
     if (proximoEndereco) {
-      window.location.href = proximoEndereco;
+      /* montado agora, e não na abertura da página: só agora se
+         sabe se a pessoa usou o controle neste nível */
+      window.location.href = enderecoDoNivel(proximoNumero);
       return;
     }
 
@@ -1357,7 +1412,9 @@ function iniciarExperiencia() {
     });
   }
 
-  verificarSuporteVR();
+  if (!MODO_VRBOX) {
+    verificarSuporteVR();
+  }
   traduzirBotoesDoAFrame();
 
   /* ---------- entrar e sair do modo VR ---------- */
@@ -1407,6 +1464,115 @@ function iniciarExperiencia() {
   /* =========================================================
      14. REGISTROS DE CARREGAMENTO
      ========================================================= */
+  /* =========================================================
+     14b. PREPARAÇÃO NO VR BOX
+
+     No primeiro nível, a pessoa ainda está pondo o celular na
+     caixa e a caixa no rosto. O aviso central vira um quadro de
+     "pronto?". Quando ela aperta um botão — ou segura o olhar
+     nele —, três coisas acontecem juntas:
+
+     1. a frente da cena passa a ser para onde ela está olhando;
+     2. as medidas começam;
+     3. o aviso mostra o nível e a instrução, como de costume.
+     ========================================================= */
+  let preparacaoAtiva = false;
+  let quadroDoAviso = null;
+  let giroDoAviso = 0;
+
+  /* O quadro NÃO gruda no olhar. Grudado, ele ficaria sempre no
+     centro da visão — e a seleção pelo olhar o acionaria sozinha
+     em segundo e meio, com o celular ainda na mão. Foi o que o
+     teste mostrou na primeira versão.
+
+     Ele fica parado e só muda de lugar se a pessoa estiver
+     virada para longe dele (mais de 50 graus): aí reaparece à
+     frente dela. Assim ninguém fica procurando o quadro, e
+     olhar para ele continua sendo uma escolha. */
+  function posicionarAviso(giro) {
+    const distanciaAviso = 1.15;
+    giroDoAviso = giro;
+    avisoAbertura.object3D.position.set(
+      -Math.sin(giro) * distanciaAviso, 1.45, -Math.cos(giro) * distanciaAviso);
+    avisoAbertura.object3D.rotation.set(0, giro, 0);
+  }
+
+  function acompanharOlhar() {
+    if (!preparacaoAtiva) {
+      return;
+    }
+    const giro = camera.object3D.rotation.y;
+    let diferenca = giro - giroDoAviso;
+    diferenca = Math.atan2(Math.sin(diferenca), Math.cos(diferenca));
+    if (Math.abs(diferenca) > AFRAME.THREE.MathUtils.degToRad(50)) {
+      posicionarAviso(giro);
+    }
+    quadroDoAviso = requestAnimationFrame(acompanharOlhar);
+  }
+
+  function comecarPreparacaoVrbox() {
+    preparacaoAtiva = true;
+
+    avisoAbertura.setAttribute('painel-texto', {
+      titulo: 'Coloque o celular no VR Box',
+      texto: 'Com o óculos no rosto, olhe para este quadro e aperte um botão '
+             + 'do controle. Sem controle, mantenha o olhar aqui até o '
+             + 'círculo fechar.',
+      destacado: true
+    });
+
+    /* o aviso não some sozinho enquanto a pessoa se prepara */
+    avisoAbertura.setAttribute('aviso-abertura', 'duracao', 3600000);
+
+    /* e passa a ser clicável pela mira. Sem controle, o olhar
+       precisa ficar nele um pouco mais que o normal: 2,5 s. */
+    avisoAbertura.classList.add('interface', 'alvo');
+    refrescarApontadores();
+    mira.setAttribute('cursor', 'fuseTimeout', 2500);
+    mira.setAttribute('animation__fechando', 'dur', 2500);
+    posicionarAviso(camera.object3D.rotation.y);
+
+    avisoAbertura.addEventListener('click', terminarPreparacaoVrbox);
+    acompanharOlhar();
+  }
+
+  function terminarPreparacaoVrbox() {
+    if (!preparacaoAtiva) {
+      return;
+    }
+    preparacaoAtiva = false;
+    cancelAnimationFrame(quadroDoAviso);
+    avisoAbertura.removeEventListener('click', terminarPreparacaoVrbox);
+
+    const modo = cena.components['modo-vrbox'];
+    if (modo) {
+      modo.recentralizar();
+    }
+
+    avisoAbertura.object3D.position.set(0, 1.45, -1.15);
+    avisoAbertura.object3D.rotation.set(0, 0, 0);
+    avisoAbertura.classList.remove('interface', 'alvo');
+    refrescarApontadores();
+    mira.setAttribute('cursor', 'fuseTimeout', 1500);
+    mira.setAttribute('animation__fechando', 'dur', 1500);
+
+    avisoAbertura.setAttribute('painel-texto', {
+      titulo: `Nível ${nivel.numero} de ${NIVEIS.length} — ${nivel.nome}`,
+      texto: nivel.instrucao,
+      destacado: true
+    });
+
+    /* o aviso recomeça a contagem normal, do zero */
+    const aviso = avisoAbertura.components['aviso-abertura'];
+    if (aviso) {
+      aviso.decorrido = 0;
+    }
+    avisoAbertura.setAttribute('aviso-abertura', 'duracao', 6500);
+
+    marcar('vrbox-pronto', {});
+    ligarMedidor();
+  }
+
   /* =========================================================
      15. MEDIR E FECHAR
 
@@ -1486,8 +1652,25 @@ function iniciarExperiencia() {
   }
 
   cena.addEventListener('loaded', function () {
-    inclinarCamera(INCLINACAO_GRAUS);
-    ligarMedidor();
+    /* Dentro da caixa, a inclinação vem do sensor: somar os -28
+       graus deixaria o horizonte torto, o que enjoa. */
+    inclinarCamera(MODO_VRBOX ? 0 : INCLINACAO_GRAUS);
+
+    if (MODO_VRBOX) {
+      const modo = cena.components['modo-vrbox'];
+      if (modo) {
+        modo.restaurarGiro();
+      }
+    }
+
+    /* Na preparação, as medidas só começam quando a pessoa disser
+       que está pronta: os segundos gastos colocando o celular na
+       caixa não são tempo de exposição. */
+    if (preparandoVrbox) {
+      comecarPreparacaoVrbox();
+    } else {
+      ligarMedidor();
+    }
 
     console.log('Cena 3D carregada com sucesso.');
     console.log('Versão do A-Frame:', AFRAME.version);

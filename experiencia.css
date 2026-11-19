@@ -148,3 +148,33 @@ html, body {
     right: 12px !important;
   }
 }
+
+/* =========================================================
+   MODO VR BOX (vrbox.js)
+   Com o celular dentro da caixa, ninguém alcança a tela: tudo
+   o que é HTML some, e só a cena dividida em dois fica.
+   ========================================================= */
+.vrbox #hud,
+.vrbox .a-enter-vr,
+.vrbox .a-enter-ar,
+.vrbox .a-orientation-modal {
+  display: none !important;
+}
+
+/* As duas imagens precisam do celular deitado. Em pé, cada olho
+   veria uma tira estreita — então, em vez da cena, um pedido. */
+@media (orientation: portrait) {
+  html.vrbox body::after {
+    content: "Gire o celular para a horizontal";
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: #0C1016;
+    color: #F2F4F7;
+    font: 600 20px/1.4 system-ui, sans-serif;
+    text-align: center;
+  }
+}

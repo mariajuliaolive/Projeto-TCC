@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Preparar o celular e o controle para usar a experiência dentro do VR Box." />
+  <meta name="theme-color" content="#000000" />
+  <title>Preparar o VR Box | VR Exposição Gradual</title>
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%233ED0C0' d='M3.5 7h17a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-5.2q-3.3-3.2-6.6 0H3.5A1.5 1.5 0 0 1 2 15.5v-7A1.5 1.5 0 0 1 3.5 7z'/></svg>" />
+
+  <script>document.documentElement.classList.add('js');</script>
+
+  <link rel="stylesheet" href="base.css" />
+  <link rel="stylesheet" href="vrbox.css" />
+</head>
+<body>
+
+  <!-- =============================================================
+       ESTA PÁGINA TEM DOIS MOMENTOS
+
+       1. PREPARAÇÃO, com o celular na mão: testar o controle,
+          ajustar as imagens às lentes e apertar "Entrar".
+
+       2. PALCO, com o celular na caixa: a experiência roda num
+          quadro (iframe) que ocupa a tela inteira.
+
+       Por que um quadro, e não ir direto para a experiência:
+       cada nível é uma página nova, e o navegador SAI da tela
+       cheia a cada troca de página. A pessoa teria de tirar o
+       celular da caixa a cada nível para tocar em "tela cheia" de
+       novo. Com o quadro, quem está em tela cheia é esta página,
+       que não muda; só o que está dentro dela troca.
+       ============================================================= -->
+
+  <main class="preparo" id="preparo">
+    <div class="container preparo__interno">
+
+      <a class="preparo__voltar" href="selecao.html">← Voltar à escolha</a>
+
+      <h1 class="preparo__titulo">Preparar o VR Box</h1>
+      <p class="preparo__escolha" id="escolha"></p>
+
+      <!-- ===== 1. CONTROLE ===== -->
+      <section class="etapa">
+        <h2 class="etapa__titulo"><span class="etapa__numero">1</span> Controle</h2>
+        <p class="etapa__texto">
+          Ligue o controle e pareie pelo Bluetooth do celular. Depois aperte
+          qualquer botão e mexa o joystick: o que o celular receber aparece
+          abaixo. Sem controle também funciona — você seleciona mantendo o
+          olhar sobre o objeto.
+        </p>
+        <div class="controle" id="controle" aria-live="polite">
+          <p class="controle__situacao" id="controleSituacao">
+            Nenhum controle reconhecido ainda.
+          </p>
+          <p class="controle__detalhe" id="controleDetalhe"></p>
+        </div>
+      </section>
+
+      <!-- ===== 2. AJUSTE DAS IMAGENS ===== -->
+      <section class="etapa">
+        <h2 class="etapa__titulo"><span class="etapa__numero">2</span> Ajuste às lentes <span class="etapa__opcional">opcional</span></h2>
+        <p class="etapa__texto">
+          Em celular grande, as duas imagens ficam mais afastadas que as
+          lentes, e a cena aparece dobrada. Toque em "Testar", coloque o
+          celular no VR Box e veja se enxerga <strong>uma</strong> cruz só. Se
+          enxergar duas, diminua o afastamento.
+        </p>
+        <label class="ajuste" for="separacao">
+          <span>Afastamento das imagens</span>
+          <input type="range" id="separacao" min="0.38" max="0.5" step="0.005" value="0.5" />
+          <output id="separacaoValor">padrão</output>
+        </label>
+        <button class="botao botao--secundario" id="testarAjuste" type="button">
+          Testar
+        </button>
+      </section>
+
+      <!-- ===== 3. ENTRAR ===== -->
+      <section class="etapa">
+        <h2 class="etapa__titulo"><span class="etapa__numero">3</span> Entrar</h2>
+        <ol class="etapa__lista">
+          <li>Toque em <strong>Entrar no VR Box</strong>. A tela fica cheia e deitada.</li>
+          <li>Coloque o celular na caixa, com a tela para as lentes.</li>
+          <li>Com o óculos no rosto, olhe para o quadro que aparece e aperte um
+              botão do controle (ou mantenha o olhar nele).</li>
+        </ol>
+        <button class="botao botao--principal preparo__entrar" id="entrar" type="button">
+          Entrar no VR Box
+        </button>
+        <p class="etapa__nota" id="notaAparelho"></p>
+      </section>
+
+      <p class="aviso">
+        <strong>Aviso:</strong> o sistema é um protótipo acadêmico desenvolvido
+        para avaliação de interação, usabilidade e experiência em Realidade
+        Virtual. Não possui finalidade de diagnóstico ou tratamento.
+      </p>
+    </div>
+  </main>
+
+  <!-- ===== PALCO: onde a experiência roda ===== -->
+  <div class="palco" id="palco" hidden>
+    <iframe class="palco__quadro" id="quadro" title="Experiência em Realidade Virtual"
+            allow="fullscreen; gamepad; screen-wake-lock; accelerometer; gyroscope; magnetometer; autoplay; xr-spatial-tracking"></iframe>
+
+    <!-- aparece se a tela cheia cair (gesto de voltar, notificação) -->
+    <button class="palco__retomar" id="retomar" type="button" hidden>
+      Toque para voltar à tela cheia
+    </button>
+  </div>
+
+  <!-- ===== TESTE DO AJUSTE: duas cruzes ===== -->
+  <div class="teste-ajuste" id="testeAjuste" hidden>
+    <span class="teste-ajuste__cruz" id="cruzEsquerda"></span>
+    <span class="teste-ajuste__cruz" id="cruzDireita"></span>
+    <p class="teste-ajuste__texto">Toque na tela para voltar</p>
+  </div>
+
+  <script src="dados.js"></script>
+  <script src="vrbox-entrada.js"></script>
+</body>
+</html>
