@@ -46,7 +46,7 @@
   <main id="conteudo" class="pagina-cadastro">
     <div class="container container--estreito">
 
-      <!-- Trilha dos três passos. Quem está preenchendo um
+      <!-- Trilha dos quatro passos. Quem está preenchendo um
            formulário precisa saber quanto falta. -->
       <ol class="trilha" id="trilha" aria-label="Etapas do cadastro">
         <li class="trilha__passo trilha__passo--atual" data-passo="1">
@@ -59,7 +59,11 @@
         </li>
         <li class="trilha__passo" data-passo="3">
           <span class="trilha__numero">3</span>
-          <span class="trilha__nome">Medo declarado</span>
+          <span class="trilha__nome">Medo por animal</span>
+        </li>
+        <li class="trilha__passo" data-passo="4">
+          <span class="trilha__numero">4</span>
+          <span class="trilha__nome">Impacto do medo</span>
         </li>
       </ol>
 
@@ -97,8 +101,8 @@
       <section class="passo" id="passo2" hidden aria-labelledby="tituloPasso2">
         <h2 class="titulo-pagina" id="tituloPasso2">Seus dados</h2>
         <p class="secao__texto">
-          Cinco campos. O e-mail serve só para identificar seu cadastro e
-          não acompanha os dados de análise.
+          O e-mail serve só para identificar seu cadastro e não acompanha
+          os dados de análise.
         </p>
 
         <form id="formularioCadastro" novalidate>
@@ -117,12 +121,12 @@
         </div>
       </section>
 
-      <!-- ===== PASSO 3: MEDO DECLARADO ===== -->
+      <!-- ===== PASSO 3: MEDO POR ANIMAL (rastreio, parte 1) ===== -->
       <section class="passo" id="passo3" hidden aria-labelledby="tituloPasso3">
         <h2 class="titulo-pagina" id="tituloPasso3"></h2>
+        <p class="secao__texto" id="instrucaoPasso3"></p>
         <p class="secao__texto">
-          Não existe resposta certa. Responda pelo que você sente hoje,
-          pensando em encontrar o animal de verdade.
+          Não existe resposta certa. Responda pelo que você sente hoje.
         </p>
 
         <div class="escalas" id="escalas"></div>
@@ -131,6 +135,31 @@
 
         <div class="acoes">
           <button class="botao botao--neutro" id="voltarPasso2" type="button">
+            Voltar
+          </button>
+          <button class="botao botao--principal" id="irPasso4" type="button">
+            Continuar
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== PASSO 4: IMPACTO DO MEDO (rastreio, parte 2) =====
+           As frases falam do animal de maior nota no passo 3.
+           Em caso de empate, a pessoa escolhe em qual pensar. -->
+      <section class="passo" id="passo4" hidden aria-labelledby="tituloPasso4">
+        <h2 class="titulo-pagina" id="tituloPasso4"></h2>
+        <p class="secao__texto" id="instrucaoPasso4"></p>
+
+        <div class="alvo" id="alvo"></div>
+
+        <p class="legenda-impacto" id="legendaImpacto"></p>
+
+        <div id="dimensoes"></div>
+
+        <p class="erro" id="erroImpacto" role="alert" hidden></p>
+
+        <div class="acoes">
+          <button class="botao botao--neutro" id="voltarPasso3" type="button">
             Voltar
           </button>
           <button class="botao botao--principal" id="concluir" type="button">

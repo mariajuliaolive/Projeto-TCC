@@ -1,8 +1,13 @@
 /* =========================================================
-   CADASTRO — consentimento, dados e medo declarado
+   CADASTRO — consentimento, dados e questionário de rastreio
    ---------------------------------------------------------
-   Monta os três passos a partir de pesquisa.js e grava o
-   resultado pelo armazenamento.js.
+   Monta os quatro passos a partir de pesquisa.js e grava o
+   resultado pelo armazenamento.js:
+
+     1. consentimento
+     2. dados (com a pergunta sobre experiência traumática)
+     3. medo por animal, de 0 a 5 (rastreio, parte 1)
+     4. impacto do medo, de 0 a 4 (rastreio, parte 2)
 
    Nenhum texto desta tela está escrito aqui dentro: tudo vem
    de pesquisa.js. É de propósito. O texto do consentimento
@@ -19,6 +24,7 @@ const passos = {
   1: document.querySelector('#passo1'),
   2: document.querySelector('#passo2'),
   3: document.querySelector('#passo3'),
+  4: document.querySelector('#passo4'),
   fim: document.querySelector('#passoFim')
 };
 
@@ -34,7 +40,7 @@ function mostrarPasso(qual) {
 
   trilha.querySelectorAll('.trilha__passo').forEach(function (passo) {
     const numero = Number(passo.dataset.passo);
-    const atual = Number(qual) || 4;   // "fim" conta como depois do 3
+    const atual = Number(qual) || 5;   // "fim" conta como depois do 4
     passo.classList.toggle('trilha__passo--atual', numero === atual);
     passo.classList.toggle('trilha__passo--feito', numero < atual);
   });
@@ -121,13 +127,40 @@ CAMPOS_CADASTRO.forEach(function (campo) {
              id="campo-${campo.id}"
              name="${campo.id}"
              type="${campo.tipo}"
+             ${campo.tipo === 'text' ? 'maxlength="300"' : ''}
              ${campo.placeholder ? `placeholder="${campo.placeholder}"` : ''} />
       ${campo.ajuda ? `<p class="campo__ajuda">${campo.ajuda}</p>` : ''}
     `;
   }
 
+  /* Campo que depende de outro ("Qual?" só depois do "Sim")
+     começa escondido. */
+  if (campo.mostrarSe) {
+    grupo.dataset.depende = campo.id;
+    grupo.hidden = true;
+  }
+
   campos.appendChild(grupo);
 });
+
+/* Mostra ou esconde os campos que dependem de outro. */
+function campoVisivel(campo, dados) {
+  return !campo.mostrarSe
+    || dados[campo.mostrarSe.campo] === campo.mostrarSe.valor;
+}
+
+function atualizarDependentes() {
+  const dados = lerCadastroBruto();
+  CAMPOS_CADASTRO.forEach(function (campo) {
+    if (!campo.mostrarSe) {
+      return;
+    }
+    const grupo = campos.querySelector(`[data-depende="${campo.id}"]`);
+    grupo.hidden = !campoVisivel(campo, dados);
+  });
+}
+
+campos.addEventListener('change', atualizarDependentes);
 
 /* A mensagem de erro some assim que a pessoa mexe em algum
    campo. Deixá-la na tela depois de corrigido faz parecer que
@@ -141,8 +174,20 @@ campos.addEventListener('change', function () {
 });
 
 /* Lê o que foi preenchido. Devolve um objeto simples, com uma
-   chave por campo. */
+   chave por campo. Um campo escondido vale null: se a pessoa
+   escreveu no "Qual?" e depois trocou para "Não", o texto não
+   pode ir para o banco. */
 function lerCadastro() {
+  const dados = lerCadastroBruto();
+  CAMPOS_CADASTRO.forEach(function (campo) {
+    if (!campoVisivel(campo, dados)) {
+      dados[campo.id] = null;
+    }
+  });
+  return dados;
+}
+
+function lerCadastroBruto() {
   const dados = {};
 
   CAMPOS_CADASTRO.forEach(function (campo) {
@@ -164,7 +209,7 @@ function lerCadastro() {
 function conferirCadastro(dados) {
   const faltando = CAMPOS_CADASTRO
     .filter(function (campo) { return campo.obrigatorio && !dados[campo.id]; })
-    .map(function (campo) { return campo.rotulo.toLowerCase(); });
+    .map(function (campo) { return (campo.rotuloCurto || campo.rotulo).toLowerCase(); });
 
   if (faltando.length) {
     return 'Falta preencher: ' + faltando.join(', ') + '.';
@@ -205,13 +250,14 @@ document.querySelector('#irPasso3').addEventListener('click', function () {
 });
 
 /* =========================================================
-   PASSO 3 — MEDO DECLARADO
+   PASSO 3 — MEDO POR ANIMAL (rastreio, parte 1)
 
-   Uma escala de 0 a 10 por animal. É a linha de base do
+   Uma escala de 0 a 5 por animal. É a linha de base do
    estudo: sem ela, as medidas de comportamento não têm com o
    que ser comparadas.
    ========================================================= */
 document.querySelector('#tituloPasso3').textContent = ESCALA_MEDO.pergunta;
+document.querySelector('#instrucaoPasso3').textContent = ESCALA_MEDO.instrucao;
 
 const escalas = document.querySelector('#escalas');
 const erroEscala = document.querySelector('#erroEscala');
@@ -268,6 +314,190 @@ document.querySelector('#voltarPasso2').addEventListener('click', function () {
   mostrarPasso(2);
 });
 
+/* Devolve o texto do erro, ou null se respondeu tudo. */
+function conferirMedo(medo) {
+  const faltam = ANIMAIS.filter(function (a) {
+    return medo[a.id] === undefined;
+  });
+  if (!faltam.length) {
+    return null;
+  }
+  return 'Falta responder sobre: '
+    + faltam.map(function (a) { return a.nome.toLowerCase(); }).join(', ') + '.';
+}
+
+document.querySelector('#irPasso4').addEventListener('click', function () {
+  const problema = conferirMedo(lerMedo());
+
+  if (problema) {
+    erroEscala.textContent = problema;
+    erroEscala.hidden = false;
+    return;
+  }
+
+  erroEscala.hidden = true;
+  prepararAlvo();
+  mostrarPasso(4);
+});
+
+/* =========================================================
+   PASSO 4 — IMPACTO DO MEDO (rastreio, parte 2)
+
+   Dez frases, de 0 (nunca) a 4 (sempre), sobre o animal de
+   maior nota no passo 3 — o "animal-alvo".
+   ========================================================= */
+document.querySelector('#tituloPasso4').textContent = IMPACTO.titulo;
+document.querySelector('#instrucaoPasso4').textContent = IMPACTO.instrucao;
+document.querySelector('#legendaImpacto').innerHTML = ESCALA_IMPACTO.rotulos
+  .map(function (rotulo, i) {
+    return `<span><strong>${ESCALA_IMPACTO.minimo + i}</strong> = ${rotulo}</span>`;
+  })
+  .join('');
+
+const dimensoes = document.querySelector('#dimensoes');
+const erroImpacto = document.querySelector('#erroImpacto');
+const alvo = document.querySelector('#alvo');
+
+IMPACTO.dimensoes.forEach(function (dimensao) {
+  const grupo = document.createElement('section');
+  grupo.className = 'dimensao';
+
+  const frases = dimensao.itens.map(function (item, indice) {
+    let botoes = '';
+    for (let valor = ESCALA_IMPACTO.minimo; valor <= ESCALA_IMPACTO.maximo; valor++) {
+      const rotulo = ESCALA_IMPACTO.rotulos[valor - ESCALA_IMPACTO.minimo];
+      botoes += `
+        <label class="nota" title="${rotulo}">
+          <input type="radio" name="impacto-${item.id}" value="${valor}"
+                 aria-label="${valor} — ${rotulo}" />
+          <span>${valor}</span>
+        </label>`;
+    }
+
+    return `
+      <div class="escala">
+        <p class="escala__nome">${indice + 1}. ${item.texto}</p>
+        <div class="notas notas--impacto" role="group" aria-label="${item.texto}">
+          ${botoes}
+        </div>
+        <div class="escala__legenda">
+          <span>${ESCALA_IMPACTO.minimo} · ${ESCALA_IMPACTO.rotulos[0]}</span>
+          <span>${ESCALA_IMPACTO.maximo} · ${ESCALA_IMPACTO.rotulos[ESCALA_IMPACTO.rotulos.length - 1]}</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  grupo.innerHTML = `
+    <h3 class="dimensao__titulo">${dimensao.titulo}</h3>
+    <div class="escalas escalas--juntas">${frases}</div>
+  `;
+  dimensoes.appendChild(grupo);
+});
+
+dimensoes.addEventListener('change', function () {
+  erroImpacto.hidden = true;
+});
+
+/* O alvo escolhido, ou null enquanto houver empate sem escolha. */
+let animalAlvo = null;
+let empatados = [];
+
+function animalPorId(id) {
+  return ANIMAIS.find(function (a) { return a.id === id; });
+}
+
+/* Chamado ao entrar no passo 4: o passo 3 pode ter mudado
+   desde a última vez (a pessoa voltou e trocou uma nota). */
+function prepararAlvo() {
+  const antes = empatados.join(',');
+  empatados = animaisDeMaiorNota(lerMedo());
+
+  /* Se o alvo mudou, as frases já respondidas eram sobre
+     outro animal e precisam ser respondidas de novo. */
+  if (antes && antes !== empatados.join(',')) {
+    dimensoes.querySelectorAll('input:checked').forEach(function (entrada) {
+      entrada.checked = false;
+    });
+    animalAlvo = null;
+  }
+
+  if (empatados.length === 1) {
+    animalAlvo = empatados[0];
+    const animal = animalPorId(animalAlvo);
+    alvo.innerHTML = `
+      <span class="alvo__rotulo">Animal em que você vai pensar</span>
+      <span class="alvo__animal">
+        <span aria-hidden="true">${animal.icone}</span> ${animal.nome}
+      </span>`;
+    return;
+  }
+
+  if (empatados.indexOf(animalAlvo) === -1) {
+    animalAlvo = null;
+  }
+
+  alvo.innerHTML = `
+    <span class="alvo__rotulo">
+      Você deu a mesma nota mais alta a mais de um animal.
+      Escolha em qual vai pensar:
+    </span>
+    <div class="escolhas">
+      ${empatados.map(function (id) {
+        const animal = animalPorId(id);
+        return `
+          <label class="escolha">
+            <input type="radio" name="alvo" value="${id}"
+                   ${id === animalAlvo ? 'checked' : ''} />
+            <span>${animal.icone} ${animal.nome}</span>
+          </label>`;
+      }).join('')}
+    </div>`;
+}
+
+alvo.addEventListener('change', function (evento) {
+  if (evento.target.name === 'alvo') {
+    animalAlvo = evento.target.value;
+    erroImpacto.hidden = true;
+  }
+});
+
+function lerImpacto() {
+  const respostas = {};
+  IMPACTO.dimensoes.forEach(function (dimensao) {
+    dimensao.itens.forEach(function (item) {
+      const marcado = dimensoes.querySelector(`input[name="impacto-${item.id}"]:checked`);
+      if (marcado) {
+        respostas[item.id] = Number(marcado.value);
+      }
+    });
+  });
+  return respostas;
+}
+
+function conferirImpacto(respostas) {
+  if (!animalAlvo) {
+    return 'Escolha em qual animal você vai pensar.';
+  }
+
+  const faltam = [];
+  IMPACTO.dimensoes.forEach(function (dimensao) {
+    dimensao.itens.forEach(function (item, indice) {
+      if (respostas[item.id] === undefined) {
+        faltam.push(dimensao.titulo.split(' (')[0].toLowerCase() + ', frase ' + (indice + 1));
+      }
+    });
+  });
+
+  if (faltam.length) {
+    return 'Falta responder: ' + faltam.join('; ') + '.';
+  }
+  return null;
+}
+
+document.querySelector('#voltarPasso3').addEventListener('click', function () {
+  mostrarPasso(3);
+});
+
 /* =========================================================
    CONCLUIR
 
@@ -277,21 +507,27 @@ document.querySelector('#voltarPasso2').addEventListener('click', function () {
    ========================================================= */
 document.querySelector('#concluir').addEventListener('click', async function () {
   const medo = lerMedo();
-  const faltam = ANIMAIS.filter(function (a) {
-    return medo[a.id] === undefined;
-  });
+  const impacto = lerImpacto();
+  const problema = conferirImpacto(impacto);
 
-  if (faltam.length) {
-    erroEscala.textContent = 'Falta responder sobre: '
-      + faltam.map(function (a) { return a.nome.toLowerCase(); }).join(', ') + '.';
-    erroEscala.hidden = false;
+  if (problema) {
+    erroImpacto.textContent = problema;
+    erroImpacto.hidden = false;
     return;
   }
 
-  erroEscala.hidden = true;
+  erroImpacto.hidden = true;
 
-  const quem = Armazenamento.registrar(lerCadastro());
+  const cadastro = lerCadastro();
+  const quem = Armazenamento.registrar(cadastro);
   Armazenamento.gravarMedoDeclarado(medo);
+  Armazenamento.gravarRastreio({
+    animalAlvo: animalAlvo,
+    empate: empatados.length > 1,
+    trauma: cadastro.trauma,
+    traumaQual: cadastro.traumaQual,
+    respostas: impacto
+  });
 
   document.querySelector('#mensagemFim').textContent =
     'Obrigada por participar. A partir daqui, use a aplicação pelo tempo '

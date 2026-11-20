@@ -184,6 +184,41 @@ const Armazenamento = (function () {
     return respostas;
   }
 
+  /* A parte 2 do questionário de rastreio (o impacto do medo
+     sobre o animal-alvo) e a pergunta sobre experiência
+     traumática. Uma linha por participante.
+
+     As somas de cada dimensão vão já calculadas, em colunas
+     próprias, para aparecerem prontas no painel do Supabase.
+     As respostas frase a frase vão juntas, em "respostas",
+     para que qualquer soma possa ser conferida ou refeita. */
+  function gravarRastreio(dados) {
+    const quem = participante();
+    if (!quem) {
+      return null;
+    }
+
+    /* somarImpacto vem de pesquisa.js */
+    const somas = typeof somarImpacto === 'function'
+      ? somarImpacto(dados.respostas || {})
+      : {};
+
+    return enfileirar('rastreio', {
+      id: novoId(),
+      participante_id: quem.id,
+      animal_alvo: dados.animalAlvo || null,
+      alvo_por_empate: Boolean(dados.empate),
+      trauma: dados.trauma === 'sim' ? true : dados.trauma === 'nao' ? false : null,
+      trauma_qual: dados.traumaQual || null,
+      respostas: dados.respostas || {},
+      atencao: somas.atencao === undefined ? null : somas.atencao,
+      autorregulacao: somas.autorregulacao === undefined ? null : somas.autorregulacao,
+      esquiva: somas.esquiva === undefined ? null : somas.esquiva,
+      total: somas.total === undefined ? null : somas.total,
+      criado_em: new Date().toISOString()
+    });
+  }
+
   function gravarQuestionarioFinal(respostas) {
     const quem = participante();
     if (!quem) {
@@ -334,7 +369,9 @@ const Armazenamento = (function () {
 
     if (!resposta.ok) {
       const detalhe = await resposta.text();
-      throw new Error(`${tabela}: ${resposta.status} ${detalhe.slice(0, 200)}`);
+      const erro = new Error(`${tabela}: ${resposta.status} ${detalhe.slice(0, 200)}`);
+      erro.respondido = true;   // o banco respondeu: a rede está de pé
+      throw erro;
     }
   }
 
@@ -363,7 +400,21 @@ const Armazenamento = (function () {
         entregues.push(item.linha.id);
       } catch (erro) {
         console.warn('Armazenamento: envio falhou, fica na fila.', erro.message);
-        break;   // rede caiu: não adianta insistir nas seguintes
+
+        /* Dois casos diferentes:
+
+           - a REDE caiu (o fetch nem recebeu resposta): parar,
+             porque as próximas falhariam do mesmo jeito;
+
+           - o BANCO respondeu com erro (por exemplo, uma tabela
+             nova que ainda não foi criada no Supabase): esta
+             linha fica na fila, mas as seguintes seguem. Sem
+             isso, uma tabela esquecida seguraria todas as
+             sessões e métricas atrás dela. */
+        if (erro.respondido) {
+          continue;
+        }
+        break;
       }
     }
 
@@ -502,6 +553,7 @@ const Armazenamento = (function () {
     encerrarParticipacao: encerrarParticipacao,
 
     gravarMedoDeclarado: gravarMedoDeclarado,
+    gravarRastreio: gravarRastreio,
     gravarQuestionarioFinal: gravarQuestionarioFinal,
 
     abrirSessao: abrirSessao,

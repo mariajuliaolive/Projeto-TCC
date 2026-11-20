@@ -1,7 +1,7 @@
 -- =========================================================
 -- VISÕES DE ANÁLISE
 -- ---------------------------------------------------------
--- As seis tabelas do banco foram feitas para GRAVAR bem:
+-- As sete tabelas do banco foram feitas para GRAVAR bem:
 -- cada dado num lugar só, ligado aos outros por um id longo
 -- (a3f1c2…). Isso é bom para o sistema e ruim para quem lê:
 -- abrir "metricas" mostra uma fileira de ids e não diz de
@@ -25,7 +25,7 @@
 --
 -- COMO USAR
 --   Supabase → Table Editor → no seletor "schema", troque
---   "public" por "analise". As cinco visões aparecem na lista.
+--   "public" por "analise". As seis visões aparecem na lista.
 --
 -- POR QUE UM ESQUEMA SEPARADO ("analise")
 --
@@ -45,6 +45,7 @@ create schema if not exists analise;
 -- Recriar do zero permite mudar as colunas de uma visão
 -- rodando este arquivo de novo.
 drop view if exists analise.conferencia;
+drop view if exists analise.rastreio;
 drop view if exists analise.por_animal;
 drop view if exists analise.sessoes;
 drop view if exists analise.questionario_final;
@@ -172,15 +173,54 @@ select p.codigo                                     as participante,
  order by p.codigo, f.criado_em;
 
 -- ---------------------------------------------------------
--- 5. CONFERÊNCIA — chegou tudo de cada pessoa?
+-- 5. RASTREIO — o questionário de rastreio, uma linha por pessoa
+--
+-- Junta as duas partes: a nota (0 a 5) que a pessoa deu ao
+-- animal-alvo e as somas do impacto (0 a 4 por frase).
+-- As dez frases aparecem uma por coluna no fim, para
+-- conferir qualquer soma.
+--
+-- Não é escore clínico nem diagnóstico: descreve a amostra.
+-- ---------------------------------------------------------
+create view analise.rastreio
+with (security_invoker = true) as
+select p.codigo                                       as participante,
+       r.animal_alvo,
+       m.medo                                         as medo_do_alvo_0a5,
+       r.alvo_por_empate,
+       r.trauma,
+       r.trauma_qual,
+       r.atencao                                      as atencao_0a12,
+       r.autorregulacao                               as autorregulacao_0a12,
+       r.esquiva                                      as esquiva_0a16,
+       r.total                                        as total_0a40,
+       (r.respostas->>'atencao_1')::int               as atencao_1,
+       (r.respostas->>'atencao_2')::int               as atencao_2,
+       (r.respostas->>'atencao_3')::int               as atencao_3,
+       (r.respostas->>'autorregulacao_1')::int        as autorregulacao_1,
+       (r.respostas->>'autorregulacao_2')::int        as autorregulacao_2,
+       (r.respostas->>'autorregulacao_3')::int        as autorregulacao_3,
+       (r.respostas->>'esquiva_1')::int               as esquiva_1,
+       (r.respostas->>'esquiva_2')::int               as esquiva_2,
+       (r.respostas->>'esquiva_3')::int               as esquiva_3,
+       (r.respostas->>'esquiva_4')::int               as esquiva_4,
+       r.criado_em                                    as respondido_em
+  from public.rastreio r
+  join public.participantes p on p.id = r.participante_id
+  left join public.respostas_perfil m on m.participante_id = r.participante_id
+                                     and m.animal = r.animal_alvo
+ order by p.codigo, r.criado_em;
+
+-- ---------------------------------------------------------
+-- 6. CONFERÊNCIA — chegou tudo de cada pessoa?
 --
 -- Para abrir no dia da coleta, entre um participante e
 -- outro. Uma linha por pessoa, com a contagem do que chegou
 -- e uma coluna "situacao" que diz em palavras o que falta.
 --
--- Um participante completo tem: 5 medos declarados, pelo
--- menos uma sessão, as métricas de todas as sessões e o
--- questionário final.
+-- Um participante completo tem: 5 medos declarados, o
+-- rastreio (parte 2), pelo menos uma sessão, as métricas de
+-- todas as sessões e o questionário final.
 -- ---------------------------------------------------------
 create view analise.conferencia
 with (security_invoker = true) as
@@ -190,6 +230,8 @@ with contagem as (
          p.criado_em,
          (select count(*) from public.respostas_perfil r
            where r.participante_id = p.id)::int          as medos_declarados,
+         exists (select 1 from public.rastreio x
+                  where x.participante_id = p.id)        as respondeu_rastreio,
          (select count(*) from public.sessoes s
            where s.participante_id = p.id)::int          as sessoes,
          (select count(*) from public.sessoes s
@@ -206,12 +248,14 @@ with contagem as (
 select c.codigo as participante,
        c.criado_em as cadastrado_em,
        c.medos_declarados,
+       c.respondeu_rastreio,
        c.sessoes,
        c.sessoes_sem_metricas,
        c.eventos,
        c.respondeu_questionario,
        case
          when c.medos_declarados < 5      then 'faltam medos declarados'
+         when not c.respondeu_rastreio    then 'falta o rastreio (parte 2)'
          when c.sessoes = 0               then 'ainda não entrou na experiência'
          when c.sessoes_sem_metricas > 0  then 'faltam métricas de ' || c.sessoes_sem_metricas || ' sessão(ões)'
          when not c.respondeu_questionario then 'falta o questionário final'

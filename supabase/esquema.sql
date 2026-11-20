@@ -5,10 +5,11 @@
 -- execute. Pode ser executado mais de uma vez sem estragar
 -- nada: tudo usa "if not exists".
 --
--- SÃO SEIS TABELAS:
+-- SÃO SETE TABELAS:
 --
 --   participantes      quem participou
---   respostas_perfil   o medo declarado, um animal por linha
+--   respostas_perfil   o medo declarado (0 a 5), um animal por linha
+--   rastreio           o impacto do medo sobre o animal-alvo (0 a 4)
 --   sessoes            cada passagem por um nível
 --   eventos            o que aconteceu durante a sessão
 --   metricas           o resumo numérico de cada sessão
@@ -70,10 +71,14 @@ create trigger trg_codigo_participante
   for each row execute function define_codigo_participante();
 
 -- ---------------------------------------------------------
--- 2. MEDO DECLARADO (questionário de perfil)
+-- 2. MEDO DECLARADO (questionário de rastreio, parte 1)
 -- Uma linha por animal, e não uma linha com cinco colunas:
 -- acrescentar um sexto animal ao estudo não exige alterar a
 -- estrutura da tabela.
+--
+-- A escala é de 0 a 5 (até 20/11/2026 era de 0 a 10; a
+-- verificação abaixo aceita as duas para não recusar dados
+-- de teste antigos — apague-os antes da coleta).
 -- ---------------------------------------------------------
 create table if not exists respostas_perfil (
   id               uuid primary key,
@@ -148,6 +153,37 @@ create table if not exists respostas_finais (
   criado_em        timestamptz default now()
 );
 
+-- ---------------------------------------------------------
+-- 7. RASTREIO — questionário de rastreio, parte 2
+--
+-- Uma linha por participante. As dez frases falam do
+-- "animal-alvo": o de maior nota na parte 1 (em empate, o
+-- participante escolheu; "alvo_por_empate" registra isso).
+--
+-- Cada frase vale de 0 (nunca) a 4 (sempre). As somas:
+--   atencao         3 frases, 0 a 12
+--   autorregulacao  3 frases, 0 a 12
+--   esquiva         4 frases, 0 a 16
+--   total          10 frases, 0 a 40
+-- "respostas" guarda as dez notas, frase a frase.
+--
+-- Não é escore clínico: é descrição da amostra.
+-- ---------------------------------------------------------
+create table if not exists rastreio (
+  id               uuid primary key,
+  participante_id  uuid references participantes(id),
+  animal_alvo      text,
+  alvo_por_empate  boolean,
+  trauma           boolean,
+  trauma_qual      text,
+  respostas        jsonb,
+  atencao          smallint check (atencao between 0 and 12),
+  autorregulacao   smallint check (autorregulacao between 0 and 12),
+  esquiva          smallint check (esquiva between 0 and 16),
+  total            smallint check (total between 0 and 40),
+  criado_em        timestamptz default now()
+);
+
 -- =========================================================
 -- POLÍTICAS DE ACESSO
 -- ---------------------------------------------------------
@@ -190,7 +226,7 @@ grant usage on schema public to anon, authenticated;
 
 grant insert on
   participantes, respostas_perfil, sessoes,
-  eventos, metricas, respostas_finais
+  eventos, metricas, respostas_finais, rastreio
   to anon, authenticated;
 
 alter table participantes    enable row level security;
@@ -199,12 +235,14 @@ alter table sessoes          enable row level security;
 alter table eventos          enable row level security;
 alter table metricas         enable row level security;
 alter table respostas_finais enable row level security;
+alter table rastreio         enable row level security;
 
 do $$
 declare t text;
 begin
   foreach t in array array['participantes', 'respostas_perfil', 'sessoes',
-                           'eventos', 'metricas', 'respostas_finais']
+                           'eventos', 'metricas', 'respostas_finais',
+                           'rastreio']
   loop
     execute format('drop policy if exists %I on %I', 'inserir_' || t, t);
     execute format(

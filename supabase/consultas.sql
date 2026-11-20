@@ -206,6 +206,14 @@ select codigo, email, to_char(criado_em, 'DD/MM HH24:MI') as quando
 -- )
 -- delete from respostas_finais where participante_id in (select id from lixo);
 --
+-- with lixo as (
+--   select id from participantes
+--    where email like '%exemplo.invalido'
+--       or email like '%@x.com'
+--       or email like '%teste%'
+-- )
+-- delete from rastreio where participante_id in (select id from lixo);
+--
 -- delete from participantes
 --  where email like '%exemplo.invalido'
 --     or email like '%@x.com'

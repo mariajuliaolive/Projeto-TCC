@@ -488,3 +488,64 @@
   min-height: 86px;
   line-height: 1.55;
 }
+
+/* =========================================================
+   RASTREIO, PARTE 2 — impacto do medo
+   ========================================================= */
+.alvo {
+  margin: 22px 0 6px;
+  padding: 16px 20px;
+  background: rgba(62, 208, 192, 0.08);
+  border: 1px solid rgba(62, 208, 192, 0.35);
+  border-radius: var(--raio);
+}
+
+.alvo__rotulo {
+  display: block;
+  font-size: 13.5px;
+  color: var(--texto-suave);
+}
+
+.alvo__animal {
+  display: block;
+  margin-top: 4px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.alvo .escolhas {
+  margin-top: 12px;
+}
+
+/* A legenda dos números fica à vista o tempo todo: a escala
+   muda de 0 a 5 (passo 3) para 0 a 4 (aqui). */
+.legenda-impacto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 18px 0 0;
+  padding: 12px 16px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: var(--texto-suave);
+}
+
+.legenda-impacto strong {
+  color: var(--texto);
+}
+
+.dimensao {
+  margin-top: 30px;
+}
+
+.dimensao__titulo {
+  font-size: 16px;
+  color: var(--verde);
+}
+
+.escalas--juntas {
+  margin: 12px 0 0;
+  gap: 12px;
+}

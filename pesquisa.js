@@ -54,16 +54,18 @@ const CONSENTIMENTO = {
       titulo: 'O que você vai fazer',
       texto:
         'Preencher um cadastro curto e um questionário sobre medo de ' +
-        'animais, usar a aplicação pelo tempo que quiser, e responder a ' +
-        'um questionário final.'
+        'animais (cerca de 5 minutos), usar a aplicação pelo tempo que ' +
+        'quiser, e responder a um questionário final.'
     },
     {
       titulo: 'Que dados são coletados',
       texto:
-        'E-mail, sexo e data de nascimento; o grau de medo que você ' +
-        'declara para cada animal; e medidas automáticas de uso, como a ' +
-        'distância que você mantém do animal, sua movimentação pelo ' +
-        'ambiente e os níveis percorridos.'
+        'E-mail, sexo e data de nascimento; se você já teve experiência ' +
+        'ruim com algum dos animais; o grau de medo que você declara para ' +
+        'cada animal e como esse medo afeta sua atenção, suas reações e ' +
+        'seu dia a dia; e medidas automáticas de uso, como a distância ' +
+        'que você mantém do animal, sua movimentação pelo ambiente e os ' +
+        'níveis percorridos.'
     },
     {
       titulo: 'Como seus dados são tratados',
@@ -155,34 +157,190 @@ const CAMPOS_CADASTRO = [
       { valor: 'sim', rotulo: 'Sim' },
       { valor: 'nao', rotulo: 'Não' }
     ]
+  },
+
+  /* Os dois campos abaixo vêm da "Identificação do Participante"
+     do Questionário de Rastreio. Ficam neste passo porque é
+     onde o questionário os coloca, mas são gravados junto com
+     o rastreio (tabela "rastreio"), e não no cadastro: são
+     dado de análise, e o cadastro guarda o e-mail. */
+  {
+    id: 'trauma',
+    rotulo: 'Já teve alguma experiência traumática ou muito desagradável com algum desses animais?',
+    rotuloCurto: 'experiência com os animais',
+    tipo: 'opcoes',
+    obrigatorio: true,
+    opcoes: [
+      { valor: 'sim', rotulo: 'Sim' },
+      { valor: 'nao', rotulo: 'Não' }
+    ]
+  },
+  {
+    id: 'traumaQual',
+    rotulo: 'Qual?',
+    tipo: 'text',
+    obrigatorio: false,
+    /* só aparece depois de a pessoa marcar "Sim" acima */
+    mostrarSe: { campo: 'trauma', valor: 'sim' },
+    ajuda: 'Se quiser, conte em poucas palavras: qual animal e o que aconteceu.'
   }
 ];
 
 /* ---------------------------------------------------------
-   3. QUESTIONÁRIO DE PERFIL — medo declarado
+   3. QUESTIONÁRIO DE RASTREIO: MEDO, ATENÇÃO E AUTORREGULAÇÃO
 
-   Uma pergunta por animal, em escala de 0 a 10. É curto de
-   propósito: a pessoa está curiosa para entrar, e um
-   questionário longo aqui gasta a paciência que ela deveria
-   gastar na experiência.
+   Aplicado no cadastro, ANTES de qualquer contato com o
+   ambiente virtual, para que as respostas não sejam
+   contaminadas pela experiência. Tem duas partes:
 
-   Este é o dado mais importante da coleta, porque é a LINHA
-   DE BASE. Sem ele, as medidas de comportamento não têm com
-   o que ser comparadas: saber que alguém manteve dois metros
-   de distância só diz alguma coisa quando se sabe o quanto
-   essa pessoa declarou temer aquele animal.
+   PARTE 1 — MAPEAMENTO POR ANIMAL (escala de 0 a 5)
+   Uma nota por animal. É a LINHA DE BASE do estudo: saber
+   que alguém manteve dois metros de distância só diz alguma
+   coisa quando se sabe o quanto essa pessoa declarou temer
+   aquele animal. Vai para a tabela "respostas_perfil".
 
-   Por isso ele é respondido ANTES de qualquer contato com o
-   ambiente virtual — para que a declaração não seja
-   contaminada pela experiência.
+   PARTE 2 — IMPACTO (escala de 0 a 4)
+   Dez frases sobre o animal que recebeu a MAIOR nota na
+   parte 1 (o "animal-alvo"), em três dimensões. Vai para a
+   tabela "rastreio", com a soma de cada dimensão.
+
+   O QUE ESTE QUESTIONÁRIO NÃO É
+
+   "Rastreio" aqui quer dizer mapear o medo declarado para
+   escolher o animal e descrever a amostra. NÃO é instrumento
+   clínico validado e NÃO produz diagnóstico — por isso a
+   pessoa não vê pontuação nenhuma ao terminar.
+
+   Os textos abaixo são os do documento
+   "Questionario_Rastreio_de_Medos.docx", sem alteração de
+   sentido. Se mudar aqui, mude também o Apêndice B do TCC.
    --------------------------------------------------------- */
 const ESCALA_MEDO = {
-  pergunta: 'De 0 a 10, quanto medo você sente de cada animal?',
+  pergunta: 'Quanto cada animal incomoda você?',
+  instrucao:
+    'Marque de 0 a 5 o nível de desconforto, medo ou repulsa que cada ' +
+    'animal provoca em você (0 = nenhum desconforto; 5 = medo/repulsa ' +
+    'extrema).',
   minimo: 0,
-  maximo: 10,
-  rotuloMinimo: 'nenhum medo',
-  rotuloMaximo: 'medo extremo'
+  maximo: 5,
+  rotuloMinimo: 'nenhum desconforto',
+  rotuloMaximo: 'medo/repulsa extrema'
 };
+
+const ESCALA_IMPACTO = {
+  minimo: 0,
+  maximo: 4,
+  /* um rótulo por número, na ordem: 0, 1, 2, 3, 4 */
+  rotulos: ['Nunca', 'Raramente', 'Às vezes', 'Quase sempre', 'Sempre']
+};
+
+const IMPACTO = {
+  titulo: 'Como esse medo afeta você?',
+  instrucao: 'Pense no animal em que você marcou a maior nota.',
+
+  /* As três dimensões, cada uma com suas frases. O "id" de
+     cada frase é o nome com que a resposta chega ao banco:
+     não mude depois que a coleta começar, senão respostas
+     da mesma pergunta ficam com nomes diferentes. */
+  dimensoes: [
+    {
+      id: 'atencao',
+      titulo: 'Atenção e bloqueio cognitivo (pensamento)',
+      itens: [
+        { id: 'atencao_1',
+          texto: 'Quando vejo esse animal perto, longe ou em imagens/vídeos, ' +
+                 'não consigo prestar atenção em mais nada ao meu redor.' },
+        { id: 'atencao_2',
+          texto: 'A simples possibilidade de esse animal aparecer no ambiente ' +
+                 'me deixa em estado de alerta.' },
+        { id: 'atencao_3',
+          texto: 'Diante desse animal, paraliso ou tenho dificuldade para ' +
+                 'pensar com clareza sobre o que fazer ou como vou agir.' }
+      ]
+    },
+    {
+      id: 'autorregulacao',
+      titulo: 'Autorregulação emocional e fisiológica',
+      itens: [
+        { id: 'autorregulacao_1',
+          texto: 'Ao me deparar com esse animal, sinto reações físicas ' +
+                 'imediatas (coração acelerado, suor, arrepio, tensão ou ' +
+                 'falta de ar).' },
+        { id: 'autorregulacao_2',
+          texto: 'Tenho dificuldade para me acalmar rapidamente mesmo depois ' +
+                 'que o animal já saiu de perto.' },
+        { id: 'autorregulacao_3',
+          texto: 'Sinto repulsa, nojo intenso ou vontade de gritar/chorar ' +
+                 'quando o animal se movimenta rápido.' }
+      ]
+    },
+    {
+      id: 'esquiva',
+      titulo: 'Comportamento de esquiva e adaptação ao ambiente',
+      itens: [
+        { id: 'esquiva_1',
+          texto: 'Meu primeiro impulso é fugir do local, fechar os olhos ou ' +
+                 'pedir para outra pessoa resolver a situação.' },
+        { id: 'esquiva_2',
+          texto: 'Evito entrar em certos lugares (ambientes fechados, ' +
+                 'quintais, áreas com mato ou locais com pouca luminosidade) ' +
+                 'por medo de encontrar esse animal.' },
+        { id: 'esquiva_3',
+          texto: 'Sinto que esse medo limita minhas ações ou minha autonomia ' +
+                 'em algumas situações do meu cotidiano.' },
+        { id: 'esquiva_4',
+          texto: 'Mesmo o animal estando em imagem e sabendo que é apenas uma ' +
+                 'simulação, sinto insegurança em me aproximar desse animal.' }
+      ]
+    }
+  ]
+};
+
+/* O animal-alvo: o de maior nota na parte 1.
+
+   Recebe { cobra: 3, rato: 5, ... } e devolve a lista dos
+   animais empatados na maior nota. Com um só, ele é o alvo;
+   com vários, a pessoa escolhe em qual pensar — decidir por
+   ela (o primeiro da lista, por exemplo) faria o alvo
+   depender da ordem em que os animais aparecem na tela. */
+function animaisDeMaiorNota(medo) {
+  const notas = Object.keys(medo).map(function (id) { return medo[id]; });
+  if (!notas.length) {
+    return [];
+  }
+  const maior = Math.max.apply(null, notas);
+  return Object.keys(medo).filter(function (id) { return medo[id] === maior; });
+}
+
+/* Soma de cada dimensão e o total. Recebe { atencao_1: 2, ... }.
+   Devolve null numa dimensão com resposta faltando: somar o que
+   existe daria um número menor que parece completo. */
+function somarImpacto(respostas) {
+  const somas = {};
+  let total = 0;
+  let completo = true;
+
+  IMPACTO.dimensoes.forEach(function (dimensao) {
+    let soma = 0;
+    dimensao.itens.forEach(function (item) {
+      const valor = respostas[item.id];
+      if (typeof valor !== 'number') {
+        soma = null;
+      } else if (soma !== null) {
+        soma += valor;
+      }
+    });
+    somas[dimensao.id] = soma;
+    if (soma === null) {
+      completo = false;
+    } else {
+      total += soma;
+    }
+  });
+
+  somas.total = completo ? total : null;
+  return somas;
+}
 
 /* ---------------------------------------------------------
    4. QUESTIONÁRIO FINAL — percepção
@@ -195,7 +353,9 @@ const ESCALA_MEDO = {
    controle enquanto fazia isso. Uma sem a outra conta meia
    história.
    --------------------------------------------------------- */
-/* A escala é a mesma do medo declarado e do desconforto: 0 a 10.
+/* A escala é a mesma do desconforto registrado durante a
+   experiência: 0 a 10. (O questionário de rastreio, aplicado
+   antes, usa 0 a 5 e 0 a 4 porque assim veio o instrumento.)
    Não é a convenção de 1 a 5 que muitos questionários usam, e a
    escolha é deliberada — trocar de escala no meio do estudo faz
    a pessoa parar para reaprender o que o número significa, e o
